@@ -91,6 +91,34 @@ L:RegisterTranslations("koKR", function() return {
 	["Make the player's arrow on the World Map 1.5 times larger than normal"] = "1.5배 정도 플레이어 위치를 좀더 크게 표시합니다.",
 } end)
 
+L:RegisterTranslations("zhCN", function() return {
+	["Look 'n' Feel"] = "外观设置",
+	["Module which allows you to change the transparency, position, and scale of the world map."] = "允许你更改世界地图的透明度、位置和缩放比例的模块。",
+	
+	["Transparency"] = "透明度",
+	["Transparency of the World Map"] = "世界地图的透明度",
+	
+	["Overlay transparency"] = "覆盖层透明度",
+	["Transparency of World Map overlays"] = "世界地图覆盖层的透明度",
+	
+	["Scale"] = "缩放比例",
+	["Scale of the World Map"] = "世界地图的缩放比例",
+	
+	["Tooltip scale"] = "提示框缩放",
+	["Scale of the World Map tooltip"] = "世界地图提示框的缩放比例",
+	
+	["Shift-MouseWheel to change transparency"] = "Shift+鼠标滚轮改变透明度",
+	["Ctrl-MouseWheel to change scale"] = "Ctrl+鼠标滚轮改变缩放比例",
+	
+	["Lock the World Map"] = "锁定世界地图",
+	
+	["Close with escape"] = "ESC关闭",
+	["Close the World Map when pressing the escape button"] = "按ESC键时关闭世界地图",
+	
+	["Large player arrow"] = "大型玩家箭头",
+	["Make the player's arrow on the World Map 1.5 times larger than normal"] = "使世界地图上玩家的箭头比正常大小大1.5倍",
+} end)
+
 Cartographer_LookNFeel = Cartographer:NewModule("LookNFeel", "AceEvent-2.0", "AceHook-2.1")
 
 local _G = getfenv(0)

@@ -12,7 +12,7 @@ Cartographer_InstanceNotes = Cartographer:NewModule("InstanceNotes", "AceConsole
 function Cartographer_InstanceNotes:OnInitialize()
 	self.name = L["Instance Notes"]
 	self.title = L["Instance Notes"]
-    Cartographer.options.args.InstanceNotes = {
+	Cartographer.options.args.InstanceNotes = {
         name = L["Instance Notes"],
         desc = L["Module which adds default notes to the instance maps."],
         type = 'group',
@@ -31,7 +31,14 @@ function Cartographer_InstanceNotes:OnInitialize()
 end
 
 function Cartographer_InstanceNotes:OnEnable()
-    if Cartographer_Notes then
+	if not self.notes then
+		local success, err = pcall(function() self:InitializeNotes() end)
+		if not success then
+			DEFAULT_CHAT_FRAME:AddMessage("Cartographer_InstanceNotes: Failed to initialize notes - " .. tostring(err))
+			return
+		end
+	end
+    if Cartographer_Notes and type(self.notes) == "table" then
         Cartographer_Notes:RegisterNotesDatabase("InstanceNotes", self.notes)
     end
 end

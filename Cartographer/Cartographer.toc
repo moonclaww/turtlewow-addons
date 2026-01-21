@@ -43,5 +43,6 @@ Modules\ZoneInfo.lua
 Modules\InstanceNotes\enUS.lua
 Modules\InstanceNotes\ruRU.lua
 Modules\InstanceNotes\koKR.lua
+Modules\InstanceNotes\zhCN.lua
 Modules\InstanceNotes\module.lua
 Modules\InstanceNotes\notes.lua

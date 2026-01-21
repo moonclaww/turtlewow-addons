@@ -31,6 +31,14 @@ L:RegisterTranslations("koKR", function() return {
 	["%d-man"] = "%d명",
 } end)
 
+L:RegisterTranslations("zhCN", function() return {
+	["Zone Info"] = "区域信息",
+	["Module which on hovering over a zone, will show the levels of the zone, the instances in the zone, their levels, and the number of men the instance is made for (e.g. 5-man, 40-man)."] = "鼠标悬停在区域上时，显示该区域的等级、副本、副本等级以及副本人数（例如：5人、40人）。",
+	
+	["Instances"] = "副本",
+	["%d-man"] = "%d人",
+} end)
+
 local Tourist = AceLibrary("Tourist-2.0")
 
 Cartographer_ZoneInfo = Cartographer:NewModule("ZoneInfo")

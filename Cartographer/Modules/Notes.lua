@@ -181,6 +181,64 @@ L:RegisterTranslations("koKR", function() return {
 	["Size of the icons on the map"] = "노트의 아이콘 크기를 변경합니다.",
 } end)
 
+L:RegisterTranslations("zhCN", function() return {
+	["Notes"] = "笔记",
+	["Module which allows you to put notes on the map."] = "允许你在地图上添加笔记的模块。",
+	
+	["White"] = "白色",
+	["Gray"] = "灰色",
+	["Red"] = "红色",
+	["Pink"] = "粉红色",
+	["Yellow"] = "黄色",
+	["Orange"] = "橙色",
+	["Green"] = "绿色",
+	["Lime"] = "青柠色",
+	["Blue"] = "蓝色",
+	["Pale blue"] = "淡蓝色",
+	["Cyan"] = "青色",
+	["Purple"] = "紫色",
+	
+	["Unknown"] = "未知",
+	["Custom icon"] = "自定义图标",
+	
+	["Create a new note"] = "创建新笔记",
+	["New note"] = "新建笔记",
+	["Delete note"] = "删除笔记",
+	["Edit note"] = "编辑笔记",
+	["Send note"] = "发送笔记",
+	["Send to party"] = "发送给小队",
+	["Send to raid"] = "发送给团队",
+	["Send to guild"] = "发送给公会",
+	["Send to player"] = "发送给玩家",
+	
+	["Note: This may be blocked by Blizzard's spam filter and cause problems. It is recommended to send to your party/raid/guild instead."] = "注意：这可能会被暴雪的垃圾信息过滤器阻止并导致问题。建议改为发送给你的小队/团队/公会。",
+	
+	["X position"] = "X坐标",
+	["Y position"] = "Y坐标",
+	["Title"] = "标题",
+	["Info line 1 (optional)"] = "信息行1（可选）",
+	["Info line 2 (optional)"] = "信息行2（可选）",
+	["Creator (optional)"] = "创建者（可选）",
+	
+	["Ctrl-Right-Click on map to add a note"] = "Ctrl+右键点击地图添加笔记",
+	
+	["%s from Guild"] = "来自公会的 %s",
+	["%s from Raid"] = "来自团队的 %s",
+	["%s from Party"] = "来自小队的 %s",
+	
+	["Error: %s sent you a note with an unknown zone: %q"] = "错误：%s 向你发送了一个未知区域的笔记：%q",
+	["Error: %s sent you a note at %q : %.1f, %.1f with the title %q created by %q, but you already have a note at this location."] = "错误：%s 向你发送了位于 %q : %.1f, %.1f 标题为 %q（由 %q 创建）的笔记，但你在此位置已有笔记。",
+	["%s sent you a note at %q : %.1f, %.1f with the title %q created by %q."] = "%s 向你发送了位于 %q : %.1f, %.1f 标题为 %q（由 %q 创建）的笔记。",
+
+	["Created by"] = "创建者",
+	
+	["Show note creator"] = "显示笔记创建者",
+	["Show the `Created By:' line in notes"] = "在笔记中显示'创建者：'行",
+	
+	["Icon size"] = "图标大小",
+	["Size of the icons on the map"] = "地图上图标的大小",
+} end)
+
 local icons = {}
 local function getIconTitle(icon)
 	if icons[icon] then

@@ -62,8 +62,16 @@ L:RegisterTranslations("koKR", function() return {
 } end)
 
 L:RegisterTranslations("zhCN", function() return {
---	["Toggle"] = true,
---	["Toggle the module on and off."] = true,
+	["Active"] = "激活",
+	["Suspend/resume this module."] = "暂停/恢复此模块。",
+	
+	["Right-Click on map to zoom out"] = "右键点击地图缩小",
+	["Left-Click on map to zoom in"] = "左键点击地图放大",
+	
+	["Go to %s"] = "前往 %s",
+	
+	["Azeroth"] = "艾泽拉斯",
+	["Cosmic map"] = "宇宙地图",
 } end)
 
 L:RegisterTranslations("zhTW", function() return {

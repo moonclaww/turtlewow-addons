@@ -55,6 +55,14 @@ L:RegisterTranslations("zhTW", function() return {
 	["Player:"] = "玩家:",
 } end)
 
+L:RegisterTranslations("zhCN", function() return {
+	["Coordinates"] = "坐标",
+	["Module to add coordinates to the bottom of the world map of the player and the cursor."] = "在世界地图底部显示玩家和光标的坐标。",
+	
+	["Cursor:"] = "光标：",
+	["Player:"] = "玩家：",
+} end)
+
 Cartographer_Coordinates = Cartographer:NewModule("Coordinates")
 
 function Cartographer_Coordinates:OnInitialize()

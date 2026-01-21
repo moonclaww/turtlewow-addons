@@ -9,7 +9,8 @@ local L = AceLibrary("AceLocale-2.2"):new("Cartographer_InstanceNotes")
 local BB = AceLibrary("Babble-Boss-2.2")
 local BZ = AceLibrary("Babble-Zone-2.2")
 
-Cartographer_InstanceNotes.notes = {
+function Cartographer_InstanceNotes:InitializeNotes()
+	self.notes = {
 	["The Stockade"] = {
 		[562278] = {
 			["titleB"] = 0,
@@ -3480,3 +3481,4 @@ Cartographer_InstanceNotes.notes = {
 		},
 	},
 }
+end

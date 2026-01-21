@@ -38,8 +38,8 @@ L:RegisterTranslations("zhTW", function() return {
 } end)
 
 L:RegisterTranslations("zhCN", function() return {
---	["Battlegrounds"] = true,
---	["Module which provides maps of battlegrounds."] = true,
+	["Battlegrounds"] = "战场",
+	["Module which provides maps of battlegrounds."] = "提供战场地图的模块。",
 } end)
 
 Cartographer_Battlegrounds = Cartographer:NewModule("Battlegrounds", "AceHook-2.1", "AceEvent-2.0")

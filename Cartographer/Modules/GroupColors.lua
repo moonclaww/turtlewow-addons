@@ -33,8 +33,8 @@ L:RegisterTranslations("koKR", function() return {
 } end)
 
 L:RegisterTranslations("zhCN", function() return {
---	["Group Colors"] = true,
---	["Module which turns all your party's and your raid's POIs into circles colored based on class, and shows a number on them based on their raid group."] = true,
+	["Group Colors"] = "队伍着色",
+	["Module which turns all your party's and your raid's POIs into circles colored based on class, and shows a number on them based on their raid group."] = "将你的小队和团队成员的位置标记变成根据职业着色的圆圈，并根据团队编号显示数字。",
 } end)
 
 L:RegisterTranslations("zhTW", function() return {

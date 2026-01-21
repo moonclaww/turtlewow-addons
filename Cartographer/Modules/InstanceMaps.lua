@@ -44,8 +44,10 @@ L:RegisterTranslations("zhTW", function() return {
 } end)
 
 L:RegisterTranslations("zhCN", function() return {
---	["Instance Maps"] = true,
---	["Module which provides maps of instances."] = true,
+	["Instance Maps"] = "副本地图",
+	["Module which provides maps of instances."] = "提供副本地图的模块。",
+	
+	["Instances"] = "副本",
 } end)
 
 Cartographer_InstanceMaps = Cartographer:NewModule("InstanceMaps", "AceHook-2.1")
