@@ -1,0 +1,575 @@
+------------------------------------------------------------------------
+r25639 | shiftos | 2007-01-20 14:33:36 -0500 (Sat, 20 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Babble-Spell-2.2: added esES (spanish) translation
+------------------------------------------------------------------------
+r25632 | pettigrow | 2007-01-20 12:21:26 -0500 (Sat, 20 Jan 2007) | 1 line
+
+Babble-2.2: frFR Update
+------------------------------------------------------------------------
+r25570 | funkydude | 2007-01-19 08:47:43 -0500 (Fri, 19 Jan 2007) | 1 line
+
+Babble-2.2: Boss: re-arrange The Slave Pens(wtb more tbc translations)
+------------------------------------------------------------------------
+r25558 | shiftos | 2007-01-19 07:12:51 -0500 (Fri, 19 Jan 2007) | 2 lines
+
+Babble-2.2:
+- updated esES for Zones
+------------------------------------------------------------------------
+r25550 | fenlis | 2007-01-19 03:13:50 -0500 (Fri, 19 Jan 2007) | 2 lines
+
+Babble-2.2: Babble-Boss-2.2
+- Updated locals koKR
+------------------------------------------------------------------------
+r25499 | gamefaq | 2007-01-18 00:15:16 -0500 (Thu, 18 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Updated 2 deDE TBC Zones
+------------------------------------------------------------------------
+r25469 | Heron | 2007-01-17 18:45:50 -0500 (Wed, 17 Jan 2007) | 1 line
+
+Babble-2.2: Herbs: Added esES and zhTW (except TBC)
+------------------------------------------------------------------------
+r25466 | funkydude | 2007-01-17 17:32:41 -0500 (Wed, 17 Jan 2007) | 1 line
+
+Babble-2.2: Boss: re-arrange The Blood Furnace and Hellfire Ramparts
+------------------------------------------------------------------------
+r25435 | funkydude | 2007-01-17 03:53:51 -0500 (Wed, 17 Jan 2007) | 1 line
+
+Babble-2.2: Boss: Remove Lord Kazzak
+------------------------------------------------------------------------
+r25432 | sayclub | 2007-01-16 23:05:00 -0500 (Tue, 16 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Babble-Boss-2.2 : Updated localization koKR
+------------------------------------------------------------------------
+r25426 | gamefaq | 2007-01-16 21:30:29 -0500 (Tue, 16 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Hungarfen deDE Fix and Blade's Edge Arena = Schergrat Arena
+------------------------------------------------------------------------
+r25416 | kergoth | 2007-01-16 14:52:03 -0500 (Tue, 16 Jan 2007) | 1 line
+
+Babble-2.2: Babble-Boss-2.2: Why was Hungarfen's english translation line commented out?  It broke Cartographer's InstanceNotes module.
+------------------------------------------------------------------------
+r25403 | shiftos | 2007-01-16 08:58:44 -0500 (Tue, 16 Jan 2007) | 1 line
+
+Babble-2.2: added spanish (esES) translation to Bosses (yes, finally)
+------------------------------------------------------------------------
+r25190 | sayclub | 2007-01-14 19:12:54 -0500 (Sun, 14 Jan 2007) | 3 lines
+
+Babble-2.2:
+- Babble-Boss-2.2 : Update locals koKR
+- Babble-Zone-2.2 : Update locals koKR
+------------------------------------------------------------------------
+r25188 | sayclub | 2007-01-14 19:05:16 -0500 (Sun, 14 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Babble-Spell-2.2 :  Update locals koKR
+------------------------------------------------------------------------
+r25138 | kagaro | 2007-01-14 14:22:10 -0500 (Sun, 14 Jan 2007) | 1 line
+
+Babble-2.2/Babble-Zone-2.2: Added Nagarand Arean to de locale
+------------------------------------------------------------------------
+r25118 | beerke | 2007-01-14 11:40:53 -0500 (Sun, 14 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Next time please correctly add zhTW locales, fixed line 6570 and 7006
+------------------------------------------------------------------------
+r25107 | sayclub | 2007-01-14 10:31:11 -0500 (Sun, 14 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Babble-Spell-2.2 :  Update locals koKR
+------------------------------------------------------------------------
+r25086 | moonsorrow | 2007-01-14 07:34:55 -0500 (Sun, 14 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Added Totemic Call spell
+------------------------------------------------------------------------
+r25073 | pettigrow | 2007-01-14 05:21:23 -0500 (Sun, 14 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Babble-Spell-2.2.lua: frFR Update
+------------------------------------------------------------------------
+r24966 | kagaro | 2007-01-13 12:24:17 -0500 (Sat, 13 Jan 2007) | 1 line
+
+Babble-2.2/Babble-Spell-2.2: added prospecting spell
+------------------------------------------------------------------------
+r24961 | kagaro | 2007-01-13 11:20:39 -0500 (Sat, 13 Jan 2007) | 1 line
+
+Babble-2.2/Babble-Spell-2.2: added extract gas spell
+------------------------------------------------------------------------
+r24954 | pettigrow | 2007-01-13 10:32:31 -0500 (Sat, 13 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Babble-Boss-2.2.lua/Babble-Zone-2.2.lua: frFR Update (2.0.3)
+------------------------------------------------------------------------
+r24726 | kagaro | 2007-01-11 21:15:07 -0500 (Thu, 11 Jan 2007) | 1 line
+
+Babble-2.2/Babble-Ore-2.2: removed non translation stuff
+------------------------------------------------------------------------
+r24725 | kagaro | 2007-01-11 21:14:12 -0500 (Thu, 11 Jan 2007) | 1 line
+
+Babble-2.2/Babble-Herbs-2.2: removed non translation stuff
+------------------------------------------------------------------------
+r24724 | kagaro | 2007-01-11 21:13:24 -0500 (Thu, 11 Jan 2007) | 1 line
+
+Babble-2.2/Babble-Fish-2.2: removed non translation stuff
+------------------------------------------------------------------------
+r24677 | kagaro | 2007-01-11 12:44:05 -0500 (Thu, 11 Jan 2007) | 1 line
+
+Babble-2.2/Babble-Ore-2.2: fixed a typo, and added a comment
+------------------------------------------------------------------------
+r24674 | pettigrow | 2007-01-11 12:22:42 -0500 (Thu, 11 Jan 2007) | 4 lines
+
+Babble-2.2:
+- Babble-Fish-2.2.lua: Added frFR translations
+- Babble-Herbs-2.2.lua: Added frFR translations
+- Babble-Ore-2.2.lua: Added frFR translations
+------------------------------------------------------------------------
+r24668 | fritti | 2007-01-11 10:04:44 -0500 (Thu, 11 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Add Lord Valthalak
+------------------------------------------------------------------------
+r24548 | rabbit | 2007-01-10 16:06:45 -0500 (Wed, 10 Jan 2007) | 1 line
+
+Babble-2.2: Add svn:eol-style to Ore, Fish and Herbs, and fix comma bug.
+------------------------------------------------------------------------
+r24532 | chinkuwaila | 2007-01-10 14:31:42 -0500 (Wed, 10 Jan 2007) | 5 lines
+
+Babble-2.2:
+- Babble-Fish-2.2.lua: added deDE translations; removed redundant "Oil Covered Fish"
+- Babble-Herbs-2.2.lua: added deDE translations
+- Babble-Ore-2.2.lua: added deDE translations; fixed "Throium" typo
+- Babble-Zone-2.2.lua: fixed deDE translation of "Menethil Harbor"
+------------------------------------------------------------------------
+r24514 | kagaro | 2007-01-10 09:12:43 -0500 (Wed, 10 Jan 2007) | 1 line
+
+Babble-2.2/Babble-Zone-2.2: fixed changes to de and fr clients for zone translations
+------------------------------------------------------------------------
+r24383 | next96 | 2007-01-10 01:47:30 -0500 (Wed, 10 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Babble-Fish-2.2: Add locale koKR
+------------------------------------------------------------------------
+r24379 | fenlis | 2007-01-10 01:37:13 -0500 (Wed, 10 Jan 2007) | 2 lines
+
+Babble-2.2:
+- updated locale koKR
+------------------------------------------------------------------------
+r24374 | next96 | 2007-01-10 01:11:22 -0500 (Wed, 10 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Babble-Ore-2.2: Add locale koKR
+------------------------------------------------------------------------
+r24373 | next96 | 2007-01-10 01:00:45 -0500 (Wed, 10 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Babble-Herbs-2.2: Add locale koKR
+------------------------------------------------------------------------
+r24320 | nevcairiel | 2007-01-09 17:25:07 -0500 (Tue, 09 Jan 2007) | 2 lines
+
+Babble-2.2:
+- fixed an error in the .toc
+------------------------------------------------------------------------
+r24292 | kagaro | 2007-01-09 15:35:46 -0500 (Tue, 09 Jan 2007) | 1 line
+
+Babble-2.2: updated toc
+------------------------------------------------------------------------
+r24289 | kagaro | 2007-01-09 15:24:35 -0500 (Tue, 09 Jan 2007) | 1 line
+
+Babble-2.2: fixed revision tag in the new sub modules
+------------------------------------------------------------------------
+r24286 | kagaro | 2007-01-09 15:08:06 -0500 (Tue, 09 Jan 2007) | 1 line
+
+Babble-2.2/Babble-Ore-2.2: added babble ore
+------------------------------------------------------------------------
+r24274 | kagaro | 2007-01-09 13:44:01 -0500 (Tue, 09 Jan 2007) | 1 line
+
+Babble-2.2: Add 2 new libraries Fish and Herbs .. both need translations (DRYCODE)
+------------------------------------------------------------------------
+r24233 | funkydude | 2007-01-09 09:02:31 -0500 (Tue, 09 Jan 2007) | 1 line
+
+Babble-2.2: toc 20003
+------------------------------------------------------------------------
+r23964 | chinkuwaila | 2007-01-07 18:29:44 -0500 (Sun, 07 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Babble-Zone-2.2.lua:  deDE translation for Scarlet Monastery
+------------------------------------------------------------------------
+r23754 | ominous | 2007-01-06 12:21:51 -0500 (Sat, 06 Jan 2007) | 2 lines
+
+Babble-2.2:
+-Fixed Babble-Spell Bug, sorry now i know
+------------------------------------------------------------------------
+r23753 | gagorian | 2007-01-06 12:14:59 -0500 (Sat, 06 Jan 2007) | 1 line
+
+Babble-2.2: -Changed "Empowered Healing Touch" to "Empowered Touch" as it should be.
+------------------------------------------------------------------------
+r23752 | chinkuwaila | 2007-01-06 12:05:15 -0500 (Sat, 06 Jan 2007) | 3 lines
+
+Babble-2.2:
+- Babble-Spell-2.2.lua: locales fixed; commented out any occurence of "true" in locales other than enUS
+- typo in deDE section fixed
+------------------------------------------------------------------------
+r23750 | ominous | 2007-01-06 11:56:39 -0500 (Sat, 06 Jan 2007) | 2 lines
+
+Babble-2.2:
+-Added Master of Subtlety + icon
+------------------------------------------------------------------------
+r23733 | chinkuwaila | 2007-01-06 10:18:41 -0500 (Sat, 06 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Babble-Spell-2.2.lua: locales fixed; commented out any occurence of "true" in locales other than enUS
+------------------------------------------------------------------------
+r23726 | ominous | 2007-01-06 08:35:38 -0500 (Sat, 06 Jan 2007) | 3 lines
+
+Babble-2.2:
+- Added Blade Twisting and Dazed, non enUS locals need updating
+- Added Blade Twisting Icon
+------------------------------------------------------------------------
+r23707 | gagorian | 2007-01-06 05:10:18 -0500 (Sat, 06 Jan 2007) | 1 line
+
+Babble-2.2: -Updated deDE and added Quick Recovery + deDE and frFR localizations
+------------------------------------------------------------------------
+r23490 | funkydude | 2007-01-05 10:44:09 -0500 (Fri, 05 Jan 2007) | 1 line
+
+Babble-2.2: toc update, re-arrange AQ
+------------------------------------------------------------------------
+r23363 | gagorian | 2007-01-04 13:33:48 -0500 (Thu, 04 Jan 2007) | 1 line
+
+Babble-2.2: -Added 7 missing druid talent keys (more is likely to be missing), and their frFR and deDE localizations.
+------------------------------------------------------------------------
+r23303 | gagorian | 2007-01-04 01:32:35 -0500 (Thu, 04 Jan 2007) | 1 line
+
+Babble-2.2: -Added all missing warlock talent keys (9 talents) and their frFR and deDE localizations.
+------------------------------------------------------------------------
+r23298 | gagorian | 2007-01-04 00:51:28 -0500 (Thu, 04 Jan 2007) | 1 line
+
+Babble-2.2: -Added keys for all missing mage talents (13 talents) and their deDE and frFR localizations
+------------------------------------------------------------------------
+r23291 | gagorian | 2007-01-04 00:03:48 -0500 (Thu, 04 Jan 2007) | 1 line
+
+Babble-2.2: -Added nearly all missing frFR and deDE translations to Babble-Spell-2.2
+------------------------------------------------------------------------
+r23219 | flutia | 2007-01-03 12:08:27 -0500 (Wed, 03 Jan 2007) | 2 lines
+
+Babble-2.2:
+- BS: fixed koKR ("Gift of Life" translation)
+------------------------------------------------------------------------
+r23200 | ckknight | 2007-01-03 08:37:25 -0500 (Wed, 03 Jan 2007) | 1 line
+
+.ckknight's assorted libraries/addons - added LICENSE.txt files to folders that state the license used.
+------------------------------------------------------------------------
+r23185 | ckknight | 2007-01-03 07:40:22 -0500 (Wed, 03 Jan 2007) | 2 lines
+
+.Babble-2.2 - changing license to MIT. If you have code within this library that you do not want to be under this license, contact me to work out a solution.
+Note: The reason this is not LGPL like other libraries is because people occasionally take out specific spells/races/etc. and they should have the ability to do so without hassle, seeing as this is a data-centric and not a code-centric library, this will likely not be a problem.
+------------------------------------------------------------------------
+r23166 | chinkuwaila | 2007-01-03 03:26:53 -0500 (Wed, 03 Jan 2007) | 2 lines
+
+Babble-2.2:
+- updated deDE localization
+------------------------------------------------------------------------
+r23120 | zealotonastick | 2007-01-02 19:03:39 -0500 (Tue, 02 Jan 2007) | 2 lines
+
+Babble-2.2:
+- Fixed the "Gift of Life" frFR translation
+------------------------------------------------------------------------
+r23012 | nevcairiel | 2007-01-01 17:30:29 -0500 (Mon, 01 Jan 2007) | 2 lines
+
+Babble-2.2:
+- BS: Added Warsong Flag, and some indentation fixes
+------------------------------------------------------------------------
+r22978 | archarodim | 2007-01-01 12:20:30 -0500 (Mon, 01 Jan 2007) | 2 lines
+
+.Babble-Spell-2.2:
+- Fixed the "Devour magic" frFR translation
+------------------------------------------------------------------------
+r22860 | nevcairiel | 2006-12-31 09:48:39 -0500 (Sun, 31 Dec 2006) | 2 lines
+
+Babble-2.2:
+- BS-2.2 deDE update
+------------------------------------------------------------------------
+r22859 | nevcairiel | 2006-12-31 09:29:27 -0500 (Sun, 31 Dec 2006) | 2 lines
+
+Babble-2.2:
+- BZ-2.2: koKR fixes
+------------------------------------------------------------------------
+r22858 | nevcairiel | 2006-12-31 09:27:05 -0500 (Sun, 31 Dec 2006) | 1 line
+
+.Babble-Spell-2.2: frFR fix
+------------------------------------------------------------------------
+r22787 | nevcairiel | 2006-12-30 20:13:48 -0500 (Sat, 30 Dec 2006) | 2 lines
+
+Babble-2.2:
+- added Gift of Life
+------------------------------------------------------------------------
+r22780 | ckknight | 2006-12-30 18:15:45 -0500 (Sat, 30 Dec 2006) | 1 line
+
+.Babble-Spell-2.2 - added frFR Armor of Faith
+------------------------------------------------------------------------
+r22770 | funkydude | 2006-12-30 15:55:31 -0500 (Sat, 30 Dec 2006) | 1 line
+
+Babble-2.2: Boss: re-arrange Zul'Gurub
+------------------------------------------------------------------------
+r22739 | fenlis | 2006-12-30 09:44:42 -0500 (Sat, 30 Dec 2006) | 2 lines
+
+Babble-2.2:
+- Updated locales koKR
+------------------------------------------------------------------------
+r22550 | gagorian | 2006-12-29 06:31:29 -0500 (Fri, 29 Dec 2006) | 2 lines
+
+Babble-2.2:
+-Added back all stuff lost in the revert.
+------------------------------------------------------------------------
+r22543 | ckknight | 2006-12-29 04:55:02 -0500 (Fri, 29 Dec 2006) | 1 line
+
+.Babble-Spell-2.2 - reverting zhCN and zhTW back to r22010
+------------------------------------------------------------------------
+r22507 | fenlis | 2006-12-28 23:23:18 -0500 (Thu, 28 Dec 2006) | 2 lines
+
+Babble-2.2:
+-Babble-Spell-2.2 : Fixed locale koKR
+------------------------------------------------------------------------
+r22490 | adirelle | 2006-12-28 20:48:52 -0500 (Thu, 28 Dec 2006) | 2 lines
+
+Babble-2.2:
+- Spell: fixed typo in french locale for Freezing Trap Effect.
+------------------------------------------------------------------------
+r22396 | matini | 2006-12-28 01:24:12 -0500 (Thu, 28 Dec 2006) | 2 lines
+
+Babble-2.2:
+- Update zhTW locale (Babble-Spell-2.2)
+------------------------------------------------------------------------
+r22312 | teomyr | 2006-12-27 16:33:42 -0500 (Wed, 27 Dec 2006) | 2 lines
+
+Babble-2.2:
+- Fixes for deDE bosses and zones
+------------------------------------------------------------------------
+r22311 | adirelle | 2006-12-27 16:33:04 -0500 (Wed, 27 Dec 2006) | 4 lines
+
+Babble-2.2:
+- added "Ferocious Inspiration" key,
+- added "Ferocious Inspiration" french localization,
+- fixed "Frost Trap Aura", "Immolation Trap Effact" french localizations.
+------------------------------------------------------------------------
+r22250 | funkydude | 2006-12-27 01:41:39 -0500 (Wed, 27 Dec 2006) | 1 line
+
+Babble-2.2: Boss: re-arrange Molten Core
+------------------------------------------------------------------------
+r22248 | funkydude | 2006-12-27 01:09:01 -0500 (Wed, 27 Dec 2006) | 1 line
+
+Babble-2.2: Boss: re-arrange Blackwing Lair
+------------------------------------------------------------------------
+r22245 | funkydude | 2006-12-27 00:36:57 -0500 (Wed, 27 Dec 2006) | 1 line
+
+Babble-2.2: Boss: re-arranged Naxxramas
+------------------------------------------------------------------------
+r22241 | sayclub | 2006-12-27 00:14:41 -0500 (Wed, 27 Dec 2006) | 2 lines
+
+Babble-2.2:
+-  Converted Babble-Spell-2.2 to a real UTF-8 file
+------------------------------------------------------------------------
+r22233 | nevcairiel | 2006-12-26 21:14:26 -0500 (Tue, 26 Dec 2006) | 2 lines
+
+Babble-2.2:
+- koKR fixes from RidRayburn on the forums
+------------------------------------------------------------------------
+r22230 | funkydude | 2006-12-26 19:48:44 -0500 (Tue, 26 Dec 2006) | 1 line
+
+Babble-2.2: Spell: stop changing the encoding!! use UTF-8 with signature
+------------------------------------------------------------------------
+r22215 | gagorian | 2006-12-26 13:34:55 -0500 (Tue, 26 Dec 2006) | 2 lines
+
+Babble-2.2:
+-Added a lot of new talents/spells plus some deDE localizations.
+------------------------------------------------------------------------
+r22155 | matini | 2006-12-26 01:05:36 -0500 (Tue, 26 Dec 2006) | 2 lines
+
+Babble-2.2:
+- Fix the zhTW locale in a TERRIBLE mess
+------------------------------------------------------------------------
+r22152 | matini | 2006-12-26 00:47:41 -0500 (Tue, 26 Dec 2006) | 2 lines
+
+Babble-2.2:
+- Update zhTW locale for Zul'Farrak
+------------------------------------------------------------------------
+r22144 | fenlis | 2006-12-25 23:13:00 -0500 (Mon, 25 Dec 2006) | 2 lines
+
+Babble-2.2:
+- Updated locales koKR
+------------------------------------------------------------------------
+r22142 | sayclub | 2006-12-25 23:02:27 -0500 (Mon, 25 Dec 2006) | 2 lines
+
+Babble-2.2:
+- Update locals koKR(Babble-Spell-2.2)
+------------------------------------------------------------------------
+r22137 | dafire | 2006-12-25 22:45:48 -0500 (Mon, 25 Dec 2006) | 2 lines
+
+Babble-2.2:
+- updated deDE of spell Silencing Shot
+------------------------------------------------------------------------
+r22098 | nevcairiel | 2006-12-25 09:20:28 -0500 (Mon, 25 Dec 2006) | 2 lines
+
+Babble-2.2:
+- Converted Babble-Spell-2.2 to a real UTF-8 file, wont bring back the lost translations, but probably preserve the koKR which looks in tact.
+------------------------------------------------------------------------
+r22089 | sayclub | 2006-12-25 04:30:36 -0500 (Mon, 25 Dec 2006) | 4 lines
+
+Babble-2.2:
+-Update locals koKR(Babble-Spell-2.2)
+
+
+------------------------------------------------------------------------
+r22079 | funkydude | 2006-12-25 00:29:13 -0500 (Mon, 25 Dec 2006) | 1 line
+
+Babble-2.2: Boss: add The Deadmines
+------------------------------------------------------------------------
+r22066 | funkydude | 2006-12-24 23:32:01 -0500 (Sun, 24 Dec 2006) | 1 line
+
+Babble-2.2: Boss: add The Stockade
+------------------------------------------------------------------------
+r22021 | chinkuwaila | 2006-12-24 11:10:58 -0500 (Sun, 24 Dec 2006) | 2 lines
+
+Babble-2.2:
+- updated deDE localization
+------------------------------------------------------------------------
+r22015 | gagorian | 2006-12-24 09:38:35 -0500 (Sun, 24 Dec 2006) | 2 lines
+
+Babble-2.2:
+-Added Nature Weakness.
+------------------------------------------------------------------------
+r22014 | gagorian | 2006-12-24 09:33:41 -0500 (Sun, 24 Dec 2006) | 2 lines
+
+Babble-2.2:
+-Added Positive/Negative Charge, Touch of Shadow and Burning Wish (MD lock buffs), Misery, Spell Vulnerability (nightfall axe), Traces of Silithyst, Arcane/Fire/Frost/Shadow Weakness (ossirian). Need localizations.
+------------------------------------------------------------------------
+r22012 | chinkuwaila | 2006-12-24 08:55:39 -0500 (Sun, 24 Dec 2006) | 2 lines
+
+Babble-2.2:
+- updated deDE localization of Scarlet Monastery bosses
+------------------------------------------------------------------------
+r22010 | ckknight | 2006-12-24 08:28:14 -0500 (Sun, 24 Dec 2006) | 2 lines
+
+.Babble-Spell-2.2 - added deDE Armor of Faith
+
+------------------------------------------------------------------------
+r21976 | funkydude | 2006-12-24 02:31:32 -0500 (Sun, 24 Dec 2006) | 1 line
+
+Babble-2.2: Boss: add Ragefire Chasm & Cartographer locales
+------------------------------------------------------------------------
+r21969 | funkydude | 2006-12-24 00:54:46 -0500 (Sun, 24 Dec 2006) | 1 line
+
+Babble-2.2: Boss: rip Scarlet Monastery locales from cartographer
+------------------------------------------------------------------------
+r21966 | funkydude | 2006-12-24 00:17:47 -0500 (Sun, 24 Dec 2006) | 1 line
+
+Babble-2.2: Boss: add Scarlet Monastery (only enUS, others in a sec)
+------------------------------------------------------------------------
+r21964 | funkydude | 2006-12-23 23:54:21 -0500 (Sat, 23 Dec 2006) | 1 line
+
+Babble-2.2: Boss: re-arrange maraudon, all locales
+------------------------------------------------------------------------
+r21956 | gamefaq | 2006-12-23 20:31:41 -0500 (Sat, 23 Dec 2006) | 2 lines
+
+Babble-2.2:
+- Updated deDE Babble-Boss for Zul´Farrak 
+------------------------------------------------------------------------
+r21949 | funkydude | 2006-12-23 18:44:53 -0500 (Sat, 23 Dec 2006) | 1 line
+
+Babble-2.2: with signature
+------------------------------------------------------------------------
+r21892 | shiftos | 2006-12-23 09:52:32 -0500 (Sat, 23 Dec 2006) | 2 lines
+
+Babble-2.2:
+- updated Zone esES translation
+------------------------------------------------------------------------
+r21874 | funkydude | 2006-12-23 01:24:48 -0500 (Sat, 23 Dec 2006) | 1 line
+
+Babble-2.2: Boss: re-arrange 'The Temple of Atal'Hakkar' please use this format for new bosses, or i will hunt you down
+------------------------------------------------------------------------
+r21865 | funkydude | 2006-12-23 00:25:37 -0500 (Sat, 23 Dec 2006) | 1 line
+
+Babble-2.2: Boss: rip uldaman locales from cartographer, small cleanup
+------------------------------------------------------------------------
+r21861 | neriak | 2006-12-22 23:33:59 -0500 (Fri, 22 Dec 2006) | 2 lines
+
+Babble-2.2:
+- fixed typos in german locales, sorry
+------------------------------------------------------------------------
+r21857 | funkydude | 2006-12-22 23:14:30 -0500 (Fri, 22 Dec 2006) | 1 line
+
+Babble-2.2: Boss: update step 2, adding Uldaman, proper locales this time :)
+------------------------------------------------------------------------
+r21851 | neriak | 2006-12-22 22:38:46 -0500 (Fri, 22 Dec 2006) | 2 lines
+
+Babble-2.2:
+- fixed german locales so that Cartographers' instance notes doesn't bug out because of nil. PLEASE don't comment out foreign locales. also use character codes instead of umlauts .. and why the fuck the file is encoded in utf-8 again?!
+------------------------------------------------------------------------
+r21796 | sayclub | 2006-12-22 13:48:18 -0500 (Fri, 22 Dec 2006) | 2 lines
+
+Babble-2.2:
+- Update koKR
+------------------------------------------------------------------------
+r21795 | sayclub | 2006-12-22 13:47:24 -0500 (Fri, 22 Dec 2006) | 2 lines
+
+Babble-2.2:
+- Update koKR
+------------------------------------------------------------------------
+r21789 | dafire | 2006-12-22 12:03:48 -0500 (Fri, 22 Dec 2006) | 2 lines
+
+Babble-2.2:
+- emergency fix... removing bugging zul'farrak entries from other languages
+------------------------------------------------------------------------
+r21787 | flutia | 2006-12-22 11:43:32 -0500 (Fri, 22 Dec 2006) | 1 line
+
+Babble-2.2: Boss: Temporary update koKR (crashes on Korean client)
+------------------------------------------------------------------------
+r21744 | funkydude | 2006-12-22 03:48:25 -0500 (Fri, 22 Dec 2006) | 1 line
+
+Babble-2.2: Boss: fix my last commit
+------------------------------------------------------------------------
+r21741 | funkydude | 2006-12-22 03:41:49 -0500 (Fri, 22 Dec 2006) | 1 line
+
+Babble-2.2: Boss: add Sandfury Executioner(ZF)
+------------------------------------------------------------------------
+r21736 | funkydude | 2006-12-22 03:01:09 -0500 (Fri, 22 Dec 2006) | 1 line
+
+Babble-2.2: Boss: rip the Zul'Farrak locales from cartographer
+------------------------------------------------------------------------
+r21704 | funkydude | 2006-12-21 21:38:59 -0500 (Thu, 21 Dec 2006) | 1 line
+
+Babble-2.2: Boss: add Zul'Farrak
+------------------------------------------------------------------------
+r21682 | pettigrow | 2006-12-21 15:40:13 -0500 (Thu, 21 Dec 2006) | 1 line
+
+Babble-2.2: frFR Update
+------------------------------------------------------------------------
+r21632 | ckknight | 2006-12-21 02:48:39 -0500 (Thu, 21 Dec 2006) | 1 line
+
+.Babble-Zone-2.2 - added The Veiled Sea
+------------------------------------------------------------------------
+r21596 | devla | 2006-12-20 16:51:55 -0500 (Wed, 20 Dec 2006) | 2 lines
+
+Babble-2.2:
+-Added DE "Blessed Resilience" and "Nether Protection" (Dragooner)
+------------------------------------------------------------------------
+r21553 | flutia | 2006-12-20 11:39:43 -0500 (Wed, 20 Dec 2006) | 2 lines
+
+Babble-2.2:
+-update koKR(Snake Trap Effect)
+------------------------------------------------------------------------
+r21502 | sayclub | 2006-12-20 01:23:06 -0500 (Wed, 20 Dec 2006) | 2 lines
+
+Babble-2.2:
+- update locals for koKR
+------------------------------------------------------------------------
+r21499 | devla | 2006-12-20 00:52:31 -0500 (Wed, 20 Dec 2006) | 2 lines
+
+Babble-2.2:
+-Spell- Added Nether Protection (Warlock), needs translations
+------------------------------------------------------------------------
+

@@ -1,0 +1,33 @@
+## Interface: 20003
+## LoadOnDemand: 1
+## Title: BabbleLib 2.2
+## Notes: A library to help with localization.
+## Notes-deDE: BabbleLib ist eine Bibliothek, die bei der Lokalisierung helfen soll.
+## Notes-frFR: Une bibliothèque d'aide à la localisation.
+## Notes-esES: Una biblioteca para ayudar con las localizaciones.
+## Author: ckknight
+## X-eMail: ckknight@gmail.com
+## X-Credits: Funkydude(Babble-Boss), others
+## Version: 2.2.$Revision: 24320 $
+## X-Category: Library
+## OptionalDeps: Ace2
+## X-AceLibrary-Babble-Boss-2.2: true
+## X-AceLibrary-Babble-Class-2.2: true
+## X-AceLibrary-Babble-Zone-2.2: true
+## X-AceLibrary-Babble-Spell-2.2: true
+## X-AceLibrary-Babble-SpellTree-2.2: true
+## X-AceLibrary-Babble-Race-2.2: true
+## X-AceLibrary-Babble-Herbs-2.2: true
+## X-AceLibrary-Babble-Fish-2.2: true
+## X-AceLibrary-Babble-Ore-2.2: true
+## X-License: MIT
+
+Babble-Boss-2.2\Babble-Boss-2.2.lua
+Babble-Class-2.2\Babble-Class-2.2.lua
+Babble-Zone-2.2\Babble-Zone-2.2.lua
+Babble-Spell-2.2\Babble-Spell-2.2.lua
+Babble-SpellTree-2.2\Babble-SpellTree-2.2.lua
+Babble-Race-2.2\Babble-Race-2.2.lua
+Babble-Fish-2.2\Babble-Fish-2.2.lua
+Babble-Herbs-2.2\Babble-Herbs-2.2.lua
+Babble-Ore-2.2\Babble-Ore-2.2.lua

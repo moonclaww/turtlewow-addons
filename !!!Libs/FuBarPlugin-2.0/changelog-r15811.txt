@@ -1,0 +1,333 @@
+------------------------------------------------------------------------
+r15811 | rabbit | 2006-11-03 09:49:11 -0500 (Fri, 03 Nov 2006) | 1 line
+
+.FuBarPlugin-2.0: Clarify that you must hold down Alt to access the tablet when it is locked.
+------------------------------------------------------------------------
+r15281 | ckknight | 2006-10-27 01:08:44 -0400 (Fri, 27 Oct 2006) | 1 line
+
+FuBarPlugin-2.0 - works better when "Show colored text" is unchecked.
+------------------------------------------------------------------------
+r15042 | xinsonic | 2006-10-23 23:30:33 -0400 (Mon, 23 Oct 2006) | 1 line
+
+FuBarPlugin-2.0: Added zhTW to FuBarPlugin-2.0
+------------------------------------------------------------------------
+r14787 | ckknight | 2006-10-22 01:39:43 -0400 (Sun, 22 Oct 2006) | 1 line
+
+FuBarPlugin-2.0 - bugfix
+------------------------------------------------------------------------
+r14216 | hshh | 2006-10-18 03:14:52 -0400 (Wed, 18 Oct 2006) | 1 line
+
+FuBarPlugin-2.0: add zhCN locale
+------------------------------------------------------------------------
+r14182 | rabbit | 2006-10-17 15:16:16 -0400 (Tue, 17 Oct 2006) | 1 line
+
+FuBarPlugin-2.0: frFR translation, thanks Jerry!
+------------------------------------------------------------------------
+r14077 | fenlis | 2006-10-16 08:30:40 -0400 (Mon, 16 Oct 2006) | 1 line
+
+FuBarPlugin-2.0 : Updated locals koKR
+------------------------------------------------------------------------
+r14058 | gamefaq | 2006-10-16 00:56:54 -0400 (Mon, 16 Oct 2006) | 1 line
+
+Updated deDE Translation
+------------------------------------------------------------------------
+r14052 | rabbit | 2006-10-15 22:53:31 -0400 (Sun, 15 Oct 2006) | 1 line
+
+FuBarPlugin-2.0: Add deDE translation, thanks Progman!
+------------------------------------------------------------------------
+r14011 | rabbit | 2006-10-15 11:58:08 -0400 (Sun, 15 Oct 2006) | 1 line
+
+FuBarPlugin-2.0: Let the localization commence!
+------------------------------------------------------------------------
+r13661 | tekkub | 2006-10-11 23:12:41 -0400 (Wed, 11 Oct 2006) | 1 line
+
+FuBarPlugin-2.0 - Now LoD
+------------------------------------------------------------------------
+r12439 | ckknight | 2006-10-01 02:54:19 -0400 (Sun, 01 Oct 2006) | 1 line
+
+FuBarPlugin-2.0 - fixed bug on line 235
+------------------------------------------------------------------------
+r10480 | tekkub | 2006-09-07 23:57:31 -0400 (Thu, 07 Sep 2006) | 2 lines
+
+FuBarPlugin-2.0
+- TOC metadata updates
+------------------------------------------------------------------------
+r9856 | ckknight | 2006-09-02 19:10:10 -0400 (Sat, 02 Sep 2006) | 1 line
+
+FuBarPlugin - bugfixes regarding .hideWithoutStandby
+------------------------------------------------------------------------
+r9835 | ckknight | 2006-09-02 15:16:54 -0400 (Sat, 02 Sep 2006) | 1 line
+
+FuBarPlugin-2.0 - bugfix for an impossible case :-P
+------------------------------------------------------------------------
+r9803 | ckknight | 2006-09-02 02:15:24 -0400 (Sat, 02 Sep 2006) | 1 line
+
+FuBarPlugin - updated the :CreateBasicPluginFrame method
+------------------------------------------------------------------------
+r9775 | ckknight | 2006-09-01 20:01:14 -0400 (Fri, 01 Sep 2006) | 1 line
+
+FuBarPlugin - now works with predefined square minimaps.
+------------------------------------------------------------------------
+r9752 | ckknight | 2006-09-01 14:40:29 -0400 (Fri, 01 Sep 2006) | 1 line
+
+FuBarPlugin-2.0 - fix bug at line :ToggleMinimapAttached()
+------------------------------------------------------------------------
+r9684 | ckknight | 2006-08-31 18:50:07 -0400 (Thu, 31 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - forgot comma
+------------------------------------------------------------------------
+r9682 | ckknight | 2006-08-31 18:44:22 -0400 (Thu, 31 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - changed "Hidden" to "Hide FuBar plugin" in the dewdrop thingy
+------------------------------------------------------------------------
+r9336 | ckknight | 2006-08-27 17:45:59 -0400 (Sun, 27 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - should fix issues with the unregistered parent frame stuff.
+------------------------------------------------------------------------
+r8997 | ckknight | 2006-08-25 03:07:45 -0400 (Fri, 25 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - bugfix in :IsTextShown
+------------------------------------------------------------------------
+r8962 | ckknight | 2006-08-24 17:44:21 -0400 (Thu, 24 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - independant -> independent
+------------------------------------------------------------------------
+r8953 | ckknight | 2006-08-24 17:35:42 -0400 (Thu, 24 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - added .independantProfile option
+------------------------------------------------------------------------
+r8940 | ckknight | 2006-08-24 16:15:05 -0400 (Thu, 24 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - fixed :IsTextShown()
+------------------------------------------------------------------------
+r8912 | ckknight | 2006-08-24 04:26:27 -0400 (Thu, 24 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - took out dead code
+------------------------------------------------------------------------
+r8911 | ckknight | 2006-08-24 04:20:43 -0400 (Thu, 24 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - remembers Show Text at the beginning now.
+------------------------------------------------------------------------
+r8890 | ckknight | 2006-08-23 23:30:27 -0400 (Wed, 23 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - bugfix in :OnEmbedEnable
+------------------------------------------------------------------------
+r8886 | ckknight | 2006-08-23 21:43:49 -0400 (Wed, 23 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - added .tooltipHiddenWhenEmpty
+------------------------------------------------------------------------
+r8877 | ckknight | 2006-08-23 20:38:35 -0400 (Wed, 23 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - works better with .hideWithoutStandby
+------------------------------------------------------------------------
+r8873 | ckknight | 2006-08-23 20:03:12 -0400 (Wed, 23 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - non-db plugins now are draggable, but positions don't save between sessions.
+------------------------------------------------------------------------
+r8872 | ckknight | 2006-08-23 19:53:38 -0400 (Wed, 23 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - plugins without a db can no longer be dragged on the minimap.
+------------------------------------------------------------------------
+r8848 | ckknight | 2006-08-23 16:54:43 -0400 (Wed, 23 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - updated TOC
+------------------------------------------------------------------------
+r8823 | ckknight | 2006-08-23 14:46:19 -0400 (Wed, 23 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - fixed detach tooltip error at beginning
+------------------------------------------------------------------------
+r8790 | ckknight | 2006-08-23 07:14:51 -0400 (Wed, 23 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - typo
+------------------------------------------------------------------------
+r8788 | ckknight | 2006-08-23 05:06:08 -0400 (Wed, 23 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - fixed :GetTitle() method
+------------------------------------------------------------------------
+r8326 | ckknight | 2006-08-17 20:28:58 -0400 (Thu, 17 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - fixed http://www.wowace.com/flyspray/?do=details&id=173
+------------------------------------------------------------------------
+r8312 | ckknight | 2006-08-17 17:25:03 -0400 (Thu, 17 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - bugfix for non-AceDB mods
+------------------------------------------------------------------------
+r8132 | ckknight | 2006-08-15 22:29:10 -0400 (Tue, 15 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - bugfix
+------------------------------------------------------------------------
+r8130 | ckknight | 2006-08-15 22:13:54 -0400 (Tue, 15 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - no longer shows show text/icon if self.db isn't available.
+------------------------------------------------------------------------
+r7852 | ckknight | 2006-08-12 18:09:26 -0400 (Sat, 12 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - fix for options table if disabled and accessing through slash commands
+------------------------------------------------------------------------
+r7560 | ckknight | 2006-08-10 04:57:34 -0400 (Thu, 10 Aug 2006) | 1 line
+
+FBP-2.0 - tooltips now properly update when hovering over a minimap button
+------------------------------------------------------------------------
+r7557 | ckknight | 2006-08-10 04:35:45 -0400 (Thu, 10 Aug 2006) | 1 line
+
+FBP-2.0 - bugfix
+------------------------------------------------------------------------
+r7481 | ckknight | 2006-08-09 19:13:29 -0400 (Wed, 09 Aug 2006) | 1 line
+
+FBP-2.0 - changed strata of minimap button to be lower.
+------------------------------------------------------------------------
+r7478 | ckknight | 2006-08-09 18:36:30 -0400 (Wed, 09 Aug 2006) | 1 line
+
+FBP-2.0 - possible fix to :IsMinimapAttached()
+------------------------------------------------------------------------
+r7458 | ckknight | 2006-08-09 16:31:50 -0400 (Wed, 09 Aug 2006) | 1 line
+
+FBP-2.0 - now hides text/icon/color option if attached to the minimap
+------------------------------------------------------------------------
+r7455 | ckknight | 2006-08-09 16:27:28 -0400 (Wed, 09 Aug 2006) | 1 line
+
+FBP-2.0 - no longer shows the minimap toggle thingy in the dewdrop if FuBar doesn't exist.
+------------------------------------------------------------------------
+r7321 | thiana | 2006-08-08 13:18:32 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FuBarPlugin-2.0: typo in CreatePluginChildFrame() frame -> child
+------------------------------------------------------------------------
+r7299 | ckknight | 2006-08-08 07:18:43 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FBP-2.0 - tweaked :GetAceOptionsDataTable()
+------------------------------------------------------------------------
+r7293 | ckknight | 2006-08-08 06:50:07 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FBP-2.0 - initial :Show() now checks for proper FuBar version. if < 2.0, then it shows on the minimap.
+------------------------------------------------------------------------
+r7287 | ckknight | 2006-08-08 05:45:06 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FBP-2.0 - added :OnReceiveDrag()
+------------------------------------------------------------------------
+r7281 | ckknight | 2006-08-08 05:15:37 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - possible fix
+------------------------------------------------------------------------
+r7277 | ckknight | 2006-08-08 04:38:43 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FBP-2.0 - removed :SetLoadOnDemand(), reworked :IsLoadOnDemand()
+------------------------------------------------------------------------
+r7274 | ckknight | 2006-08-08 04:24:18 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - updated stuff. Better profile handling
+------------------------------------------------------------------------
+r7272 | ckknight | 2006-08-08 03:53:15 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FBP-2.0 - :AddImpliedMenuOptions() now returns true if it properly added menus
+------------------------------------------------------------------------
+r7267 | ckknight | 2006-08-08 03:41:11 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FBP-2.0 - another typo
+------------------------------------------------------------------------
+r7266 | ckknight | 2006-08-08 03:37:56 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FBP-2.0 - typo
+------------------------------------------------------------------------
+r7264 | ckknight | 2006-08-08 03:29:25 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - bugfix
+------------------------------------------------------------------------
+r7263 | ckknight | 2006-08-08 03:25:16 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - Lock tooltip is now disabled if tooltip isn't detached.
+------------------------------------------------------------------------
+r7262 | ckknight | 2006-08-08 03:14:49 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - detached Tablet fixes, Dewdrop fixes
+------------------------------------------------------------------------
+r7251 | ckknight | 2006-08-08 01:21:57 -0400 (Tue, 08 Aug 2006) | 1 line
+
+FBP-2.0 - no longer has an implied dependency on AceDB-2.0
+------------------------------------------------------------------------
+r7245 | ckknight | 2006-08-07 21:10:14 -0400 (Mon, 07 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - profile now no longer shows up in the individual options menus.
+------------------------------------------------------------------------
+r7015 | ckknight | 2006-08-05 19:53:42 -0400 (Sat, 05 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - bugfix for profile switching
+------------------------------------------------------------------------
+r7007 | ckknight | 2006-08-05 18:57:48 -0400 (Sat, 05 Aug 2006) | 1 line
+
+FuBarPlugin-2.0 - now remembers the disabled flag
+------------------------------------------------------------------------
+r6915 | ckknight | 2006-08-04 19:14:03 -0400 (Fri, 04 Aug 2006) | 1 line
+
+FBP-2.0 - random fixes
+------------------------------------------------------------------------
+r6811 | ckknight | 2006-08-03 18:42:02 -0400 (Thu, 03 Aug 2006) | 1 line
+
+FBP-2.0 - got rid of loud and self.cmd
+------------------------------------------------------------------------
+r6795 | tekkub | 2006-08-03 17:18:15 -0400 (Thu, 03 Aug 2006) | 3 lines
+
+FuBarPlugin-2.0 
+- Fixed Title being set is OnUpdateText is not defined and text is disabled for plugin
+- Closes: #47 --- http://www.wowace.com/flyspray/?do=details&id=47
+------------------------------------------------------------------------
+r6286 | thiana | 2006-07-30 21:13:54 -0400 (Sun, 30 Jul 2006) | 1 line
+
+FuBarPlugin-2.0: Add .toc file
+------------------------------------------------------------------------
+r6262 | ckknight | 2006-07-30 18:25:00 -0400 (Sun, 30 Jul 2006) | 1 line
+
+FBP-2.0 - fixed if |FuBarPlugin.hasNoText| has been set, FuBarPlugin-2.0 complains about it on load; "Cannot set text if self.hasNoText has been set.".
+------------------------------------------------------------------------
+r6217 | ckknight | 2006-07-30 07:39:58 -0400 (Sun, 30 Jul 2006) | 1 line
+
+FBP-2.0 - typo in mixin export
+------------------------------------------------------------------------
+r6193 | kaelten | 2006-07-30 00:09:12 -0400 (Sun, 30 Jul 2006) | 2 lines
+
+FuBarPlugin-2.0 - 
+-Fixed small logic error in ToggleIconShown 
+------------------------------------------------------------------------
+r6172 | ckknight | 2006-07-29 21:20:49 -0400 (Sat, 29 Jul 2006) | 1 line
+
+FBP-2.0 - typo
+------------------------------------------------------------------------
+r6170 | ckknight | 2006-07-29 21:13:55 -0400 (Sat, 29 Jul 2006) | 1 line
+
+FBP-2.0 - added more checks to injection
+------------------------------------------------------------------------
+r6167 | ckknight | 2006-07-29 20:52:52 -0400 (Sat, 29 Jul 2006) | 1 line
+
+FBP-2.0 - automatically injects aceoptions into a table OnMenuRequest
+------------------------------------------------------------------------
+r6101 | ckknight | 2006-07-29 07:12:35 -0400 (Sat, 29 Jul 2006) | 1 line
+
+FBP-2.0 - added more checks
+------------------------------------------------------------------------
+r5796 | neronix | 2006-07-26 15:29:38 -0400 (Wed, 26 Jul 2006) | 1 line
+
+FuBarPlugin-2.0 - Set svn:keywords
+------------------------------------------------------------------------
+r5655 | ckknight | 2006-07-25 02:23:13 -0400 (Tue, 25 Jul 2006) | 1 line
+
+FuBarPlugin-2.0 - moved to trunk
+------------------------------------------------------------------------
+r5650 | ckknight | 2006-07-25 01:23:24 -0400 (Tue, 25 Jul 2006) | 1 line
+
+FuBarPlugin-2.0 - minimap now works
+------------------------------------------------------------------------
+r5585 | ckknight | 2006-07-24 18:41:27 -0400 (Mon, 24 Jul 2006) | 1 line
+
+FuBarPlugin-2.0 - self:assert -> lib:assert
+------------------------------------------------------------------------
+r5182 | ckknight | 2006-07-20 00:32:33 -0400 (Thu, 20 Jul 2006) | 1 line
+
+FuBarPlugin - added ordering to AceOptions table.
+------------------------------------------------------------------------
+r4962 | ckknight | 2006-07-15 23:22:18 -0400 (Sat, 15 Jul 2006) | 1 line
+
+FuBarPlugin - more stuff
+------------------------------------------------------------------------
+r4958 | ckknight | 2006-07-15 20:44:20 -0400 (Sat, 15 Jul 2006) | 1 line
+
+FuBarPlugin-2.0 - initial commit.
+------------------------------------------------------------------------
