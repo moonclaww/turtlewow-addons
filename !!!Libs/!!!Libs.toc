@@ -1,7 +1,7 @@
 ## Interface: 11200
 ## Title: AIO Library Package
-## Notes: A package of all the Ace SVN libraries
-## Notes-koKR: ACE SVN 통합 라이브러리 패키지
+## Notes: A package of all the common libraries
+## Notes-zhCN: 一个包含所有常用库的合集
 ## Author: Various
 ## Version: 1.0
 ## OptionalDeps: !!Warmup, !BugGrabber
