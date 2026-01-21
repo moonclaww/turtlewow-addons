@@ -1,0 +1,16 @@
+## Interface: 11200
+## Title: SCT Cooldowns v1.4.2
+## Title-zhCN: SCT Cooldowns v1.4.2
+## Author: Bonecleaver of Burning Legion EU
+## Version: 1.4.2
+## Notes: Add cooldown messages to SCT.
+## Notes-zhCN: 在SCT上增加冷却时间的消息。|n|cff3fcf26GGCALL汉化|r
+## eMail: mbudde@gmail.com
+## RequiredDeps: sct
+## DefaultState: Enabled
+## LoadOnDemand: 0
+## SavedVariablesPerCharacter: sctcOptions
+sct_cooldowns.xml
+localization.lua
+localization.cn.lua
+sct_cooldowns.lua

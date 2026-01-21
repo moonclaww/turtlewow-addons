@@ -1,0 +1,15 @@
+## Interface: 11200
+## Title: SCT Options|cff7fff7f -Ace2-|r
+## Title-zhCN: SCT Options 5.11|cff7fff7f -Ace2-|r
+## Notes: Options menu for SCT (LoadOnDemand)
+## Notes-zhCN: SCT 设置界面|n|cff3fcf26GGCALL汉化|r
+## Version: 5.11
+## Author: Grayhoof
+## Dependencies: sct
+## LoadOnDemand: 1
+localization.lua
+localization.cn.lua
+options_setup.lua
+configs.lua
+options.lua
+options.xml

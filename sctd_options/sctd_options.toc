@@ -1,0 +1,15 @@
+## Interface: 11200
+## Title: SCTD Options|cff7fff7f -Ace2-|r
+## Title-zhCN: SCTD Options 2.1|cff7fff7f -Ace2-|r
+## Notes:  Options menu for SCTD (LoadOnDemand)
+## Notes-zhCN:  SCTD 设置界面|n|cff3fcf26GGCALL汉化|r
+## Dependencies: sct, sctd, sct_options
+## LoadOnDemand: 1
+## LoadWith: sct_options
+localization.lua
+localization.cn.lua
+options.lua
+options.xml
+
+
+

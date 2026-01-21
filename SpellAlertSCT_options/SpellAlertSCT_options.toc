@@ -1,0 +1,12 @@
+## Interface: 11200
+## Title: SpellAlertSCT Options
+## Title-zhCN: SpellAlertSCT Options 11200-4|cff7fff7f -Ace2-|r
+## Notes:  Options menu for SpellAlertSCT (LoadOnDemand)
+## Notes-zhCN:  SpellAlertSCT 设置界面|n|cff3fcf26GGCALL汉化|r
+## Dependencies: sct, SpellAlertSCT
+## LoadOnDemand: 1
+localization.lua
+localization.cn.lua
+options.lua
+options.xml
+

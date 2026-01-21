@@ -1,0 +1,9 @@
+## Interface: 11200
+## Title: SpellAlert SCT
+## Title-zhCN: SpellAlert SCT 11200-4|cff7fff7f -Ace2-|r
+## RequiredDeps: SCT
+## Version: 11200-4
+## SavedVariables: SpellAlertSCTDB
+## Notes: Warns the player of the spell being casting from hostile units through SCT.
+## Notes-zhCN: 通过SCT显示周围施法报警|n|cff3fcf26GGCALL汉化|r
+SpellAlertSCT.xml

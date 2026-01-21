@@ -1,0 +1,15 @@
+## Interface: 11200
+## Title: SCT - Damage|cff7fff7f -Ace2-|r
+## Title-zhCN: SCTD 2.1|cff7fff7f -Ace2-|r
+## Notes: Adds your damage to Scrolling Combat Text
+## Notes-zhCN: 增加你的伤害信息显示到SCT|n|cff3fcf26GGCALL汉化|r
+## Version: 2.1
+## Author: Grayhoof
+## Dependencies: sct
+## OptionalDeps: myAddOns, Cosmos, CT_MasterMod, EarthFeatureFrame
+sctd.lua
+sctd.xml
+localization.lua
+localization.cn.lua
+
+

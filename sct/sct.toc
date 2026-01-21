@@ -1,0 +1,19 @@
+﻿## Interface: 11200
+## Title: ScrollingCombatText|cff7fff7f -Ace2-|r
+## Title-zhCN: SCT 5.11|cff7fff7f -Ace2-|r
+## Notes: Adds Scrolling Combat Text above your character
+## Notes-zhCN: 在你的角色上增加滚动的战斗信息|n|cff3fcf26GGCALL汉化|r
+## Version: 5.11
+## Author: Grayhoof
+## SavedVariables: SCT_CONFIG
+## OptionalDeps: myAddOns, Cosmos, CT_MasterMod, EarthFeatureFrame, Ace2, ParserLib, CompostLib  
+## Dependencies: 
+
+
+sct.lua
+sct_animation.lua
+localization.lua
+localization.cn.lua
+sct_event_config.lua
+sct_legacy.lua
+sct.xml
