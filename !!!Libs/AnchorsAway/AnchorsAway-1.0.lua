@@ -9,7 +9,7 @@ Description: Row stacking and anchoring template
 Dependencies: AceLibrary, AceEvent-2.0, AceLocale-2.2
 ]]
 
-local vmajor, vminor = "AnchorsAway-1.0", "$Revision: 18177 $"
+local vmajor, vminor = "AnchorsAway-1.0", "$Revision: 18443 $"
 
 if not AceLibrary then error(vmajor .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(vmajor, vminor) then return end
@@ -53,7 +53,7 @@ L:RegisterTranslations("enUS", function()
 			BOTTOMRIGHT = "Bottom right corner",
 			BOTTOM = "Bottom edge",
 			BOTTOMLEFT = "Bottom left corner",
-			LEFT = "Left edge",
+			LEFT = "Left edge"
 		},
 	}
 end)
@@ -88,7 +88,7 @@ L:RegisterTranslations("frFR", function()
 			BOTTOMRIGHT = "Coin inf\195\169rieur droit",
 			BOTTOM = "Bord infr\195\169rieur",
 			BOTTOMLEFT = "Coin inf\195\169rieur gauche",
-			LEFT = "Bord gauche",
+			LEFT = "Bord gauche"
 		},
 	}
 end)
@@ -102,17 +102,6 @@ end)
 local AnchorsAway = { }
 
 AceLibrary("AceEvent-2.0"):embed(AnchorsAway)
-
-AnchorsAway.arefs = {
-	TOPLEFT = { x = -1, y = 1 },
-	TOP =  { x = 0, y = 1 },
-	TOPRIGHT = { x = 1, y = 1 },
-	RIGHT = { x = 1, y = 0 },
-	BOTTOMRIGHT = { x = 1, y = -1 },
-	BOTTOM = { x = 0, y = -1 },
-	BOTTOMLEFT = { x = -1, y  = -1 },
-	LEFT = { x = -1, y = 0 }
-}
 
 function AnchorsAway:NewStack(stackname, icon, db, index, mode)
 	db.AnchorsAway = db.AnchorsAway or {}
@@ -144,36 +133,10 @@ function AnchorsAway:Restack(stack, sortkey)
 			table.remove(stack.rowstack, k)
 		end
 	end
---[[	if stack.mode == 'insert' then
-		for k, v in iteratetable(stack.rowstack, sortkey) do
-			self:StackRow(stack, stack.rowstack[k], k == 1 and stack.frame or self:RestackGetParent(stack, k))
-		end
-	elseif stack.mode == 'add' then
-		local xself, yself, xtarg, ytarg, xoff, yoff = self.arefs[stack.db.attach.self].x, self.arefs[stack.db.attach.self].y, self.arefs[stack.db.attach.ptarg].x, self.arefs[stack.db.attach.ptarg].y
-		if xself > xtarg then
-			xoff = 
-				
-		for k, v in iteratetable(stack.rowstack, sortkey) do
-			local parent = self:RestackGetParent(stack, k)
-			if parent < k-1 then
-				if stack.attach.self == 'TOP'
-				end
-			end
-		end
-	end]]--
 	for k, v in iteratetable(stack.rowstack, stack.mode ~= 'add' and sortkey or nil) do
 		self:StackRow(stack, stack.rowstack[k], k == 1 and stack.frame or stack.rowstack[k-1]) 
 		stack:SizeRow(stack, v)
 	end
-end
-
-function AnchorsAway:RestackGetParent(stack, k)
-	local k = k-1
-	while k > 1 do
-		if not stack.rowstack[k] or not stack.rowstack[k].active then return stack.rowstack[k] end
-		k = k-1
-	end
-	return stack.frame
 end
 
 function AnchorsAway:StackRow(stack, row, target, xoff, yoff)
@@ -208,16 +171,6 @@ function AnchorsAway:AddRow(stack)
 		rowstack[id] = row
 		self:StackRow(stack, rowstack[id], id-1 > 0 and rowstack[id-1] or stack.frame)
 	end
-	--local keys, key, found = table.getn(rowstack), 1, 0
-	--while found <= keys do	
-	--	if not rowstack[key] or not rowstack[key].active then break end
-	--	key = key + 1
-	--	found = found + 1
-	--end
-	
-	--row:ClearAllPoints()
-	--stack.rowstack[key] = row
-	--self:Restack(stack)
 	
 	row:Show()
 	UIFrameFadeIn(row, 0.5, 0, 1)
@@ -233,7 +186,6 @@ function AnchorsAway:PushRow(stack)
 	if stack.rowstack[2] and stack.rowstack[2] ~= stack.rowstack[1] then
 		self:StackRow(stack, stack.rowstack[2], stack.rowstack[1])
 	elseif stack.rowstack[2] then
-		--DevTools_Dump(stack.rowstack)
 		return nil
 	end
 	self:StackRow(stack, stack.rowstack[1], stack.frame)
@@ -273,13 +225,11 @@ function AnchorsAway:RemoveRow(stack, row)
 	if stack.mode ~= 'add' then
 		for k,v in ipairs(stack.rowstack) do 
 			if v == row then
-				--if stack.mode == 'insert' or ( stack.mode == 'add' and k == table.getn(stack.rowstack) ) then
-					row:ClearAllPoints()
-					table.remove(stack.rowstack, k)
-					if stack.mode == 'insert' then
-						self:Restack(stack)
-					end
-				--end
+				row:ClearAllPoints()
+				table.remove(stack.rowstack, k)
+				if stack.mode == 'insert' then
+					self:Restack(stack)
+				end
 				break
 			end
 		end
@@ -340,7 +290,7 @@ function AnchorsAway:NewAnchor(stackname, anchorname, icon, db, dewdrop, index, 
 	stack.frame:SetWidth(150)
 	stack.frame:SetHeight(20)
 
-	stack.frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", stack.db.pos.x or GetScreenWidth()/2, stack.db.pos.y or GetScreenWidth()/2) 	
+	stack.frame:SetPoint("TOPLEFT", UIParent, "BOTTOMLEFT", stack.db.pos.x or GetScreenWidth()/2, stack.db.pos.y or GetScreenHeight()/2) 	
 	
 	stack.frame:SetBackdrop({r = 0, g = 0, b = 0, a = 0.9})
 	stack.frame:SetBackdropBorderColor(.5, .5, .5, 1)
