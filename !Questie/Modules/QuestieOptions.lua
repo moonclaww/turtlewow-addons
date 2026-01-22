@@ -19,6 +19,46 @@ end
 
 local QO_FormName = "QuestieOptionsForm"
 
+local QO_LabelMapping = {
+    ["AlwaysShowObjectivesLabel"] = "alwaysShowObjectives",
+    ["ArrowEnabledLabel"] = "arrowEnabled",
+    ["BoldColorsLabel"] = "boldColors",
+    ["ClusterQuestsLabel"] = "clusterQuests",
+    ["CorpseArrowLabel"] = "corpseArrow",
+    ["HideMinimapIconsLabel"] = "hideMinimapIcons",
+    ["HideObjectivesLabel"] = "hideObjectives",
+    ["MaxLevelFilterLabel"] = "maxLevelFilter",
+    ["MaxShowLevelSliderTitle"] = "maxShowLevel",
+    ["MinLevelFilterLabel"] = "minLevelFilter",
+    ["MinShowLevelSliderTitle"] = "minShowLevel",
+    ["MinimapButtonLabel"] = "minimapButton",
+    ["ResizeWorldmapLabel"] = "resizeWorldmap",
+    ["ShowMapNotesLabel"] = "showMapNotes",
+    ["ShowProfessionQuestsLabel"] = "showProfessionQuests",
+    ["ShowToolTipsLabel"] = "showToolTips",
+    ["ShowTrackerHeaderLabel"] = "showTrackerHeader",
+    ["TrackerBackgroundLabel"] = "trackerBackground",
+    ["TrackerEnabledLabel"] = "trackerEnabled",
+    ["TrackerListLabel"] = "trackerList",
+    ["TrackerScaleSliderTitle"] = "trackerScale",
+    ["TrackerTransparencySliderTitle"] = "trackerAlpha",
+    ["UseQuestLinksLabel"] = "useQuestLinks",
+}
+
+local function QO_LocalizeLabels()
+    local language = QuestieLanguage or "enUS"
+    if language == "enUS" then return end
+    for labelSuffix, settingKey in pairs(QO_LabelMapping) do
+        local labelFrame = getglobal(QO_FormName..labelSuffix.."Label")
+        if not labelFrame then
+            labelFrame = getglobal(QO_FormName..labelSuffix)
+        end
+        if labelFrame and QuestieInterfaceTexts and QuestieInterfaceTexts["Settings"] and QuestieInterfaceTexts["Settings"][settingKey] and QuestieInterfaceTexts["Settings"][settingKey][language] then
+            labelFrame:SetText(QuestieInterfaceTexts["Settings"][settingKey][language]["name"])
+        end
+    end
+end
+
 function Questie:OptionsForm_Init()
     QO_arrowenabled = getglobal(QO_FormName.."ArrowEnabledCheck")
     QO_showobjectives = getglobal(QO_FormName.."AlwaysShowObjectivesCheck")
@@ -104,6 +144,8 @@ function Questie:OptionsForm_Display()
     QO_usequestlinks:SetChecked(QuestieConfig["useQuestLinks"])
 
     QO_versionlabel:SetText("Version: " .. tostring(QuestieConfig["getVersion"]))
+
+    QO_LocalizeLabels()
 
     QuestieOptionsForm:SetScale(GetCVar("uiScale"))
     QuestieOptionsForm:Show()
@@ -259,7 +301,7 @@ function Questie:OptionsForm_SettingOnEnter(SettingsName)
         1, 1, 0)
 
     if QuestieInterfaceTexts["Settings"][SettingsName]["requiresReload"] then
-        QuestieOptionsToolTip:AddLine("Requires ReloadUI", 1, 0, 0)
+        QuestieOptionsToolTip:AddLine(QL("REQUIRES_RELOAD"), 1, 0, 0)
     end
 
     QuestieOptionsToolTip:AddLine(QuestieInterfaceTexts["Settings"][SettingsName][language]["description"], 1, 1, 1, true)

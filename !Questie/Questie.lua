@@ -12,6 +12,11 @@
 ---------------------------------------------------------------------------------------------------
 Questie = CreateFrame("Frame", "QuestieLua", UIParent, "ActionButtonTemplate");
 QuestieVersion = "3.7.1";
+if GetLocale() == "zhCN" then
+    QuestieLanguage = "zhCN"
+else
+    QuestieLanguage = "enUS"
+end
 ---------------------------------------------------------------------------------------------------
 --Setup Default Profile
 ---------------------------------------------------------------------------------------------------
@@ -1132,24 +1137,28 @@ function SetItemRef(link, text, button)
                 local questHash = Questie:getQuestHash(questTitle);
                 questOb = nil;
                 local QuestName = QuestieHashMap[questHash].name;
-                if QuestName == questTitle then
+                local localizedName = Questie:GetLocalizedQuestName(questHash) or QuestName;
+                if QuestName == questTitle or localizedName == questTitle then
                     local index = 0;
-                    for k,v in pairs(Questie:SanitisedQuestLookup(QuestName)) do
-                        index = index + 1;
-                        if (index == 1) and (v[2] == questHash) and (k ~= "") then
-                            questOb = k;
-                        elseif (index > 0) and(v[2] == questHash) and (k ~= "") then
-                            questOb = k;
-                        elseif (index == 1) and (v[2] ~= questHash) and (k ~= "") then
-                            questOb = k;
+                    local questLookup = Questie:SanitisedQuestLookup(QuestName);
+                    if questLookup and type(questLookup) == "table" then
+                        for k,v in pairs(questLookup) do
+                            index = index + 1;
+                            if (index == 1) and (v[2] == questHash) and (k ~= "") then
+                                questOb = k;
+                            elseif (index > 0) and(v[2] == questHash) and (k ~= "") then
+                                questOb = k;
+                            elseif (index == 1) and (v[2] ~= questHash) and (k ~= "") then
+                                questOb = k;
+                            end
                         end
                     end
-                    ItemRefTooltip:AddLine("Started by: |cFFa6a6a6"..QuestieHashMap[questHash].startedBy.."|r",1,1,1);
+                    ItemRefTooltip:AddLine(QL("STARTED_BY")..": |cFFa6a6a6"..QuestieHashMap[questHash].startedBy.."|r",1,1,1);
                     if questOb ~= nil then
                         ItemRefTooltip:AddLine("|cffffffff"..questOb.."|r",1,1,1,true);
                     else
-                        ItemRefTooltip:AddLine("Quest *Objective* not found in Questie Database!", 1, .8, .8);
-                        ItemRefTooltip:AddLine("Please file a bug report on our GitHub portal:)", 1, .8, .8);
+                        ItemRefTooltip:AddLine(QL("QUEST_NOT_FOUND"), 1, .8, .8);
+                        ItemRefTooltip:AddLine(QL("BUG_REPORT"), 1, .8, .8);
                         ItemRefTooltip:AddLine("https://github.com/AeroScripts/QuestieDev/issues", 1, .8, .8);
                     end
                     local _, _, questLevel = string.find(QuestieHashMap[questHash].questLevel, "(%d+)");

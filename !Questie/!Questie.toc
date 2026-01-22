@@ -40,10 +40,20 @@ Database\objects.lua
 Database\newObjects.lua
 Database\reputations.lua
 Database\addendum.lua
+Database\zhCN\items.lua
+Database\zhCN\monsters.lua
+Database\zhCN\events.lua
+Database\zhCN\hash.lua
+Database\zhCN\finishers.lua
+Database\zhCN\objects.lua
+Database\zhCN\newObjects.lua
+Database\zhCN\reputations.lua
+Database\zhCN\addendum.lua
 Astrolabe\Astrolabe.lua
 
 # Questie
 Questie.lua
+Modules\QuestieLocale.lua
 Modules\QuestieOptions.lua
 Modules\QuestieArrow.lua
 Modules\QuestieGUI.lua

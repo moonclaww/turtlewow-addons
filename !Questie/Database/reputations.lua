@@ -1,3 +1,5 @@
+if GetLocale() ~= "enUS" then return end
+
 QuestieReputations = {
     [576] = {
         name = "Timbermaw Hold",

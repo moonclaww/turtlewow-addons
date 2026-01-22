@@ -1,4 +1,4 @@
-if GetLocale() ~= "enUS" then return end
+if GetLocale() ~= "zhCN" then return end
 
 QuestieEvents = {
   ["Wolves Across the Border"] = {

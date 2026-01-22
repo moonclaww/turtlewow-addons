@@ -1108,6 +1108,32 @@ function Questie:getQuestHash(name, level, objectiveText)
     return hash, false;
 end
 ---------------------------------------------------------------------------------------------------
+-- Get localized quest name from hash (reverse lookup)
+---------------------------------------------------------------------------------------------------
+function Questie:GetLocalizedQuestName(questHash)
+    -- First check if we have it cached from quest log (THIS HAS THE LOCALIZED NAME!)
+    if QuestieCachedQuests[questHash] and QuestieCachedQuests[questHash]["questName"] then
+        return QuestieCachedQuests[questHash]["questName"];
+    end
+    
+    -- Try to get it from quest log directly
+    local questLogId = Questie:GetQuestIdFromHash(questHash);
+    if questLogId and type(questLogId) == "number" and questLogId > 0 then
+        local questName, level, questTag = QGet_QuestLogTitle(questLogId);
+        if questName then
+            return questName;
+        end
+    end
+    
+    -- For available/unavailable quests, we can't get localized name from client
+    -- The database only has English names, so we have to use English
+    if QuestieHashMap[questHash] and QuestieHashMap[questHash].name then
+        return QuestieHashMap[questHash].name;
+    end
+    
+    return nil;
+end
+---------------------------------------------------------------------------------------------------
 --Checks to see if a quest is finished by quest hash
 ---------------------------------------------------------------------------------------------------
 function Questie:IsQuestFinished(questHash)
@@ -1194,8 +1220,9 @@ end
 function Questie:GetAvailableQuestHashes(mapFileName, levelFrom, levelTo)
     local mapid =  -1;
     if(QuestieZones[mapFileName]) then
-        c = QuestieZones[mapFileName][4];
-        z = QuestieZones[mapFileName][5];
+        local cIdx, zIdx = QuestieGetZoneIndices();
+        c = QuestieZones[mapFileName][cIdx];
+        z = QuestieZones[mapFileName][zIdx];
     end
     local class = UnitClass("Player");
     local race = UnitRace("Player");

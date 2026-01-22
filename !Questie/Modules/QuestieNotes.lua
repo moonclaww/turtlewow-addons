@@ -393,7 +393,9 @@ function Questie:Tooltip(this, forceShow, bag, slot)
                         local colorString = "|c" .. QuestieTracker:GetDifficultyColor(questInfo.questLevel)
                         local title = colorString
                         title = title .. "[" .. questInfo.questLevel .. "] "
-                        title = title .. questInfo.name .. "|r"
+                        -- Use localized quest name instead of English name
+                        local localizedName = Questie:GetLocalizedQuestName(questHash) or questInfo.name
+                        title = title .. localizedName .. "|r"
                         Questie_TooltipCache[cacheKey]['lines'][lineIndex] = {
                             ['color'] = {1,1,1},
                             ['data'] = " "
@@ -569,36 +571,41 @@ function Questie_Tooltip_OnEnter()
                     end
                 else
                     Tooltip:AddLine("["..QuestieHashMap[data.questHash].questLevel.."] "..Quest["name"].." |cFF33FF00(complete)|r");
-                    Tooltip:AddLine("Finished by: |cFFa6a6a6"..QuestieHashMap[data.questHash].finishedBy.."|r",1,1,1);
+                    Tooltip:AddLine(QL("FINISHED_BY")..": |cFFa6a6a6"..QuestieHashMap[data.questHash].finishedBy.."|r",1,1,1);
                 end
             else
                 questOb = nil;
                 local QuestName = tostring(QuestieHashMap[data.questHash].name);
                 if QuestName then
                     local index = 0;
-                    for k,v in pairs(Questie:SanitisedQuestLookup(QuestName)) do
-                        index = index + 1;
-                        if (index == 1) and (v[2] == data.questHash) and (k ~= "") then
-                            questOb = k;
-                        elseif (index > 0) and(v[2] == data.questHash) and (k ~= "") then
-                            questOb = k;
-                        elseif (index == 1) and (v[2] ~= data.questHash) and (k ~= "") then
-                            questOb = k;
+                    local questLookup = Questie:SanitisedQuestLookup(QuestName);
+                    if questLookup and type(questLookup) == "table" then
+                        for k,v in pairs(questLookup) do
+                            index = index + 1;
+                            if (index == 1) and (v[2] == data.questHash) and (k ~= "") then
+                                questOb = k;
+                            elseif (index > 0) and(v[2] == data.questHash) and (k ~= "") then
+                                questOb = k;
+                            elseif (index == 1) and (v[2] ~= data.questHash) and (k ~= "") then
+                                questOb = k;
+                            end
                         end
                     end
                 end
-                local questLine = "["..QuestieHashMap[data.questHash].questLevel.."] "..QuestieHashMap[data.questHash].name;
+                -- Use localized quest name
+                local localizedName = Questie:GetLocalizedQuestName(data.questHash) or QuestieHashMap[data.questHash].name;
+                local questLine = "["..QuestieHashMap[data.questHash].questLevel.."] "..localizedName;
                 if data.icontype == "available" then
                     questLine = questLine.." |cFF33FF00(available)|r";
                 elseif data.icontype == "availablesoon" then
                     questLine = questLine.." |cFFa6a6a6(not available)|r";
                 end
                 Tooltip:AddLine(questLine);
-                Tooltip:AddLine("Min Level: |cFFa6a6a6"..QuestieHashMap[data.questHash].level.."|r",1,1,1);
-                Tooltip:AddLine("Started by: |cFFa6a6a6"..Questie:RemoveUniqueSuffix(QuestieHashMap[data.questHash].startedBy).."|r",1,1,1);
+                Tooltip:AddLine(QL("MIN_LEVEL")..": |cFFa6a6a6"..QuestieHashMap[data.questHash].level.."|r",1,1,1);
+                Tooltip:AddLine(QL("STARTED_BY")..": |cFFa6a6a6"..Questie:RemoveUniqueSuffix(QuestieHashMap[data.questHash].startedBy).."|r",1,1,1);
                 Questie:AddPathToTooltip(Tooltip, questMeta['path'], 1);
                 if questOb ~= nil then
-                    Tooltip:AddLine("Description: |cFFa6a6a6"..Questie:RemoveUniqueSuffix(questOb).."|r",1,1,1,true);
+                    Tooltip:AddLine(QL("DESCRIPTION")..": |cFFa6a6a6"..Questie:RemoveUniqueSuffix(questOb).."|r",1,1,1,true);
                 end
                 canManualComplete = 1;
             end
@@ -608,7 +615,7 @@ function Questie_Tooltip_OnEnter()
             if count > 1 then
                 Tooltip:AddLine(" ");
             end
-            Tooltip:AddLine("Shift+Click: |cFFa6a6a6Manually complete quest!|r",1,1,1);
+            Tooltip:AddLine(QL("SHIFT_CLICK_COMPLETE"),1,1,1);
         end
         if(NOTES_DEBUG and IsAltKeyDown()) then
             Tooltip:AddLine("!DEBUG!", 1, 0, 0);
@@ -1026,8 +1033,9 @@ function Questie:RecursiveCreateNotes(c, z, v, locationMeta, iconMeta, objective
             for i, location in pairs(sources) do
                 local MapInfo = QuestieZoneIDLookup[location[1]];
                 if MapInfo ~= nil then
-                    c = MapInfo[4];
-                    z = MapInfo[5];
+                    local cIdx, zIdx = QuestieGetZoneIndices();
+                    c = MapInfo[cIdx];
+                    z = MapInfo[zIdx];
                     local icontype = iconMeta.selectedIcon;
                     if icontype == nil then icontype = iconMeta.defaultIcon; end
                     if icontype == "available" or icontype == "availablesoon" then

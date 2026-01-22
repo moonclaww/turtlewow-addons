@@ -222,6 +222,7 @@ function QuestieTracker:createOrGetTrackingButton(index)
         btn:SetScript("OnEnter", function()
             local questHash = btn.hash;
             local quest = QuestieCachedQuests[questHash];
+            if not quest then return; end
             local questTitle = quest["questName"];
             Tooltip = GameTooltip;
             local questOb = nil;
@@ -233,23 +234,28 @@ function QuestieTracker:createOrGetTrackingButton(index)
                     Tooltip:SetOwner(this, "ANCHOR_LEFT");
                 end
                 local index = 0;
-                for k,v in pairs(Questie:SanitisedQuestLookup(QuestieHashMap[questHash].name)) do
-                    index = index + 1;
-                    if (index == 1) and (v[2] == questHash) and (k ~= "") then
-                        questOb = k;
-                    elseif (index > 0) and(v[2] == questHash) and (k ~= "") then
-                        questOb = k;
-                    elseif (index == 1) and (v[2] ~= questHash) and (k ~= "") then
-                        questOb = k;
+                if QuestieHashMap[questHash] and QuestieHashMap[questHash].name then
+                    local questLookup = Questie:SanitisedQuestLookup(QuestieHashMap[questHash].name);
+                    if questLookup and type(questLookup) == "table" then
+                        for k,v in pairs(questLookup) do
+                            index = index + 1;
+                            if (index == 1) and (v[2] == questHash) and (k ~= "") then
+                                questOb = k;
+                            elseif (index > 0) and(v[2] == questHash) and (k ~= "") then
+                                questOb = k;
+                            elseif (index == 1) and (v[2] ~= questHash) and (k ~= "") then
+                                questOb = k;
+                            end
+                        end
                     end
                 end
                 if (QuestieConfig.showToolTips == true) then
                     if questOb ~= nil and (quest["isComplete"] or quest["leaderboards"] == 0) then
-                        Tooltip:AddLine("|cFFa6a6a6To finish this quest... |r",1,1,1,true);
+                        Tooltip:AddLine("|cFFa6a6a6"..QL("TO_FINISH_QUEST").." |r",1,1,1,true);
                         Tooltip:AddLine("|cffffffff"..Questie:RemoveUniqueSuffix(questOb).."|r",1,1,1,true);
                     elseif questOb == nil then
-                        Tooltip:AddLine("Quest *Objective* not found in Questie Database!", 1, .8, .8);
-                        Tooltip:AddLine("Please file a bug report on our GitHub portal:)", 1, .8, .8);
+                        Tooltip:AddLine(QL("QUEST_NOT_FOUND"), 1, .8, .8);
+                        Tooltip:AddLine(QL("BUG_REPORT"), 1, .8, .8);
                         Tooltip:AddLine("https://github.com/AeroScripts/QuestieDev/issues", 1, .8, .8);
                     end
                     Tooltip:Show();
