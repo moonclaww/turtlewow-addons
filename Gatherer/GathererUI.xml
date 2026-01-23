@@ -1823,10 +1823,10 @@
 					</OnLoad>
 					<OnClick>
 						if (this:GetChecked()) then
-							GatherConfig.HideIcon = tonumber("1");;
+							GatherConfig.HideIcon = 1;
 							GathererUI_IconFrame:Hide();
 						else
-							GatherConfig.HideIcon = tonumber("0");
+							GatherConfig.HideIcon = 0;
 							GathererUI_IconFrame:Show();
 						end
 					</OnClick>
