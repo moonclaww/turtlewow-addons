@@ -1,25 +1,55 @@
-WS_BUFFMASTER_TITLE_enUS = "BuffMaster";
-WS_BUFFMASTER_DESCRIPTION_enUS = "BuffMaster";
-WS_BUFFMASTER_TOOLTIP_enUS = "BuffMaster";
-WS_BUFFMASTER_ENABLE_BUFFMASTER_enUS = "Enable BuffMaster";
-WS_BUFFMASTER_SHOW_ITEMBUFF_enUS = "Show ItemBuff";
+-- BuffMaster Localization
+-- Supports English (enUS) and Simplified Chinese (zhCN)
 
-WS_BUFFMASTER_TITLE_zhCN = "增益魔法";
-WS_BUFFMASTER_DESCRIPTION_zhCN = "BuffMaster";
-WS_BUFFMASTER_TOOLTIP_zhCN = "BuffMaster";
-WS_BUFFMASTER_ENABLE_BUFFMASTER_zhCN = "开启增益魔法时间显示";
-WS_BUFFMASTER_SHOW_ITEMBUFF_zhCN = "显示物品增益魔法";
+BuffMaster_Locale = {}
 
----
-WS_BUFFMASTER_PATTERN_MIN_enUS = "(.+)%((%d+) min%)";
-WS_BUFFMASTER_PATTERN_SEC_enUS = "(.+)%((%d+) sec%)";
-WS_BUFFMASTER_PATTERN_CHARGE_enUS = "(.+)%((%d+) Charges%)";
-WS_BUFFMASTER_MIN_enUS = "min";
-WS_BUFFMASTER_SEC_enUS = "sec";
+-- English strings
+BuffMaster_Locale["enUS"] = {
+    TITLE = "BuffMaster",
+    DESCRIPTION = "Shows buff timers for your character",
+    TOOLTIP = "Click to open BuffMaster settings",
+    ENABLE_BUFFMASTER = "Enable BuffMaster",
+    SHOW_ITEMBUFF = "Show Item Buff Timers",
+    PATTERN_MIN = "(.+)%((%d+) min%)",
+    PATTERN_SEC = "(.+)%((%d+) sec%)",
+    PATTERN_CHARGE = "(.+)%((%d+) Charges%)",
+    MIN = "min",
+    SEC = "sec",
+}
 
-WS_BUFFMASTER_PATTERN_MIN_zhCN = "(.+)（(%d+)分钟）";
-WS_BUFFMASTER_PATTERN_SEC_zhCN = "(.+)（(%d+)秒）";
-WS_BUFFMASTER_PATTERN_CHARGE_zhCN = "(.+)%((%d+)次%)";
-WS_BUFFMASTER_MIN_zhCN = "分钟";
-WS_BUFFMASTER_SEC_zhCN = "秒";
----
+-- Simplified Chinese strings
+BuffMaster_Locale["zhCN"] = {
+    TITLE = "增益魔法",
+    DESCRIPTION = "显示玩家身上的增益魔法剩余时间",
+    TOOLTIP = "点击打开设置",
+    ENABLE_BUFFMASTER = "开启增益魔法时间显示",
+    SHOW_ITEMBUFF = "显示物品增益魔法",
+    PATTERN_MIN = "(.+)（(%d+)分钟）",
+    PATTERN_SEC = "(.+)（(%d+)秒）",
+    PATTERN_CHARGE = "(.+)%((%d+)次%)",
+    MIN = "分钟",
+    SEC = "秒",
+}
+
+-- Get the current client locale, default to enUS
+local function GetClientLocale()
+    local locale = GetLocale()
+    if BuffMaster_Locale[locale] then
+        return locale
+    end
+    return "enUS"
+end
+
+-- Get a localized string by key
+function BuffMaster_GetLocale(key)
+    local locale = GetClientLocale()
+    local localeTable = BuffMaster_Locale[locale]
+    if localeTable and localeTable[key] then
+        return localeTable[key]
+    end
+    -- Fallback to English
+    if BuffMaster_Locale["enUS"] and BuffMaster_Locale["enUS"][key] then
+        return BuffMaster_Locale["enUS"][key]
+    end
+    return key
+end

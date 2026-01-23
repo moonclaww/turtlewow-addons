@@ -1,8 +1,9 @@
-﻿# Do not delete the following line!
 ## Interface: 11200
-## Dependencies: WoWShell
-## Title: [WoWShell]增益魔法
-## Notes: 显示玩家身上和装备物品上的增减益魔法剩余时间
+## Title: BuffMaster
+## Notes: Shows remaining time for player buffs and item enchants
+## Notes-zhCN: 显示玩家身上和装备物品上的增减益魔法剩余时间
+## SavedVariables: BuffMaster_SavedSettings
+localization.lua
 BuffMaster.xml
 ItemBuff.xml
 BuffMasterConfigFrame.xml

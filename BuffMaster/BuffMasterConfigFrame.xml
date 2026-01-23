@@ -2,7 +2,7 @@
 ..\..\FrameXML\UI.xsd">
 <Script file="localization.lua"/>
 <Script file="BuffMaster.lua"/>
-<CheckButton name="wsBuffMasterConfigFrameCheckButtonTemplate" virtual="true">
+<CheckButton name="BuffMasterConfigFrameCheckButtonTemplate" virtual="true">
 <Size>
 <AbsDimension x="32" y="32"/>
 </Size>
@@ -11,7 +11,7 @@
 </HitRectInsets>
 <Layers>
 <Layer level="ARTWORK">
-<FontString name="$parentText" inherits="wsGameFontNormalLarge">
+<FontString name="$parentText" inherits="GameFontNormalLarge">
 <Anchors>
 <Anchor point="LEFT" relativePoint="RIGHT">
 <Offset>
@@ -37,7 +37,7 @@ end
 <CheckedTexture file="Interface\Buttons\UI-CheckBox-Check"/>
 <DisabledCheckedTexture file="Interface\Buttons\UI-CheckBox-Check-Disabled"/>
 </CheckButton>
-<Frame name="wsBuffMasterConfigFrame" toplevel="true" movable="true" enableMouse="true" hidden="true" parent="UIParent">
+<Frame name="BuffMasterConfigFrame" toplevel="true" movable="true" enableMouse="true" hidden="true" parent="UIParent">
 <Size>
 <AbsDimension x="384" y="512"/>
 </Size>
@@ -99,7 +99,7 @@ end
 <Anchor point="BOTTOMRIGHT"/>
 </Anchors>
 </Texture>
-<FontString name="$parentTitleText" inherits="wsGameFontNormalLarge">
+<FontString name="$parentTitleText" inherits="GameFontNormalLarge">
 <Anchors>
 <Anchor point="TOP" relativeTo="$parent" relativePoint="TOP">
 <Offset>
@@ -133,7 +133,7 @@ end
 </Anchors>
 <Scripts>
 <OnClick>
-Oo0o0o0nv();
+BuffMasterConfigFrame_Defaults();
 </OnClick>
 </Scripts>
 </Button>
@@ -150,7 +150,7 @@ Oo0o0o0nv();
 </Anchors>
 <Scripts>
 <OnClick>
-Oo0o0o0ov();
+BuffMasterConfigFrame_Okay();
 </OnClick>
 </Scripts>
 </Button>
@@ -171,7 +171,7 @@ HideUIPanel(this:GetParent());
 </OnClick>
 </Scripts>
 </Button>
-<CheckButton name="$parentCheckButton1" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<CheckButton name="$parentCheckButton1" inherits="BuffMasterConfigFrameCheckButtonTemplate" hidden="true">
 <Anchors>
 <Anchor point="TOPLEFT">
 <Offset>
@@ -180,7 +180,7 @@ HideUIPanel(this:GetParent());
 </Anchor>
 </Anchors>
 </CheckButton>
-<CheckButton name="$parentCheckButton2" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<CheckButton name="$parentCheckButton2" inherits="BuffMasterConfigFrameCheckButtonTemplate" hidden="true">
 <Anchors>
 <Anchor point="TOPLEFT" relativeTo="$parentCheckButton1" relativePoint="BOTTOMLEFT">
 <Offset>
@@ -189,7 +189,7 @@ HideUIPanel(this:GetParent());
 </Anchor>
 </Anchors>
 </CheckButton>
-<CheckButton name="$parentCheckButton3" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<CheckButton name="$parentCheckButton3" inherits="BuffMasterConfigFrameCheckButtonTemplate" hidden="true">
 <Anchors>
 <Anchor point="TOPLEFT" relativeTo="$parentCheckButton2" relativePoint="BOTTOMLEFT">
 <Offset>
@@ -198,7 +198,7 @@ HideUIPanel(this:GetParent());
 </Anchor>
 </Anchors>
 </CheckButton>
-<CheckButton name="$parentCheckButton4" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<CheckButton name="$parentCheckButton4" inherits="BuffMasterConfigFrameCheckButtonTemplate" hidden="true">
 <Anchors>
 <Anchor point="TOPLEFT" relativeTo="$parentCheckButton3" relativePoint="BOTTOMLEFT">
 <Offset>
@@ -207,7 +207,7 @@ HideUIPanel(this:GetParent());
 </Anchor>
 </Anchors>
 </CheckButton>
-<CheckButton name="$parentCheckButton5" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<CheckButton name="$parentCheckButton5" inherits="BuffMasterConfigFrameCheckButtonTemplate" hidden="true">
 <Anchors>
 <Anchor point="TOPLEFT" relativeTo="$parentCheckButton4" relativePoint="BOTTOMLEFT">
 <Offset>
@@ -216,7 +216,7 @@ HideUIPanel(this:GetParent());
 </Anchor>
 </Anchors>
 </CheckButton>
-<CheckButton name="$parentCheckButton6" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<CheckButton name="$parentCheckButton6" inherits="BuffMasterConfigFrameCheckButtonTemplate" hidden="true">
 <Anchors>
 <Anchor point="TOPLEFT" relativeTo="$parentCheckButton5" relativePoint="BOTTOMLEFT">
 <Offset>
@@ -225,7 +225,7 @@ HideUIPanel(this:GetParent());
 </Anchor>
 </Anchors>
 </CheckButton>
-<CheckButton name="$parentCheckButton7" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<CheckButton name="$parentCheckButton7" inherits="BuffMasterConfigFrameCheckButtonTemplate" hidden="true">
 <Anchors>
 <Anchor point="TOPLEFT" relativeTo="$parentCheckButton6" relativePoint="BOTTOMLEFT">
 <Offset>
@@ -234,7 +234,7 @@ HideUIPanel(this:GetParent());
 </Anchor>
 </Anchors>
 </CheckButton>
-<CheckButton name="$parentCheckButton8" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<CheckButton name="$parentCheckButton8" inherits="BuffMasterConfigFrameCheckButtonTemplate" hidden="true">
 <Anchors>
 <Anchor point="TOPLEFT" relativeTo="$parentCheckButton7" relativePoint="BOTTOMLEFT">
 <Offset>
@@ -246,13 +246,13 @@ HideUIPanel(this:GetParent());
 </Frames>
 <Scripts>
 <OnLoad>
-Oo0o0o0lv();
+BuffMasterConfigFrame_OnLoad();
 </OnLoad>
 <OnEvent>
-Oo0o0o0kv(event);
+BuffMasterConfigFrame_OnEvent(event);
 </OnEvent>
 <OnShow>
-Oo0o0o0mv();
+BuffMasterConfigFrame_OnShow();
 </OnShow>
 </Scripts>
 </Frame>

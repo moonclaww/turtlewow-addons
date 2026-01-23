@@ -46,16 +46,16 @@
 </Layers>
 <Scripts>
 <OnLoad>
-Oo0o0o0Rf();
+ItemBuffButton_OnLoad();
 </OnLoad>
 <OnEnter>
-Oo0o0o0Pf();
+ItemBuffButton_OnEnter();
 </OnEnter>
 <OnLeave>
-Oo0o0o0Qf();
+ItemBuffButton_OnLeave();
 </OnLeave>
 <OnUpdate>
-Oo0o0o0Sf(arg1);
+ItemBuffButton_OnUpdate(arg1);
 </OnUpdate>
 </Scripts>
 <NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
@@ -78,13 +78,13 @@ Oo0o0o0Sf(arg1);
 </Size>
 <Scripts>
 <OnLoad>
-Oo0o0o0Lf();
+ItemBuff_OnLoad();
 </OnLoad>
 <OnShow>
-Oo0o0o0Mf();
+ItemBuffBar_OnShow();
 </OnShow>
 <OnEvent>
-Oo0o0o0Kf(event);
+ItemBuffBar_OnEvent(event);
 </OnEvent>
 </Scripts>
 </Frame>
