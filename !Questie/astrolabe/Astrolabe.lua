@@ -146,7 +146,7 @@ function Astrolabe:TranslateWorldMapPosition( C, Z, xPos, yPos, nC, nZ )
             xPos = xPos - zoneData.xOffset;
             yPos = yPos - zoneData.yOffset;
         end
-    elseif (C and nC) and (WorldMapSize[C].parentContinent == WorldMapSize[nC].parentContinent) then
+    elseif (C and nC) and WorldMapSize[C] and WorldMapSize[nC] and (WorldMapSize[C].parentContinent == WorldMapSize[nC].parentContinent) then
         -- different continents, same world
         zoneData = WorldMapSize[C];
         local parentContinent = zoneData.parentContinent;
@@ -862,6 +862,13 @@ function initSizes()
                     yOffset = 9614.5166015625,
                 },
             },
+        },
+        [30] = {
+            parentContinent = 0,
+            height = 0,
+            width = 0,
+            xOffset = 0,
+            yOffset = 0,
         },
     }
     local zeroData = { xOffset = 0, height = 0, yOffset = 0, width = 0 };
