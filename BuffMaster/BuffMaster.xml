@@ -1,0 +1,241 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\FrameXML\UI.xsd">
+<Script file="BuffMaster.lua"/>
+<Frame name="wsBuffMasterFrame" parent="UIParent" frameStrata="LOW" toplevel="true">
+<Size>
+<AbsDimension x="50" y="50"/>
+</Size>
+<Anchors>
+<Anchor point="TOPRIGHT" relativeTo="BuffFrame" relativePoint="BOTTOMRIGHT">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+<Layers>
+<Layer level="ARTWORK">
+<FontString name="BuffLabel0" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton0" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel1" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton1" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel2" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton2" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel3" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton3" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel4" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton4" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel5" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton5" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel6" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton6" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel7" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton7" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel8" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton8" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel9" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton9" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel10" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton10" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel11" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton11" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel12" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton12" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel13" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton13" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel14" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton14" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel15" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton15" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel16" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton16" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel17" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton17" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel18" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton18" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel19" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton19" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel20" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton20" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel21" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton21" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel22" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton22" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="BuffLabel23" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton23" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+</Layer>
+</Layers>
+<Scripts>
+<OnUpdate>
+Oo0o0o0N();
+</OnUpdate>
+</Scripts>
+</Frame>
+</Ui>

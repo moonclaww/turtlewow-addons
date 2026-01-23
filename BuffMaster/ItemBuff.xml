@@ -1,0 +1,159 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\FrameXML\UI.xsd">
+<Script file="localization.lua"/>
+<Script file="ItemBuff.lua"/>
+<CheckButton name="ItemBuffButtonTemplate" hidden="true" virtual="true">
+<Size>
+<AbsDimension x="36" y="36"/>
+</Size>
+<Frames>
+<Model name="$parentCooldown" inherits="CooldownFrameTemplate"/>
+</Frames>
+<Layers>
+<Layer level="BACKGROUND">
+<Texture name="$parentIcon"/>
+</Layer>
+<Layer level="ARTWORK">
+<FontString name="$parentLabel" inherits="GameFontHighlightSmall" >
+<Anchors>
+<Anchor point="LEFT">
+<Offset>
+<AbsDimension x="40" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="$parentDuration" inherits="GameFontHighlightSmall" >
+<Anchors>
+<Anchor point="TOPLEFT" relativeTo="$parentLabel" relativePoint="BOTTOMLEFT">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="$parentCharge" inherits="GameFontHighlightSmall">
+<Anchors>
+<Anchor point="BOTTOMLEFT">
+<Offset>
+<AbsDimension x="16" y="2"/>
+</Offset>
+</Anchor>
+</Anchors>
+<Color r="0" g="1" b="0"/>
+</FontString>
+</Layer>
+</Layers>
+<Scripts>
+<OnLoad>
+Oo0o0o0Rf();
+</OnLoad>
+<OnEnter>
+Oo0o0o0Pf();
+</OnEnter>
+<OnLeave>
+Oo0o0o0Qf();
+</OnLeave>
+<OnUpdate>
+Oo0o0o0Sf(arg1);
+</OnUpdate>
+</Scripts>
+<NormalTexture name="$parentNormalTexture" file="Interface\Buttons\UI-Quickslot2">
+<Size>
+<AbsDimension x="64" y="64"/>
+</Size>
+<Anchors>
+<Anchor point="CENTER">
+<Offset>
+<AbsDimension x="1" y="-1"/>
+</Offset>
+</Anchor>
+</Anchors>
+</NormalTexture>
+<HighlightTexture alphaMode="ADD" file="Interface\Buttons\ButtonHilight-Square"/>
+</CheckButton>
+<Frame name="ItemBuffBar" toplevel="true" frameStrata="LOW" enableMouse="true" parent="BuffFrame">
+<Size>
+<AbsDimension x="50" y="50"/>
+</Size>
+<Scripts>
+<OnLoad>
+Oo0o0o0Lf();
+</OnLoad>
+<OnShow>
+Oo0o0o0Mf();
+</OnShow>
+<OnEvent>
+Oo0o0o0Kf(event);
+</OnEvent>
+</Scripts>
+</Frame>
+<CheckButton name="ItemBuffButton1" inherits="ItemBuffButtonTemplate" parent="ItemBuffBar" id="1">
+<Anchors>
+<Anchor point="TOP" relativeTo="BuffButton16" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="-60"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<CheckButton name="ItemBuffButton2" inherits="ItemBuffButtonTemplate" parent="ItemBuffBar" id="2">
+<Anchors>
+<Anchor point="TOP" relativeTo="ItemBuffButton1" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="-5"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<CheckButton name="ItemBuffButton3" inherits="ItemBuffButtonTemplate" parent="ItemBuffBar" id="3">
+<Anchors>
+<Anchor point="TOP" relativeTo="ItemBuffButton2" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="-5"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<CheckButton name="ItemBuffButton4" inherits="ItemBuffButtonTemplate" parent="ItemBuffBar" id="4">
+<Anchors>
+<Anchor point="TOP" relativeTo="ItemBuffButton3" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="-5"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<CheckButton name="ItemBuffButton5" inherits="ItemBuffButtonTemplate" parent="ItemBuffBar" id="5">
+<Anchors>
+<Anchor point="TOP" relativeTo="ItemBuffButton4" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="-5"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<CheckButton name="ItemBuffButton6" inherits="ItemBuffButtonTemplate" parent="ItemBuffBar" id="6">
+<Anchors>
+<Anchor point="TOP" relativeTo="ItemBuffButton5" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="-5"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<GameTooltip name="ItemBuffTooltip" inherits="GameTooltipTemplate" parent="WorldFrame" hidden="false">
+<Scripts>
+<OnLoad>
+this:SetOwner(getglobal("WorldFrame"), "ANCHOR_NONE");
+</OnLoad>
+</Scripts>
+</GameTooltip>
+<GameTooltip name="ItemTempTooltip" inherits="GameTooltipTemplate" parent="WorldFrame" hidden="false">
+<Scripts>
+<OnLoad>
+this:SetOwner(getglobal("WorldFrame"), "ANCHOR_NONE");
+</OnLoad>
+</Scripts>
+</GameTooltip>
+</Ui>

@@ -1,0 +1,25 @@
+WS_BUFFMASTER_TITLE_enUS = "BuffMaster";
+WS_BUFFMASTER_DESCRIPTION_enUS = "BuffMaster";
+WS_BUFFMASTER_TOOLTIP_enUS = "BuffMaster";
+WS_BUFFMASTER_ENABLE_BUFFMASTER_enUS = "Enable BuffMaster";
+WS_BUFFMASTER_SHOW_ITEMBUFF_enUS = "Show ItemBuff";
+
+WS_BUFFMASTER_TITLE_zhCN = "增益魔法";
+WS_BUFFMASTER_DESCRIPTION_zhCN = "BuffMaster";
+WS_BUFFMASTER_TOOLTIP_zhCN = "BuffMaster";
+WS_BUFFMASTER_ENABLE_BUFFMASTER_zhCN = "开启增益魔法时间显示";
+WS_BUFFMASTER_SHOW_ITEMBUFF_zhCN = "显示物品增益魔法";
+
+---
+WS_BUFFMASTER_PATTERN_MIN_enUS = "(.+)%((%d+) min%)";
+WS_BUFFMASTER_PATTERN_SEC_enUS = "(.+)%((%d+) sec%)";
+WS_BUFFMASTER_PATTERN_CHARGE_enUS = "(.+)%((%d+) Charges%)";
+WS_BUFFMASTER_MIN_enUS = "min";
+WS_BUFFMASTER_SEC_enUS = "sec";
+
+WS_BUFFMASTER_PATTERN_MIN_zhCN = "(.+)（(%d+)分钟）";
+WS_BUFFMASTER_PATTERN_SEC_zhCN = "(.+)（(%d+)秒）";
+WS_BUFFMASTER_PATTERN_CHARGE_zhCN = "(.+)%((%d+)次%)";
+WS_BUFFMASTER_MIN_zhCN = "分钟";
+WS_BUFFMASTER_SEC_zhCN = "秒";
+---

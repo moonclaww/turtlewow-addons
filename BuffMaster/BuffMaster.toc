@@ -1,0 +1,8 @@
+﻿# Do not delete the following line!
+## Interface: 11200
+## Dependencies: WoWShell
+## Title: [WoWShell]增益魔法
+## Notes: 显示玩家身上和装备物品上的增减益魔法剩余时间
+BuffMaster.xml
+ItemBuff.xml
+BuffMasterConfigFrame.xml

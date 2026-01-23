@@ -1,0 +1,259 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/
+..\..\FrameXML\UI.xsd">
+<Script file="localization.lua"/>
+<Script file="BuffMaster.lua"/>
+<CheckButton name="wsBuffMasterConfigFrameCheckButtonTemplate" virtual="true">
+<Size>
+<AbsDimension x="32" y="32"/>
+</Size>
+<HitRectInsets>
+<AbsInset left="0" right="-200" top="0" bottom="0"/>
+</HitRectInsets>
+<Layers>
+<Layer level="ARTWORK">
+<FontString name="$parentText" inherits="wsGameFontNormalLarge">
+<Anchors>
+<Anchor point="LEFT" relativePoint="RIGHT">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+</Layer>
+</Layers>
+<Scripts>
+<OnClick>
+if ( this:GetChecked() ) then
+PlaySound("igMainMenuOptionCheckBoxOff");
+else
+PlaySound("igMainMenuOptionCheckBoxOn");
+end
+</OnClick>
+</Scripts>
+<NormalTexture file="Interface\Buttons\UI-CheckBox-Up"/>
+<PushedTexture file="Interface\Buttons\UI-CheckBox-Down"/>
+<HighlightTexture file="Interface\Buttons\UI-CheckBox-Highlight" alphaMode="ADD"/>
+<CheckedTexture file="Interface\Buttons\UI-CheckBox-Check"/>
+<DisabledCheckedTexture file="Interface\Buttons\UI-CheckBox-Check-Disabled"/>
+</CheckButton>
+<Frame name="wsBuffMasterConfigFrame" toplevel="true" movable="true" enableMouse="true" hidden="true" parent="UIParent">
+<Size>
+<AbsDimension x="384" y="512"/>
+</Size>
+<Anchors>
+<Anchor point="TOPLEFT">
+<Offset>
+<AbsDimension x="0" y="-104"/>
+</Offset>
+</Anchor>
+</Anchors>
+<HitRectInsets>
+<AbsInset left="0" right="30" top="0" bottom="70"/>
+</HitRectInsets>
+<Layers>
+<Layer level="BACKGROUND">
+<Texture name="$parentIconTexture">
+<Size>
+<AbsDimension x="60" y="60"/>
+</Size>
+<Anchors>
+<Anchor point="TOPLEFT">
+<Offset>
+<AbsDimension x="7" y="-6"/>
+</Offset>
+</Anchor>
+</Anchors>
+</Texture>
+</Layer>
+<Layer level="BORDER">
+<Texture file="Interface\PaperDollInfoFrame\UI-Character-General-TopLeft">
+<Size>
+<AbsDimension x="256" y="256"/>
+</Size>
+<Anchors>
+<Anchor point="TOPLEFT"/>
+</Anchors>
+</Texture>
+<Texture file="Interface\PaperDollInfoFrame\UI-Character-General-TopRight">
+<Size>
+<AbsDimension x="128" y="256"/>
+</Size>
+<Anchors>
+<Anchor point="TOPRIGHT"/>
+</Anchors>
+</Texture>
+<Texture file="Interface\MacroFrame\MacroFrame-BotLeft">
+<Size>
+<AbsDimension x="256" y="256"/>
+</Size>
+<Anchors>
+<Anchor point="BOTTOMLEFT"/>
+</Anchors>
+</Texture>
+<Texture file="Interface\MacroFrame\MacroFrame-BotRight">
+<Size>
+<AbsDimension x="128" y="256"/>
+</Size>
+<Anchors>
+<Anchor point="BOTTOMRIGHT"/>
+</Anchors>
+</Texture>
+<FontString name="$parentTitleText" inherits="wsGameFontNormalLarge">
+<Anchors>
+<Anchor point="TOP" relativeTo="$parent" relativePoint="TOP">
+<Offset>
+<AbsDimension x="0" y="-17"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+</Layer>
+</Layers>
+<Frames>
+<Button name="$parentCloseButton" inherits="UIPanelCloseButton">
+<Anchors>
+<Anchor point="CENTER" relativeTo="$parent" relativePoint="TOPRIGHT">
+<Offset>
+<AbsDimension x="-44" y="-26"/>
+</Offset>
+</Anchor>
+</Anchors>
+</Button>
+<Button name="$parentDefaultsButton" inherits="UIPanelButtonTemplate" text="DEFAULTS">
+<Size>
+<AbsDimension x="80" y="22"/>
+</Size>
+<Anchors>
+<Anchor point="BOTTOMLEFT" relativeTo="$parent">
+<Offset>
+<AbsDimension x="17" y="79"/>
+</Offset>
+</Anchor>
+</Anchors>
+<Scripts>
+<OnClick>
+Oo0o0o0nv();
+</OnClick>
+</Scripts>
+</Button>
+<Button name="$parentOkayButton" inherits="UIPanelButtonTemplate" text="OKAY">
+<Size>
+<AbsDimension x="80" y="22"/>
+</Size>
+<Anchors>
+<Anchor point="CENTER" relativeTo="$parent" relativePoint="TOPLEFT">
+<Offset>
+<AbsDimension x="222" y="-422"/>
+</Offset>
+</Anchor>
+</Anchors>
+<Scripts>
+<OnClick>
+Oo0o0o0ov();
+</OnClick>
+</Scripts>
+</Button>
+<Button name="$parentCancelButton" inherits="UIPanelButtonTemplate" text="CANCEL">
+<Size>
+<AbsDimension x="80" y="22"/>
+</Size>
+<Anchors>
+<Anchor point="CENTER" relativeTo="$parent" relativePoint="TOPLEFT">
+<Offset>
+<AbsDimension x="303" y="-422"/>
+</Offset>
+</Anchor>
+</Anchors>
+<Scripts>
+<OnClick>
+HideUIPanel(this:GetParent());
+</OnClick>
+</Scripts>
+</Button>
+<CheckButton name="$parentCheckButton1" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<Anchors>
+<Anchor point="TOPLEFT">
+<Offset>
+<AbsDimension x="34" y="-85"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<CheckButton name="$parentCheckButton2" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<Anchors>
+<Anchor point="TOPLEFT" relativeTo="$parentCheckButton1" relativePoint="BOTTOMLEFT">
+<Offset>
+<AbsDimension x="0" y="-8"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<CheckButton name="$parentCheckButton3" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<Anchors>
+<Anchor point="TOPLEFT" relativeTo="$parentCheckButton2" relativePoint="BOTTOMLEFT">
+<Offset>
+<AbsDimension x="0" y="-8"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<CheckButton name="$parentCheckButton4" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<Anchors>
+<Anchor point="TOPLEFT" relativeTo="$parentCheckButton3" relativePoint="BOTTOMLEFT">
+<Offset>
+<AbsDimension x="0" y="-8"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<CheckButton name="$parentCheckButton5" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<Anchors>
+<Anchor point="TOPLEFT" relativeTo="$parentCheckButton4" relativePoint="BOTTOMLEFT">
+<Offset>
+<AbsDimension x="0" y="-8"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<CheckButton name="$parentCheckButton6" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<Anchors>
+<Anchor point="TOPLEFT" relativeTo="$parentCheckButton5" relativePoint="BOTTOMLEFT">
+<Offset>
+<AbsDimension x="0" y="-8"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<CheckButton name="$parentCheckButton7" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<Anchors>
+<Anchor point="TOPLEFT" relativeTo="$parentCheckButton6" relativePoint="BOTTOMLEFT">
+<Offset>
+<AbsDimension x="0" y="-8"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+<CheckButton name="$parentCheckButton8" inherits="wsBuffMasterConfigFrameCheckButtonTemplate" hidden="true">
+<Anchors>
+<Anchor point="TOPLEFT" relativeTo="$parentCheckButton7" relativePoint="BOTTOMLEFT">
+<Offset>
+<AbsDimension x="0" y="-8"/>
+</Offset>
+</Anchor>
+</Anchors>
+</CheckButton>
+</Frames>
+<Scripts>
+<OnLoad>
+Oo0o0o0lv();
+</OnLoad>
+<OnEvent>
+Oo0o0o0kv(event);
+</OnEvent>
+<OnShow>
+Oo0o0o0mv();
+</OnShow>
+</Scripts>
+</Frame>
+</Ui>
