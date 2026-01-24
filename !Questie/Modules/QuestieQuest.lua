@@ -33,6 +33,32 @@ Questie.lastCollapsedCount = 0;
 Questie.collapsedThisRun = false;
 QUESTIE_LAST_UPDATECACHE = GetTime();
 ---------------------------------------------------------------------------------------------------
+local QuestieDeformat = AceLibrary and AceLibrary:HasInstance("Deformat-2.0") and AceLibrary("Deformat-2.0") or nil;
+
+function Questie:ParseObjectiveName(desc, objType)
+    if QuestieDeformat then
+        local name, have, need;
+        if objType == "monster" then
+            name, have, need = QuestieDeformat(desc, QUEST_MONSTERS_KILLED);
+            if not name then
+                name, have, need = QuestieDeformat(desc, QUEST_OBJECTS_FOUND);
+            end
+        elseif objType == "item" or objType == "object" then
+            name, have, need = QuestieDeformat(desc, QUEST_OBJECTS_FOUND);
+        end
+        if name then return name; end
+    end
+    local splitIndex = findLast(desc, ":");
+    if splitIndex then
+        local objectiveName = string.sub(desc, 1, splitIndex-1);
+        if string.find(objectiveName, " slain") then
+            objectiveName = string.sub(objectiveName, 1, string.len(objectiveName)-6);
+        end
+        return objectiveName;
+    end
+    return desc;
+end
+---------------------------------------------------------------------------------------------------
 --Blizzard Hook: Quest Abandon On Accept
 ---------------------------------------------------------------------------------------------------
 QuestAbandonOnAccept = StaticPopupDialogs["ABANDON_QUEST"].OnAccept;
@@ -310,15 +336,8 @@ function Questie:UpdateGameClientCache(force)
                 Questie:debug_Print("Quest:UpdateGameClientCache --> Questie:addQuestToTrackerCache(forced): [Hash: "..hash.."]");
             end
             for index=1, QGet_NumQuestLeaderBoards(id) do
-                local desc = QGet_QuestLogLeaderBoard(index, id);
-                local objectiveName = desc;
-                local splitIndex = findLast(objectiveName, ":");
-                if splitIndex ~= nil then
-                    objectiveName = string.sub(objectiveName, 1, splitIndex-1);
-                    if (string.find(objectiveName, " slain")) then
-                        objectiveName = string.sub(objectiveName, 1, string.len(objectiveName)-6);
-                    end
-                end
+                local desc, objType, done = QGet_QuestLogLeaderBoard(index, id);
+                local objectiveName = Questie:ParseObjectiveName(desc, objType);
                 if (not LastQuestLogHashes and not force) or (QuestieHandledQuests[hash] and QuestieHandledQuests[hash]["objectives"] and QuestieHandledQuests[hash]["objectives"][index]["name"] ~= objectiveName) then
                     Questie:AddQuestToMap(hash);
                     Questie:debug_Print("Quest:UpdateGameClientCache --> Questie:AddQuestToMap(): [Name: "..QuestieHandledQuests[hash]["objectives"][index]["name"].."]");
@@ -769,14 +788,7 @@ function Questie:GetQuestObjectivePaths(questHash)
         };
         local typeFunction = typeFunctions[type];
         if typeFunction ~= nil then
-            local objectiveName = desc;
-            local splitIndex = findLast(objectiveName, ":");
-            if splitIndex ~= nil then
-                objectiveName = string.sub(objectiveName, 1, splitIndex-1);
-                if (string.find(objectiveName, " slain")) then
-                    objectiveName = string.sub(objectiveName, 1, string.len(objectiveName)-6);
-                end
-            end
+            local objectiveName = Questie:ParseObjectiveName(desc, type);
             locations = typeFunction(objectiveName);
             objectivePaths[i] = {};
             objectivePaths[i]['path'] = locations;
@@ -810,10 +822,9 @@ function Questie:AstroGetQuestObjectives(questHash)
             local indx = findLast(desc, ":");
             local countless = indx == nil;
             local countstr = "";
-            local namestr = desc;
+            local namestr = Questie:ParseObjectiveName(desc, typ);
             if not countless then
                 countstr = string.sub(desc, indx + 2);
-                namestr = string.sub(desc, 1, indx - 1);
             end
             local objectives = typeFunction(q, namestr, countstr, selected, mapid);
             Objective = {};
@@ -930,9 +941,6 @@ AstroobjectiveProcessors = {
     ['monster'] = function(quest, name, amount, selected, mapid)
         local list = {};
         local monster = {};
-        if (string.find(name, " slain")) then
-            name = string.sub(name, 1, string.len(name)-6);
-        end
         monster["name"] = name;
         monster["type"] = "slay";
         monster["locations"] = {};

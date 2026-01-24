@@ -49,6 +49,10 @@ Database\zhCN\objects.lua
 Database\zhCN\newObjects.lua
 Database\zhCN\reputations.lua
 Database\zhCN\addendum.lua
+
+Database\turtle\init.lua
+Database\turtle_zhCN\init.lua
+
 Astrolabe\Astrolabe.lua
 
 # Questie
