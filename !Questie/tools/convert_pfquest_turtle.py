@@ -29,16 +29,16 @@ import urllib.error
 from pathlib import Path
 from datetime import datetime
 
-# Configuration - Multiple Sources for Best Coverage
-PFQUEST_TURTLE_BASE = "https://raw.githubusercontent.com/shagu/pfQuest-turtle/master/"
-NINETEARS_BASE = "https://raw.githubusercontent.com/NineTears/pfQuest-en2cn/main/pfQuest-turtle/"
-
-# Output directories (relative to script location)
+# Configuration - Use local files
 SCRIPT_DIR = Path(__file__).parent
 QUESTIE_DIR = SCRIPT_DIR.parent
 DATABASE_DIR = QUESTIE_DIR / "Database"
 TURTLE_DIR = DATABASE_DIR / "turtle"
 TURTLE_ZHCN_DIR = DATABASE_DIR / "turtle_zhCN"
+
+# Local data directories
+PFQUEST_TURTLE_DIR = SCRIPT_DIR / "pfQuest-turtle" / "db"
+PFQUEST_VANILLA_DIR = SCRIPT_DIR / "pfQuest" / "db"
 
 # AreaTable ID (pfQuest) → mapID (Questie) conversion table
 # pfQuest uses WoW's AreaTable zone IDs in coordinates, but Questie uses its own mapID system
@@ -93,6 +93,22 @@ AREATABLE_TO_MAPID = {
     1519: 36,   # Stormwind City
     1537: 25,   # Ironforge
     1497: 45,   # Undercity
+    
+    # Subzones (map to parent zone)
+    42: 31,     # Darkshire → Duskwood
+    
+    # Additional instances/areas
+    2159: 64,   # Onyxia's Lair (alternate ID)
+    1941: 8,    # Caverns of Time → Tanaris
+    2257: 78,   # Deeprun Tram
+    
+    # Battlegrounds (map to nearby zones for quest location purposes)
+    2597: 26,   # Alterac Valley → Alterac Mountains
+    3277: 2,    # Warsong Gulch → Ashenvale
+    3358: 39,   # Arathi Basin → Arathi Highlands
+    
+    # Outdoor event areas
+    3478: 5,    # Gates of Ahn'Qiraj → Silithus
 }
 
 # TurtleWoW custom zones: AreaTable ID → (continent, turtleZoneIdx)
@@ -175,20 +191,13 @@ TURTLEWOW_ZONES = {
     5148: (33, 1),    # Upper Necropolis → Naxxramas area
     5204: (31, 1),    # TurtleWoW Black Morass → same as 2366
     
-    # ==================== TODO: UNMAPPED ZONES ====================
-    # These zones need in-game verification to determine their continent/zone mapping
-    #
-    # Subzones (parent zone unknown - not in GetMapZones output):
-    #   5023 = Sunnyglade Valley (阳光林地山谷) - 1 coord in pfQuest, parent zone unknown
-    #   5557 = Rock of Desolation (荒芜巨岩) - 18 coords, has lvl63 mobs, parent unknown
-    #   5628 = Stormwrought Ruins (风暴废墟) - 54 coords, parent zone unknown
-    #
-    # Battlegrounds (need to enter BG and check GetCurrentMapContinent):
-    #   2597 = Alterac Valley
-    #
-    # Special areas (need in-game verification):
-    #   1941 = Caverns of Time entrance area
-    #   3478 = Gates of Ahn'Qiraj (outdoor event area in Silithus)
+    # ==================== TURTLEWOW CUSTOM SUBZONES ====================
+    # These are TurtleWoW-specific subzones without direct world map presence
+    # Mapped to the most appropriate nearby continent/zone combination
+    5023: (1, 1),     # Sunnyglade Valley → Kalimdor (placeholder)
+    5144: (40, 1),    # Deeprun Tram (TurtleWoW) → C40 (special instance)
+    5557: (1, 1),     # Rock of Desolation → Kalimdor (high-level content)
+    5628: (2, 1),     # Stormwrought Ruins → Eastern Kingdoms (placeholder)
 }
 
 # Track unmapped zones for reporting
@@ -330,6 +339,84 @@ def parse_name_table(content: str, table_pattern: str) -> dict:
         name = match.group(2)
         if name and name != "*" and name != "_":
             result[id_val] = name
+    
+    return result
+
+
+def parse_items_data_table(content: str) -> dict:
+    """Parse pfQuest items data table. Format: [item_id] = { ["U"] = {unit_id=rate}, ["O"] = {obj_id=rate} }"""
+    result = {}
+    
+    table_pattern = 'pfDB["items"]["data-turtle"]'
+    start_idx = content.find(table_pattern)
+    if start_idx == -1:
+        return result
+    
+    brace_idx = content.find('{', start_idx)
+    if brace_idx == -1:
+        return result
+    
+    # Find matching closing brace
+    depth = 1
+    pos = brace_idx + 1
+    while pos < len(content) and depth > 0:
+        if content[pos] == '{':
+            depth += 1
+        elif content[pos] == '}':
+            depth -= 1
+        pos += 1
+    
+    table_content = content[brace_idx+1:pos-1]
+    
+    # Parse each item entry: [item_id] = { ... }
+    item_pattern = re.compile(r'\[(\d+)\]\s*=\s*\{')
+    for match in item_pattern.finditer(table_content):
+        item_id = int(match.group(1))
+        entry_start = match.end()
+        
+        # Find the matching closing brace for this entry
+        depth = 1
+        entry_pos = entry_start
+        while entry_pos < len(table_content) and depth > 0:
+            c = table_content[entry_pos]
+            if c == '{':
+                depth += 1
+            elif c == '}':
+                depth -= 1
+            entry_pos += 1
+        
+        entry_content = table_content[entry_start:entry_pos-1]
+        
+        # Skip empty entries
+        if not entry_content.strip():
+            continue
+        
+        entry = {}
+        
+        # Parse ["U"] = { [unit_id] = rate, ... } (units that drop item)
+        u_match = re.search(r'\["U"\]\s*=\s*\{([^}]*)\}', entry_content)
+        if u_match:
+            units = {}
+            for unit_match in re.finditer(r'\[(\d+)\]\s*=\s*([\d.]+)', u_match.group(1)):
+                unit_id = int(unit_match.group(1))
+                rate = float(unit_match.group(2))
+                units[unit_id] = rate
+            if units:
+                entry["U"] = units
+        
+        # Parse ["O"] = { [obj_id] = rate, ... } (objects that contain item)
+        o_match = re.search(r'\["O"\]\s*=\s*\{([^}]*)\}', entry_content)
+        if o_match:
+            objects = {}
+            for obj_match in re.finditer(r'\[(\d+)\]\s*=\s*([\d.]+)', o_match.group(1)):
+                obj_id = int(obj_match.group(1))
+                rate = float(obj_match.group(2))
+                objects[obj_id] = rate
+            if objects:
+                entry["O"] = objects
+        
+        if entry:
+            result[item_id] = entry
     
     return result
 
@@ -543,8 +630,17 @@ def generate_init_lua(units_data: dict, units_names: dict,
                       items_data: dict, items_names: dict,
                       objects_data: dict, objects_names: dict,
                       quest_data: dict, quest_locale: dict,
-                      locale: str) -> str:
-    """Generate the full init.lua content for TurtleWoW database."""
+                      locale: str,
+                      vanilla_units_names: dict = None,
+                      vanilla_objects_names: dict = None) -> str:
+    """Generate the full init.lua content for TurtleWoW database.
+    
+    vanilla_units_names/vanilla_objects_names: Fallback names from vanilla pfQuest
+    for monsters/objects that don't have TurtleWoW coordinates but are referenced
+    by TurtleWoW items. Uses vanilla names to match base Questie database.
+    """
+    vanilla_units_names = vanilla_units_names or {}
+    vanilla_objects_names = vanilla_objects_names or {}
     
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     
@@ -690,6 +786,76 @@ def generate_init_lua(units_data: dict, units_names: dict,
     
     lines.append('')
     
+    # Generate items section (QuestieItems)
+    item_count = 0
+    lines.append('---------------------------------------------------------------------------------------------------')
+    lines.append('-- TurtleWoW Item Data')
+    lines.append('---------------------------------------------------------------------------------------------------')
+    lines.append('-- Initialize table if not already defined')
+    lines.append('QuestieItems = QuestieItems or {}')
+    lines.append('')
+    
+    for item_id, item_data in sorted(items_data.items()):
+        item_name = items_names.get(item_id)
+        if not item_name:
+            continue
+        
+        # Build the item entry with drop/contained sources
+        has_sources = False
+        drop_sources = {}
+        contained_sources = {}
+        
+        # Process units that drop this item -> drop = { ["monster_name"] = rate }
+        # For vanilla monsters (no TurtleWoW coords), use vanilla pfQuest names to match base Questie
+        if "U" in item_data:
+            for unit_id, rate in item_data["U"].items():
+                # If unit has TurtleWoW coords, use TurtleWoW name (we generate QuestieMonsters for it)
+                # Otherwise, use vanilla pfQuest name (to match base Questie QuestieMonsters)
+                if unit_id in units_data:
+                    unit_name = units_names.get(unit_id)
+                else:
+                    unit_name = vanilla_units_names.get(unit_id)
+                if unit_name:
+                    drop_sources[unit_name] = int(rate) if rate == int(rate) else rate
+                    has_sources = True
+        
+        # Process objects that contain this item -> contained = { ["object_name"] = rate }
+        # Same logic: use vanilla names for vanilla objects
+        if "O" in item_data:
+            for obj_id, rate in item_data["O"].items():
+                if obj_id in objects_data:
+                    obj_name = objects_names.get(obj_id)
+                else:
+                    obj_name = vanilla_objects_names.get(obj_id)
+                if obj_name:
+                    contained_sources[obj_name] = int(rate) if rate == int(rate) else rate
+                    has_sources = True
+        
+        if has_sources:
+            item_count += 1
+            escaped_name = item_name.replace('\\', '\\\\').replace('"', '\\"')
+            lines.append(f'if not QuestieItems["{escaped_name}"] then')
+            lines.append(f'  QuestieItems["{escaped_name}"] = {{')
+            
+            if drop_sources:
+                lines.append('    drop = {')
+                for source_name, rate in sorted(drop_sources.items()):
+                    escaped_source = source_name.replace('\\', '\\\\').replace('"', '\\"')
+                    lines.append(f'      ["{escaped_source}"] = {rate},')
+                lines.append('    },')
+            
+            if contained_sources:
+                lines.append('    contained = {')
+                for source_name, rate in sorted(contained_sources.items()):
+                    escaped_source = source_name.replace('\\', '\\\\').replace('"', '\\"')
+                    lines.append(f'      ["{escaped_source}"] = {rate},')
+                lines.append('    },')
+            
+            lines.append('  }')
+            lines.append('end')
+    
+    lines.append('')
+    
     # Generate quest data (QuestieLevLookup and QuestieHashMap)
     quest_count = 0
     lines.append('---------------------------------------------------------------------------------------------------')
@@ -798,6 +964,265 @@ def generate_init_lua(units_data: dict, units_names: dict,
     return '\n'.join(lines)
 
 
+# ============================================================================
+# NEW ID-BASED GENERATION FUNCTIONS
+# ============================================================================
+
+def escape_lua_string(s: str) -> str:
+    """Escape a string for Lua."""
+    if not s:
+        return ""
+    return s.replace('\\', '\\\\').replace('"', '\\"').replace('\n', '\\n').replace('\r', '')
+
+
+def generate_turtle_units_data(units_data: dict) -> str:
+    """Generate Database/turtle/data/units.lua content."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    lines = [
+        '-- TurtleWoW Unit Data Overlay (ID-based)',
+        f'-- Auto-generated by convert_pfquest_turtle.py on {timestamp}',
+        '-- Source: pfQuest-turtle database',
+        '',
+        'QuestieUnitDataTurtle = {',
+    ]
+    
+    for unit_id in sorted(units_data.keys()):
+        data = units_data[unit_id]
+        coords = data.get("coords", [])
+        if not coords:
+            continue
+        
+        locations = []
+        for x, y, zone in coords:
+            qx = x / 100.0
+            qy = y / 100.0
+            
+            if zone in AREATABLE_TO_MAPID:
+                map_id = AREATABLE_TO_MAPID[zone]
+                locations.append(('old', map_id, qx, qy))
+            elif zone in TURTLEWOW_ZONES:
+                continent, turtle_zone = TURTLEWOW_ZONES[zone]
+                locations.append(('new', continent, turtle_zone, qx, qy))
+            else:
+                unmapped_zones.add(zone)
+                continue
+        
+        if not locations:
+            continue
+        
+        lines.append(f'  [{unit_id}] = {{')
+        lines.append('    locations = {')
+        for i, loc in enumerate(locations[:50], 1):
+            if loc[0] == 'old':
+                _, map_id, x, y = loc
+                lines.append(f'      [{i}] = {{{map_id}, {x:.4f}, {y:.4f}}},')
+            else:
+                _, continent, turtle_zone, x, y = loc
+                lines.append(f'      [{i}] = {{{continent}, {turtle_zone}, {x:.4f}, {y:.4f}}},')
+        lines.append('    },')
+        lines.append('  },')
+    
+    lines.append('}')
+    return '\n'.join(lines)
+
+
+def generate_turtle_objects_data(objects_data: dict) -> str:
+    """Generate Database/turtle/data/objects.lua content."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    lines = [
+        '-- TurtleWoW Object Data Overlay (ID-based)',
+        f'-- Auto-generated by convert_pfquest_turtle.py on {timestamp}',
+        '-- Source: pfQuest-turtle database',
+        '',
+        'QuestieObjectDataTurtle = {',
+    ]
+    
+    for obj_id in sorted(objects_data.keys()):
+        data = objects_data[obj_id]
+        coords = data.get("coords", [])
+        if not coords:
+            continue
+        
+        locations = []
+        for x, y, zone in coords:
+            qx = x / 100.0
+            qy = y / 100.0
+            
+            if zone in AREATABLE_TO_MAPID:
+                map_id = AREATABLE_TO_MAPID[zone]
+                locations.append(('old', map_id, qx, qy))
+            elif zone in TURTLEWOW_ZONES:
+                continent, turtle_zone = TURTLEWOW_ZONES[zone]
+                locations.append(('new', continent, turtle_zone, qx, qy))
+            else:
+                unmapped_zones.add(zone)
+                continue
+        
+        if not locations:
+            continue
+        
+        lines.append(f'  [{obj_id}] = {{')
+        lines.append('    locations = {')
+        for i, loc in enumerate(locations[:50], 1):
+            if loc[0] == 'old':
+                _, map_id, x, y = loc
+                lines.append(f'      [{i}] = {{{map_id}, {x:.4f}, {y:.4f}}},')
+            else:
+                _, continent, turtle_zone, x, y = loc
+                lines.append(f'      [{i}] = {{{continent}, {turtle_zone}, {x:.4f}, {y:.4f}}},')
+        lines.append('    },')
+        lines.append('  },')
+    
+    lines.append('}')
+    return '\n'.join(lines)
+
+
+def generate_turtle_items_data(items_data: dict) -> str:
+    """Generate Database/turtle/data/items.lua content."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    lines = [
+        '-- TurtleWoW Item Data Overlay (ID-based)',
+        f'-- Auto-generated by convert_pfquest_turtle.py on {timestamp}',
+        '-- Source: pfQuest-turtle database',
+        '',
+        'QuestieItemDataTurtle = {',
+    ]
+    
+    for item_id in sorted(items_data.keys()):
+        data = items_data[item_id]
+        
+        drop_units = list(data.get("U", {}).keys())
+        contained_objects = list(data.get("O", {}).keys())
+        
+        if not drop_units and not contained_objects:
+            continue
+        
+        lines.append(f'  [{item_id}] = {{')
+        
+        if drop_units:
+            units_str = ', '.join(str(u) for u in sorted(drop_units))
+            lines.append(f'    dropUnits = {{{units_str}}},')
+        
+        if contained_objects:
+            objs_str = ', '.join(str(o) for o in sorted(contained_objects))
+            lines.append(f'    containedObjects = {{{objs_str}}},')
+        
+        lines.append('  },')
+    
+    lines.append('}')
+    return '\n'.join(lines)
+
+
+def generate_turtle_quests_data(quest_data: dict) -> str:
+    """Generate Database/turtle/data/quests.lua content."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    lines = [
+        '-- TurtleWoW Quest Data Overlay (ID-based)',
+        f'-- Auto-generated by convert_pfquest_turtle.py on {timestamp}',
+        '-- Source: pfQuest-turtle database',
+        '',
+        'QuestieQuestDataTurtle = {',
+    ]
+    
+    for quest_id in sorted(quest_data.keys()):
+        data = quest_data[quest_id]
+        
+        lines.append(f'  [{quest_id}] = {{')
+        
+        if "lvl" in data:
+            lines.append(f'    level = {data["lvl"]},')
+        if "min" in data:
+            lines.append(f'    minLevel = {data["min"]},')
+        if "race" in data:
+            lines.append(f'    race = {data["race"]},')
+        if "class" in data:
+            lines.append(f'    class = {data["class"]},')
+        
+        if "start" in data:
+            if "U" in data["start"]:
+                lines.append(f'    startUnit = {data["start"]["U"]},')
+            if "I" in data["start"]:
+                lines.append(f'    startItem = {data["start"]["I"]},')
+            if "O" in data["start"]:
+                lines.append(f'    startObject = {data["start"]["O"]},')
+        
+        if "end" in data:
+            if "U" in data["end"]:
+                lines.append(f'    endUnit = {data["end"]["U"]},')
+            if "O" in data["end"]:
+                lines.append(f'    endObject = {data["end"]["O"]},')
+        
+        lines.append('  },')
+    
+    lines.append('}')
+    return '\n'.join(lines)
+
+
+def generate_turtle_names_lua(unit_names: dict, object_names: dict, item_names: dict,
+                              quest_locale: dict, locale: str) -> str:
+    """Generate TurtleWoW locale names.lua content."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    
+    if locale == "enUS":
+        header = [
+            '-- TurtleWoW Name Mappings Overlay (English)',
+            f'-- Auto-generated by convert_pfquest_turtle.py on {timestamp}',
+            '-- Source: pfQuest-turtle database',
+        ]
+    else:
+        header = [
+            '-- TurtleWoW Name Mappings Overlay (Simplified Chinese)',
+            '-- TurtleWoW 名称映射表覆盖层（简体中文）',
+            f'-- Auto-generated by convert_pfquest_turtle.py on {timestamp}',
+            '-- Source: pfQuest-turtle database',
+        ]
+    
+    lines = header + ['']
+    
+    # Unit names
+    lines.append('QuestieUnitNamesTurtle = {')
+    for unit_id in sorted(unit_names.keys()):
+        name = escape_lua_string(unit_names[unit_id])
+        lines.append(f'  [{unit_id}] = "{name}",')
+    lines.append('}')
+    lines.append('')
+    
+    # Object names
+    lines.append('QuestieObjectNamesTurtle = {')
+    for obj_id in sorted(object_names.keys()):
+        name = escape_lua_string(object_names[obj_id])
+        lines.append(f'  [{obj_id}] = "{name}",')
+    lines.append('}')
+    lines.append('')
+    
+    # Item names
+    lines.append('QuestieItemNamesTurtle = {')
+    for item_id in sorted(item_names.keys()):
+        name = escape_lua_string(item_names[item_id])
+        lines.append(f'  [{item_id}] = "{name}",')
+    lines.append('}')
+    lines.append('')
+    
+    # Quest names
+    lines.append('QuestieQuestNamesTurtle = {')
+    for quest_id in sorted(quest_locale.keys()):
+        info = quest_locale[quest_id]
+        title = escape_lua_string(info.get("T", ""))
+        objectives = escape_lua_string(info.get("O", ""))
+        if title:
+            lines.append(f'  [{quest_id}] = {{')
+            lines.append(f'    title = "{title}",')
+            lines.append(f'    objectives = "{objectives}",')
+            lines.append('  },')
+    lines.append('}')
+    
+    return '\n'.join(lines)
+
+
 def merge_name_tables(base: dict, additional: dict, source_name: str) -> int:
     """Merge additional names into base table."""
     added = 0
@@ -829,41 +1254,59 @@ def main():
     print(f"  Found: {TURTLE_ZHCN_DIR}")
     
     # =========================================================================
-    # PHASE 1: Fetch all data
+    # PHASE 1: Load all data from local files
     # =========================================================================
     print("\n" + "-" * 70)
-    print("PHASE 1: Fetching data from pfQuest-turtle")
+    print("PHASE 1: Loading data from local pfQuest-turtle files")
     print("-" * 70)
     
+    def read_local_file(path):
+        """Read content from local file."""
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except FileNotFoundError:
+            print(f"    Warning: File not found: {path}")
+            return ""
+        except Exception as e:
+            print(f"    Error reading {path}: {e}")
+            return ""
+    
     # Coordinate data
-    print("\n  Fetching coordinate data...")
-    units_data_content = fetch_url(PFQUEST_TURTLE_BASE + "db/units-turtle.lua")
-    objects_data_content = fetch_url(PFQUEST_TURTLE_BASE + "db/objects-turtle.lua")
+    print("\n  Loading coordinate data...")
+    units_data_content = read_local_file(PFQUEST_TURTLE_DIR / "units-turtle.lua")
+    objects_data_content = read_local_file(PFQUEST_TURTLE_DIR / "objects-turtle.lua")
+    items_data_content = read_local_file(PFQUEST_TURTLE_DIR / "items-turtle.lua")
     
     # Quest data
-    print("\n  Fetching quest data...")
-    quests_data_content = fetch_url(PFQUEST_TURTLE_BASE + "db/quests-turtle.lua")
+    print("\n  Loading quest data...")
+    quests_data_content = read_local_file(PFQUEST_TURTLE_DIR / "quests-turtle.lua")
     
     # English names
-    print("\n  Fetching English locale...")
-    units_en_content = fetch_url(PFQUEST_TURTLE_BASE + "db/enUS/units-turtle.lua")
-    items_en_content = fetch_url(PFQUEST_TURTLE_BASE + "db/enUS/items-turtle.lua")
-    objects_en_content = fetch_url(PFQUEST_TURTLE_BASE + "db/enUS/objects-turtle.lua")
-    quests_en_content = fetch_url(PFQUEST_TURTLE_BASE + "db/enUS/quests-turtle.lua")
+    print("\n  Loading English locale...")
+    units_en_content = read_local_file(PFQUEST_TURTLE_DIR / "enUS" / "units-turtle.lua")
+    items_en_content = read_local_file(PFQUEST_TURTLE_DIR / "enUS" / "items-turtle.lua")
+    objects_en_content = read_local_file(PFQUEST_TURTLE_DIR / "enUS" / "objects-turtle.lua")
+    quests_en_content = read_local_file(PFQUEST_TURTLE_DIR / "enUS" / "quests-turtle.lua")
     
     # Chinese names (official)
-    print("\n  Fetching Chinese locale (official)...")
-    units_zh_content = fetch_url(PFQUEST_TURTLE_BASE + "db/zhCN/units-turtle.lua")
-    items_zh_content = fetch_url(PFQUEST_TURTLE_BASE + "db/zhCN/items-turtle.lua")
-    objects_zh_content = fetch_url(PFQUEST_TURTLE_BASE + "db/zhCN/objects-turtle.lua")
-    quests_zh_content = fetch_url(PFQUEST_TURTLE_BASE + "db/zhCN/quests-turtle.lua")
+    print("\n  Loading Chinese locale...")
+    units_zh_content = read_local_file(PFQUEST_TURTLE_DIR / "zhCN" / "units-turtle.lua")
+    items_zh_content = read_local_file(PFQUEST_TURTLE_DIR / "zhCN" / "items-turtle.lua")
+    objects_zh_content = read_local_file(PFQUEST_TURTLE_DIR / "zhCN" / "objects-turtle.lua")
+    quests_zh_content = read_local_file(PFQUEST_TURTLE_DIR / "zhCN" / "quests-turtle.lua")
     
-    # Chinese names (NineTears)
-    print("\n  Fetching Chinese locale (NineTears)...")
-    units_zh_nt = fetch_url(NINETEARS_BASE + "db/zhCN/units-turtle.lua")
-    items_zh_nt = fetch_url(NINETEARS_BASE + "db/zhCN/items-turtle.lua")
-    objects_zh_nt = fetch_url(NINETEARS_BASE + "db/zhCN/objects-turtle.lua")
-    quests_zh_nt = fetch_url(NINETEARS_BASE + "db/zhCN/quests-turtle.lua")
+    # NineTears translations (skip if not available locally)
+    print("\n  Loading NineTears translations (if available)...")
+    units_zh_nt = ""
+    items_zh_nt = ""
+    objects_zh_nt = ""
+    quests_zh_nt = ""
+    
+    # Vanilla pfQuest Chinese names (for vanilla monsters referenced by TurtleWoW items)
+    print("\n  Loading vanilla pfQuest Chinese locale...")
+    vanilla_units_zh_content = read_local_file(PFQUEST_VANILLA_DIR / "zhCN" / "units.lua")
+    vanilla_objects_zh_content = read_local_file(PFQUEST_VANILLA_DIR / "zhCN" / "objects.lua")
     
     # =========================================================================
     # PHASE 2: Parse data
@@ -875,7 +1318,8 @@ def main():
     print("\n  Parsing coordinate data...")
     units_data = parse_data_table(units_data_content, "units")
     objects_data = parse_data_table(objects_data_content, "objects")
-    print(f"    Units: {len(units_data)}, Objects: {len(objects_data)}")
+    items_data = parse_items_data_table(items_data_content)
+    print(f"    Units: {len(units_data)}, Objects: {len(objects_data)}, Items: {len(items_data)}")
     
     print("\n  Parsing quest data...")
     quest_data = parse_quest_data(quests_data_content)
@@ -911,36 +1355,58 @@ def main():
     print(f"    NineTears added: +{nt_added} entries")
     print(f"    Final zhCN - Units: {len(units_names_zh)}, Items: {len(items_names_zh)}, Objects: {len(objects_names_zh)}, Quests: {len(quests_locale_zh)}")
     
+    # Parse vanilla pfQuest Chinese names (for fallback when TurtleWoW items reference vanilla monsters)
+    print("\n  Parsing vanilla pfQuest Chinese names...")
+    vanilla_units_names_zh = parse_name_table(vanilla_units_zh_content, 'pfDB["units"]["zhCN"]')
+    vanilla_objects_names_zh = parse_name_table(vanilla_objects_zh_content, 'pfDB["objects"]["zhCN"]')
+    print(f"    Vanilla zhCN - Units: {len(vanilla_units_names_zh)}, Objects: {len(vanilla_objects_names_zh)}")
+    
     # =========================================================================
-    # PHASE 3: Generate output
+    # PHASE 3: Generate ID-based output files (NEW FORMAT)
     # =========================================================================
     print("\n" + "-" * 70)
-    print("PHASE 3: Generating Questie database files")
+    print("PHASE 3: Generating ID-based TurtleWoW overlay files")
     print("-" * 70)
     
-    # English file
-    print(f"\n  Writing {TURTLE_DIR / 'init.lua'}")
-    en_content = generate_init_lua(
-        units_data, units_names_en,
-        {}, items_names_en,  # items_data is empty (no coords)
-        objects_data, objects_names_en,
-        quest_data, quests_locale_en,
-        "enUS"
-    )
-    (TURTLE_DIR / "init.lua").write_text(en_content, encoding='utf-8')
-    print(f"    Size: {len(en_content):,} bytes")
+    # Create output directories
+    turtle_data_dir = DATABASE_DIR / "turtle" / "data"
+    turtle_locale_enus_dir = DATABASE_DIR / "turtle" / "locale" / "enUS"
+    turtle_locale_zhcn_dir = DATABASE_DIR / "turtle" / "locale" / "zhCN"
     
-    # Chinese file
-    print(f"\n  Writing {TURTLE_ZHCN_DIR / 'init.lua'}")
-    zh_content = generate_init_lua(
-        units_data, units_names_zh,
-        {}, items_names_zh,
-        objects_data, objects_names_zh,
-        quest_data, quests_locale_zh,
-        "zhCN"
-    )
-    (TURTLE_ZHCN_DIR / "init.lua").write_text(zh_content, encoding='utf-8')
-    print(f"    Size: {len(zh_content):,} bytes")
+    turtle_data_dir.mkdir(parents=True, exist_ok=True)
+    turtle_locale_enus_dir.mkdir(parents=True, exist_ok=True)
+    turtle_locale_zhcn_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Generate data files
+    print("\n  Generating TurtleWoW data files...")
+    
+    units_lua = generate_turtle_units_data(units_data)
+    (turtle_data_dir / "units.lua").write_text(units_lua, encoding='utf-8')
+    print(f"    {turtle_data_dir / 'units.lua'}")
+    
+    objects_lua = generate_turtle_objects_data(objects_data)
+    (turtle_data_dir / "objects.lua").write_text(objects_lua, encoding='utf-8')
+    print(f"    {turtle_data_dir / 'objects.lua'}")
+    
+    items_lua = generate_turtle_items_data(items_data)
+    (turtle_data_dir / "items.lua").write_text(items_lua, encoding='utf-8')
+    print(f"    {turtle_data_dir / 'items.lua'}")
+    
+    quests_lua = generate_turtle_quests_data(quest_data)
+    (turtle_data_dir / "quests.lua").write_text(quests_lua, encoding='utf-8')
+    print(f"    {turtle_data_dir / 'quests.lua'}")
+    
+    # Generate English locale file
+    print("\n  Generating TurtleWoW English names...")
+    names_enus_lua = generate_turtle_names_lua(units_names_en, objects_names_en, items_names_en, quests_locale_en, "enUS")
+    (turtle_locale_enus_dir / "names.lua").write_text(names_enus_lua, encoding='utf-8')
+    print(f"    {turtle_locale_enus_dir / 'names.lua'}")
+    
+    # Generate Chinese locale file
+    print("\n  Generating TurtleWoW Chinese names...")
+    names_zhcn_lua = generate_turtle_names_lua(units_names_zh, objects_names_zh, items_names_zh, quests_locale_zh, "zhCN")
+    (turtle_locale_zhcn_dir / "names.lua").write_text(names_zhcn_lua, encoding='utf-8')
+    print(f"    {turtle_locale_zhcn_dir / 'names.lua'}")
     
     # =========================================================================
     # Summary
@@ -948,13 +1414,18 @@ def main():
     print("\n" + "=" * 70)
     print("CONVERSION COMPLETE!")
     print("=" * 70)
-    print(f"\nGenerated files:")
-    print(f"  - {TURTLE_DIR / 'init.lua'}")
-    print(f"  - {TURTLE_ZHCN_DIR / 'init.lua'}")
+    print(f"\nGenerated ID-based files:")
+    print(f"  - {turtle_data_dir / 'units.lua'}")
+    print(f"  - {turtle_data_dir / 'objects.lua'}")
+    print(f"  - {turtle_data_dir / 'items.lua'}")
+    print(f"  - {turtle_data_dir / 'quests.lua'}")
+    print(f"  - {turtle_locale_enus_dir / 'names.lua'}")
+    print(f"  - {turtle_locale_zhcn_dir / 'names.lua'}")
     print(f"\nNow includes:")
-    print(f"  - Monster/NPC locations")
-    print(f"  - World object locations")
-    print(f"  - Quest tracking data (QuestieLevLookup + QuestieHashMap)")
+    print(f"  - Monster/NPC locations (ID-based)")
+    print(f"  - World object locations (ID-based)")
+    print(f"  - Quest data (ID-based)")
+    print(f"\nQuestieHashMap and QuestieLevLookup are built at runtime from ID-based data.")
     
     # Report unmapped zones
     if unmapped_zones:

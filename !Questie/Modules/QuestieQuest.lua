@@ -771,25 +771,95 @@ function Questie:AstroGetFinishedQuests()
     return FinishedQuests;
 end
 ---------------------------------------------------------------------------------------------------
+-- ID-based location lookup with name fallback
+local function GetLocationsWithIdFallback(objectiveName, objectiveType, questId)
+    local locations = nil
+    
+    -- Try ID-based lookup first (new system)
+    if objectiveType == "monster" then
+        local unitId = QuestieGetUnitIdByName and QuestieGetUnitIdByName(objectiveName)
+        if unitId then
+            locations = QuestieGetUnitLocationsById(unitId)
+            if locations and locations["locations"] and table.getn(locations["locations"]) > 0 then
+                return locations
+            end
+        end
+    elseif objectiveType == "item" then
+        local itemId = QuestieGetItemIdByName and QuestieGetItemIdByName(objectiveName)
+        if itemId then
+            locations = QuestieGetItemLocationsById(itemId)
+            if locations and locations["locations"] and table.getn(locations["locations"]) > 0 then
+                return locations
+            end
+        end
+        
+        -- Item has no drop source - try quest objective coordinates from quest_poi
+        if questId and QuestieGetAllQuestObjectiveCoords then
+            locations = QuestieGetAllQuestObjectiveCoords(questId)
+            if locations and locations["locations"] and table.getn(locations["locations"]) > 0 then
+                return locations
+            end
+        end
+    elseif objectiveType == "object" then
+        local objectId = QuestieGetObjectIdByName and QuestieGetObjectIdByName(objectiveName)
+        if objectId then
+            locations = QuestieGetObjectLocationsById(objectId)
+            if locations and locations["locations"] and table.getn(locations["locations"]) > 0 then
+                return locations
+            end
+        end
+    elseif objectiveType == "event" then
+        -- Event objectives - use quest objective coordinates from quest_poi
+        if questId and QuestieGetAllQuestObjectiveCoords then
+            locations = QuestieGetAllQuestObjectiveCoords(questId)
+            if locations and locations["locations"] and table.getn(locations["locations"]) > 0 then
+                return locations
+            end
+        end
+    end
+    
+    -- Fallback to name-based lookup (legacy system)
+    local typeFunctions = {
+        ['item'] = GetItemLocations,
+        ['event'] = GetEventLocations,
+        ['monster'] = GetMonsterLocations,
+        ['object'] = GetObjectLocations,
+        ['reputation'] = GetReputationLocations
+    }
+    local typeFunction = typeFunctions[objectiveType]
+    if typeFunction then
+        return typeFunction(objectiveName)
+    end
+    
+    return {}, {}
+end
+
 function Questie:GetQuestObjectivePaths(questHash)
     local prevQuestLogSelection = QGet_QuestLogSelection();
     local questLogID = Questie:GetQuestIdFromHash(questHash);
     QSelect_QuestLogEntry(questLogID);
     local count = QGet_NumQuestLeaderBoards();
     local objectivePaths = {};
+    
+    -- Get the quest's database ID for objective coordinate lookup
+    -- Use quest title AND objectives from quest log to find questId (handles duplicate titles)
+    local questId = nil
+    local questTitle = QGet_QuestLogTitle(questLogID)
+    local questText, objectiveText = QGet_QuestLogQuestText()
+    if questTitle and QuestieGetQuestIdByTitle then
+        -- Pass objectives to disambiguate quests with same title (e.g., Alliance/Horde versions)
+        questId = QuestieGetQuestIdByTitle(questTitle, objectiveText)
+    end
+    -- Fallback to hash-based lookup if title lookup fails
+    if not questId and QuestieHashMap and QuestieHashMap[questHash] then
+        questId = QuestieHashMap[questHash].questId
+    end
+    
     for i = 1, count do
         local desc, type, done = QGet_QuestLogLeaderBoard(i);
-        local typeFunctions = {
-            ['item'] = GetItemLocations,
-            ['event'] = GetEventLocations,
-            ['monster'] = GetMonsterLocations,
-            ['object'] = GetObjectLocations,
-            ['reputation'] = GetReputationLocations
-        };
-        local typeFunction = typeFunctions[type];
-        if typeFunction ~= nil then
+        if type then
             local objectiveName = Questie:ParseObjectiveName(desc, type);
-            locations = typeFunction(objectiveName);
+            local locations = GetLocationsWithIdFallback(objectiveName, type, questId);
             objectivePaths[i] = {};
             objectivePaths[i]['path'] = locations;
             objectivePaths[i]['done'] = done;
@@ -862,80 +932,56 @@ end
 AstroobjectiveProcessors = {
     ['item'] = function(quest, name, amount, selected, mapid)
         local list = {};
-        local itemdata = QuestieItems[name];
-        --Questie:debug_Print(name);
-        if itemdata == nil then
-            Questie:debug_Print("Quest:AstroobjectiveProcessors --> ERROR1 PROCESSING: [Quest: "..quest.."] | [Objective: "..name.."] | No [itemdata] found | ID:0");
-            itemdata = QuestieItems[name];
-        end
-        if itemdata then
-            for k,v in pairs(itemdata) do
-                if k == "locationCount" then
-                    local monster = {};
-                    monster["name"] = name;
-                    monster["locations"] = {};
-                    monster["type"] = "loot";
-                    for b=1,itemdata['locationCount'] do
-                        local loc = itemdata['locations'][b];
-                        table.insert(monster["locations"], loc);
-                    end
-                    table.insert(list, monster);
-                elseif k == "drop" then
-                    for e,r in pairs(v) do
-                        local monster = {};
-                        monster["name"] = name;
-                        monster["lootname"] = e;
-                        monster["locations"] = {};
-                        monster["type"] = "loot";
-                        for k, pos in pairs(QuestieMonsters[e]['locations']) do
-                            table.insert(monster["locations"], pos);
-                        end
-                        table.insert(list, monster);
-                    end
-                elseif k == "contained" then
-                    for objectName, someNumber in pairs(v) do
-                        local monster = {};
-                        monster["name"] = name;
-                        monster["lootname"] = objectName;
-                        monster["locations"] = {};
-                        monster["type"] = "object";
-                        if QuestieObjects[objectName] then
-                            --TODO: handle objects that appear when a mob is killed
-                            for k, pos in pairs(QuestieObjects[objectName]['locations']) do
-                                table.insert(monster["locations"], pos);
-                            end
-                            table.insert(list, monster);
+        
+        -- Use ID-based lookup only
+        local itemId = QuestieGetItemIdByName and QuestieGetItemIdByName(name)
+        if itemId then
+            local itemData = QuestieGetItemById(itemId)
+            if itemData then
+                -- Get locations from drop units
+                if itemData.dropUnits then
+                    for _, unitId in ipairs(itemData.dropUnits) do
+                        local unitLocs, _ = QuestieGetUnitLocationsById(unitId)
+                        if unitLocs and unitLocs["locations"] and table.getn(unitLocs["locations"]) > 0 then
+                            local unitName = QuestieUnitNames and QuestieUnitNames[unitId] or ("Unit_" .. unitId)
+                            local monster = {}
+                            monster["name"] = name
+                            monster["lootname"] = unitName
+                            monster["locations"] = unitLocs["locations"]
+                            monster["type"] = "loot"
+                            table.insert(list, monster)
                         end
                     end
-                elseif k =="locations" then
-                else
-                    Questie:debug_Print("Quest:AstroobjectiveProcessors --> ERROR2: [Quest: "..quest.."] | [Objective: "..name.."] | ID:1");
-                    for s, r in pairs(itemdata) do
-                        Questie:debug_Print(s,tostring(r));
+                end
+                
+                -- Get locations from contained objects
+                if itemData.containedObjects then
+                    for _, objId in ipairs(itemData.containedObjects) do
+                        local objLocs, _ = QuestieGetObjectLocationsById(objId)
+                        if objLocs and objLocs["locations"] and table.getn(objLocs["locations"]) > 0 then
+                            local objName = QuestieObjectNames and QuestieObjectNames[objId] or ("Object_" .. objId)
+                            local monster = {}
+                            monster["name"] = name
+                            monster["lootname"] = objName
+                            monster["locations"] = objLocs["locations"]
+                            monster["type"] = "object"
+                            table.insert(list, monster)
+                        end
                     end
                 end
             end
         end
+        
+        if table.getn(list) == 0 then
+            Questie:debug_Print("Quest:AstroobjectiveProcessors --> No item data found: [Quest: "..quest.."] | [Objective: "..name.."]");
+        end
+        
         return list;
     end,
     ['event'] = function(quest, name, amount, selected, mapid)
-        local evtdata = QuestieEvents[name];
+        -- Events are now integrated into quest data
         local list = {};
-        if evtdata == nil then
-            Questie:debug_Print("Quest:AstroobjectiveProcessors --> ERROR3 UNKNOWN EVENT: [Quest: "..quest.."] | [Objective: "..name.."] | ID:2");
-        else
-            for b=1,evtdata['locationCount'] do
-                local monster = {};
-                monster["name"] = name;
-                monster["locations"] = {};
-                monster["type"] = "event";
-                for b=1,evtdata['locationCount'] do
-                    local loc = evtdata['locations'][b];
-                    table.insert(monster["locations"], loc);
-                end
-                table.insert(list, monster);
-            end
-        end
+        Questie:debug_Print("Quest:AstroobjectiveProcessors --> Event type not supported in ID-based system: [Quest: "..quest.."] | [Objective: "..name.."]");
         return list;
     end,
     ['monster'] = function(quest, name, amount, selected, mapid)
@@ -944,9 +990,15 @@ AstroobjectiveProcessors = {
         monster["name"] = name;
         monster["type"] = "slay";
         monster["locations"] = {};
-        if (QuestieMonsters[name] and QuestieMonsters[name]['locations']) then
-            for k, pos in pairs(QuestieMonsters[name]['locations']) do
-                table.insert(monster["locations"], pos);
+        
+        -- Use ID-based lookup only
+        local unitId = QuestieGetUnitIdByName and QuestieGetUnitIdByName(name)
+        if unitId then
+            local unitLocs, _ = QuestieGetUnitLocationsById(unitId)
+            if unitLocs and unitLocs["locations"] then
+                for _, pos in ipairs(unitLocs["locations"]) do
+                    table.insert(monster["locations"], pos);
+                end
             end
         end
         table.insert(list, monster);
@@ -954,22 +1006,24 @@ AstroobjectiveProcessors = {
     end,
     ['object'] = function(quest, name, amount, selected, mapid)
         local list = {};
-        local objdata = QuestieObjects[name];
-        if objdata == nil then
-            Questie:debug_Print("Quest:AstroobjectiveProcessors: ERROR4 UNKNOWN OBJECT: [Quest: "..quest.."] | [Objective: "..name.."]");
-        else
-            for b=1,objdata['locationCount'] do
+        
+        -- Use ID-based lookup only
+        local objectId = QuestieGetObjectIdByName and QuestieGetObjectIdByName(name)
+        if objectId then
+            local objLocs, _ = QuestieGetObjectLocationsById(objectId)
+            if objLocs and objLocs["locations"] and table.getn(objLocs["locations"]) > 0 then
                 local monster = {};
                 monster["name"] = name;
-                monster["locations"] = {};
+                monster["locations"] = objLocs["locations"];
                 monster["type"] = "object";
-                for b=1,objdata['locationCount'] do
-                    local loc = objdata['locations'][b];
-                    table.insert(monster["locations"], loc);
-                end
                 table.insert(list, monster);
             end
         end
+        
+        if table.getn(list) == 0 then
+            Questie:debug_Print("Quest:AstroobjectiveProcessors: No object data found: [Quest: "..quest.."] | [Objective: "..name.."]");
+        end
+        
         return list;
     end
 }
@@ -1274,4 +1328,6 @@ function Questie:GetAvailableQuestHashes(mapFileName, levelFrom, levelTo)
 end
 ---------------------------------------------------------------------------------------------------
 --End of filter functions
+---------------------------------------------------------------------------------------------------
+
 ---------------------------------------------------------------------------------------------------

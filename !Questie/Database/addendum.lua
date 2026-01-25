@@ -55642,9 +55642,11 @@ function GetEntityLocations(entity)
 end
 
 function GetMonsterLocations(monsterName)
-    if QuestieMonsters[monsterName] then
-        return GetEntityLocations(QuestieMonsters[monsterName])
-    elseif QuestieAdditionalStartFinishLookup[monsterName] then
+    -- Use ID-based lookup
+    local unitId = QuestieUnitIds and QuestieUnitIds[monsterName]
+    if unitId and QuestieUnitData and QuestieUnitData[unitId] then
+        return GetEntityLocations(QuestieUnitData[unitId])
+    elseif QuestieAdditionalStartFinishLookup and QuestieAdditionalStartFinishLookup[monsterName] then
         return GetEntityLocations({
             ["locations"] = {
                 [1] = QuestieAdditionalStartFinishLookup[monsterName]
@@ -55656,38 +55658,65 @@ function GetMonsterLocations(monsterName)
 end
 
 function GetObjectLocations(objectName)
-    if QuestieObjects[objectName] then
-        return GetEntityLocations(QuestieObjects[objectName])
-    else
-        -- todo shouldn't really check monsters, but someone moved some objects and items to the monsters list
-        return GetMonsterLocations(objectName)
+    -- Use ID-based lookup
+    local objectId = QuestieObjectIds and QuestieObjectIds[objectName]
+    if objectId and QuestieObjectData and QuestieObjectData[objectId] then
+        return GetEntityLocations(QuestieObjectData[objectId])
     end
     return {}, {}
 end
 
 function GetNewObjectLocations(objectId)
-    if QuestieNewObjects[objectId] then
+    if QuestieNewObjects and QuestieNewObjects[objectId] then
         return GetEntityLocations(QuestieNewObjects[objectId])
     end
     return {}, {}
 end
 
 function GetItemLocations(itemName)
-    if QuestieItems[itemName] then
-        return GetEntityLocations(QuestieItems[itemName])
+    -- Use ID-based lookup
+    local itemId = QuestieItemIds and QuestieItemIds[itemName]
+    if itemId and QuestieItemData and QuestieItemData[itemId] then
+        -- Build item locations from drop sources
+        local itemData = QuestieItemData[itemId]
+        local allLocations = {}
+        
+        -- Get locations from drop units
+        if itemData.dropUnits then
+            for _, unitId in ipairs(itemData.dropUnits) do
+                if QuestieUnitData and QuestieUnitData[unitId] and QuestieUnitData[unitId].locations then
+                    for _, loc in ipairs(QuestieUnitData[unitId].locations) do
+                        table.insert(allLocations, loc)
+                    end
+                end
+            end
+        end
+        
+        -- Get locations from contained objects
+        if itemData.containedObjects then
+            for _, objId in ipairs(itemData.containedObjects) do
+                if QuestieObjectData and QuestieObjectData[objId] and QuestieObjectData[objId].locations then
+                    for _, loc in ipairs(QuestieObjectData[objId].locations) do
+                        table.insert(allLocations, loc)
+                    end
+                end
+            end
+        end
+        
+        if table.getn(allLocations) > 0 then
+            return GetEntityLocations({ ["locations"] = allLocations, ["locationCount"] = table.getn(allLocations) })
+        end
     end
     return {}, {}
 end
 
 function GetEventLocations(eventName)
-    if QuestieEvents[eventName] then
-        return GetEntityLocations(QuestieEvents[eventName])
-    end
+    -- Events are now part of quest data - return empty for now
     return {}, {}
 end
 
 function GetReputationLocations(reputationName)
-    if QuestieReputationsByName[reputationName] then
+    if QuestieReputationsByName and QuestieReputationsByName[reputationName] then
         return GetEntityLocations(QuestieReputationsByName[reputationName])
     end
     return {}, {}
@@ -55741,3 +55770,573 @@ end
 
 local ttl = GetTime() - start;
 DEFAULT_CHAT_FRAME:AddMessage("Compiled AvailableQuests in " .. math.floor(ttl*1000) .. "ms");
+
+-- ============================================================================
+-- ID-Based Lookup System (New Architecture)
+-- ============================================================================
+
+-- Merge TurtleWoW overlay data into vanilla tables
+if QuestieIsTurtleWoW then
+    -- Merge unit data
+    if QuestieUnitDataTurtle then
+        for id, data in pairs(QuestieUnitDataTurtle) do
+            QuestieUnitData[id] = data
+        end
+    end
+    -- Merge object data
+    if QuestieObjectDataTurtle then
+        for id, data in pairs(QuestieObjectDataTurtle) do
+            QuestieObjectData[id] = data
+        end
+    end
+    -- Merge item data
+    if QuestieItemDataTurtle then
+        for id, data in pairs(QuestieItemDataTurtle) do
+            QuestieItemData[id] = data
+        end
+    end
+    -- Merge quest data (preserve objectiveCoords from vanilla)
+    if QuestieQuestDataTurtle then
+        for id, data in pairs(QuestieQuestDataTurtle) do
+            if QuestieQuestData[id] then
+                -- Preserve objectiveCoords from vanilla data
+                local vanillaCoords = QuestieQuestData[id].objectiveCoords
+                QuestieQuestData[id] = data
+                if vanillaCoords and not data.objectiveCoords then
+                    QuestieQuestData[id].objectiveCoords = vanillaCoords
+                end
+            else
+                QuestieQuestData[id] = data
+            end
+        end
+    end
+    -- Merge unit names (only add TurtleWoW-specific units, don't overwrite vanilla)
+    if QuestieUnitNamesTurtle then
+        for id, name in pairs(QuestieUnitNamesTurtle) do
+            if not QuestieUnitNames[id] then
+                QuestieUnitNames[id] = name
+            end
+        end
+    end
+    -- Merge object names (only add TurtleWoW-specific objects, don't overwrite vanilla)
+    if QuestieObjectNamesTurtle then
+        for id, name in pairs(QuestieObjectNamesTurtle) do
+            if not QuestieObjectNames[id] then
+                QuestieObjectNames[id] = name
+            end
+        end
+    end
+    -- Merge item names (only add TurtleWoW-specific items, don't overwrite vanilla)
+    if QuestieItemNamesTurtle then
+        for id, name in pairs(QuestieItemNamesTurtle) do
+            if not QuestieItemNames[id] then
+                QuestieItemNames[id] = name
+            end
+        end
+    end
+    -- Merge quest names (only add TurtleWoW-specific quests, don't overwrite vanilla)
+    if QuestieQuestNamesTurtle then
+        for id, info in pairs(QuestieQuestNamesTurtle) do
+            if not QuestieQuestNames[id] then
+                QuestieQuestNames[id] = info
+            end
+        end
+    end
+end
+
+-- Build reverse lookup tables (name → ID)
+QuestieUnitIds = {}      -- ["暗礁蟹幼崽"] = 2234
+QuestieObjectIds = {}    -- ["铜矿"] = 1731
+QuestieItemIds = {}      -- ["小蜘蛛腿"] = 5465
+QuestieQuestLookup = {}  -- ["加瑞克·帕德弗特的赏金"]["杀死加瑞克..."] = 6
+
+if QuestieUnitNames then
+    for id, name in pairs(QuestieUnitNames) do
+        if name and name ~= "" then
+            QuestieUnitIds[name] = id
+        end
+    end
+end
+
+if QuestieObjectNames then
+    for id, name in pairs(QuestieObjectNames) do
+        if name and name ~= "" then
+            QuestieObjectIds[name] = id
+        end
+    end
+end
+
+if QuestieItemNames then
+    for id, name in pairs(QuestieItemNames) do
+        if name and name ~= "" then
+            QuestieItemIds[name] = id
+        end
+    end
+end
+
+if QuestieQuestNames then
+    for id, info in pairs(QuestieQuestNames) do
+        local title = info.title
+        local objectives = info.objectives or ""
+        if title and title ~= "" then
+            if not QuestieQuestLookup[title] then
+                QuestieQuestLookup[title] = {}
+            end
+            QuestieQuestLookup[title][objectives] = id
+        end
+    end
+end
+
+-- Custom modulo function (same as Questie:Modulo for Lua 5.0 compatibility)
+local function QuestieModulo(val, by)
+    return val - math.floor(val / by) * by
+end
+
+-- Adler-32 hash function (same as Questie:HashString)
+local function QuestieAdler32(text)
+    local a, b = 1, 0
+    for i = 1, string.len(text) do
+        a = QuestieModulo(a + string.byte(text, i), 65521)
+        b = QuestieModulo(b + a, 65521)
+    end
+    return b * 65536 + a
+end
+
+-- Build questId mapping from ID-based quest data
+-- First: Add questId to EXISTING QuestieHashMap entries by looking up through QuestieLevLookup
+-- This handles pre-existing entries where hash was calculated differently
+if QuestieQuestNames and QuestieQuestData and QuestieLevLookup and QuestieHashMap then
+    for questId, info in pairs(QuestieQuestNames) do
+        local title = info.title
+        if title and title ~= "" then
+            local questData = QuestieQuestData[questId]
+            if questData then
+                -- Look up existing hash from QuestieLevLookup
+                local levEntry = QuestieLevLookup[title]
+                if levEntry then
+                    -- Iterate through all objective variants for this quest title
+                    for objectives, hashInfo in pairs(levEntry) do
+                        local existingHash = hashInfo[2]
+                        if existingHash and QuestieHashMap[existingHash] then
+                            -- Add questId to existing entry if missing
+                            if not QuestieHashMap[existingHash].questId then
+                                QuestieHashMap[existingHash].questId = questId
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- Second pass: Create new entries for quests not in pre-existing data (e.g., TurtleWoW quests)
+if QuestieQuestNames and QuestieQuestData then
+    QuestieLevLookup = QuestieLevLookup or {}
+    QuestieHashMap = QuestieHashMap or {}
+    
+    for questId, info in pairs(QuestieQuestNames) do
+        local title = info.title
+        local objectives = info.objectives or ""
+        
+        if title and title ~= "" then
+            local questData = QuestieQuestData[questId]
+            
+            if questData then
+                -- Check if quest already exists in QuestieLevLookup
+                local existsInLookup = false
+                if QuestieLevLookup[title] then
+                    for _, hashInfo in pairs(QuestieLevLookup[title]) do
+                        if hashInfo[2] and QuestieHashMap[hashInfo[2]] then
+                            existsInLookup = true
+                            break
+                        end
+                    end
+                end
+                
+                -- Only create new entry if quest doesn't exist
+                if not existsInLookup then
+                    -- Calculate hash from title + objectives
+                    local questHash = QuestieAdler32(title .. objectives)
+                    
+                    if not QuestieHashMap[questHash] then
+                        -- Get quest giver/finisher names
+                        local startedBy = "Unknown"
+                        local startedType = "monster"
+                        local finishedBy = "Unknown"
+                        local finishedType = "monster"
+                        
+                        if questData.startUnit and QuestieUnitNames then
+                            startedBy = QuestieUnitNames[questData.startUnit] or ("Unit_" .. questData.startUnit)
+                            startedType = "monster"
+                        elseif questData.startObject and QuestieObjectNames then
+                            startedBy = QuestieObjectNames[questData.startObject] or ("Object_" .. questData.startObject)
+                            startedType = "object"
+                        elseif questData.startItem and QuestieItemNames then
+                            startedBy = QuestieItemNames[questData.startItem] or ("Item_" .. questData.startItem)
+                            startedType = "item"
+                        end
+                        
+                        if questData.endUnit and QuestieUnitNames then
+                            finishedBy = QuestieUnitNames[questData.endUnit] or ("Unit_" .. questData.endUnit)
+                            finishedType = "monster"
+                        elseif questData.endObject and QuestieObjectNames then
+                            finishedBy = QuestieObjectNames[questData.endObject] or ("Object_" .. questData.endObject)
+                            finishedType = "object"
+                        end
+                        
+                        -- Add to QuestieHashMap
+                        QuestieHashMap[questHash] = {
+                            ["name"] = title,
+                            ["startedType"] = startedType,
+                            ["finishedType"] = finishedType,
+                            ["startedBy"] = startedBy,
+                            ["finishedBy"] = finishedBy,
+                            ["level"] = questData.minLevel or 1,
+                            ["questLevel"] = tostring(questData.level or 1),
+                            ["rr"] = questData.race or 0,
+                            ["rc"] = questData.class or 0,
+                            ["rq"] = questData.preQuests and questData.preQuests[1] or nil,
+                            ["questId"] = questId,
+                        }
+                        
+                        -- Add to QuestieLevLookup
+                        if not QuestieLevLookup[title] then
+                            QuestieLevLookup[title] = {}
+                        end
+                        local faction = questData.race or 0
+                        if not QuestieLevLookup[title][objectives] then
+                            QuestieLevLookup[title][objectives] = {faction, questHash}
+                        end
+                    end
+                end
+            end
+        end
+    end
+end
+
+-- ID-based lookup functions
+
+-- Get unit data by ID
+function QuestieGetUnitById(unitId)
+    if QuestieUnitData and QuestieUnitData[unitId] then
+        return QuestieUnitData[unitId]
+    end
+    return nil
+end
+
+-- Get unit ID by name
+function QuestieGetUnitIdByName(unitName)
+    return QuestieUnitIds[unitName]
+end
+
+-- Get object data by ID
+function QuestieGetObjectById(objectId)
+    if QuestieObjectData and QuestieObjectData[objectId] then
+        return QuestieObjectData[objectId]
+    end
+    return nil
+end
+
+-- Get object ID by name
+function QuestieGetObjectIdByName(objectName)
+    return QuestieObjectIds[objectName]
+end
+
+-- Get item data by ID
+function QuestieGetItemById(itemId)
+    if QuestieItemData and QuestieItemData[itemId] then
+        return QuestieItemData[itemId]
+    end
+    return nil
+end
+
+-- Get item ID by name
+function QuestieGetItemIdByName(itemName)
+    return QuestieItemIds[itemName]
+end
+
+-- Get quest data by ID
+function QuestieGetQuestById(questId)
+    if QuestieQuestData and QuestieQuestData[questId] then
+        return QuestieQuestData[questId]
+    end
+    return nil
+end
+
+-- Race bitmask mapping (WoW 1.12 classic)
+local RACE_BITMASK = {
+    ["Human"] = 1, ["Orc"] = 2, ["Dwarf"] = 4, ["NightElf"] = 8,
+    ["Undead"] = 16, ["Tauren"] = 32, ["Gnome"] = 64, ["Troll"] = 128,
+    -- Chinese localized race names
+    ["人类"] = 1, ["兽人"] = 2, ["矮人"] = 4, ["暗夜精灵"] = 8,
+    ["亡灵"] = 16, ["牛头人"] = 32, ["侏儒"] = 64, ["巨魔"] = 128,
+}
+
+-- Check if player race matches quest race requirement
+local function isQuestAvailableForPlayerRace(questId)
+    local questData = QuestieQuestData and QuestieQuestData[questId]
+    if not questData or not questData.race then
+        return true  -- No race restriction
+    end
+    
+    local _, playerRace = UnitRace("player")
+    local playerRaceBit = RACE_BITMASK[playerRace] or 0
+    
+    -- Check if player race bit is set in quest race mask
+    return bit.band(questData.race, playerRaceBit) > 0
+end
+
+-- Get quest ID by title and objectives (with race filtering)
+function QuestieGetQuestIdByTitle(questTitle, questObjectives)
+    if not QuestieQuestLookup[questTitle] then
+        return nil
+    end
+    
+    -- Collect all matching quest IDs
+    local matchingQuests = {}
+    
+    -- Try exact match first
+    if questObjectives and QuestieQuestLookup[questTitle][questObjectives] then
+        table.insert(matchingQuests, QuestieQuestLookup[questTitle][questObjectives])
+    end
+    
+    -- Try partial match
+    for objectives, questId in pairs(QuestieQuestLookup[questTitle]) do
+        if not questObjectives or objectives == "" or 
+           string.find(questObjectives, objectives, 1, true) or
+           string.find(objectives, questObjectives, 1, true) then
+            -- Check if not already in list
+            local found = false
+            for _, id in ipairs(matchingQuests) do
+                if id == questId then found = true; break end
+            end
+            if not found then
+                table.insert(matchingQuests, questId)
+            end
+        end
+    end
+    
+    -- If no matches from above, add all quests with this title
+    if table.getn(matchingQuests) == 0 then
+        for _, questId in pairs(QuestieQuestLookup[questTitle]) do
+            table.insert(matchingQuests, questId)
+        end
+    end
+    
+    -- Filter by player race and return first match
+    for _, questId in ipairs(matchingQuests) do
+        if isQuestAvailableForPlayerRace(questId) then
+            return questId
+        end
+    end
+    
+    -- Fallback: return first match regardless of race
+    if table.getn(matchingQuests) > 0 then
+        return matchingQuests[1]
+    end
+    
+    return nil
+end
+
+-- Get unit locations by ID (returns formatted locations for map display)
+function QuestieGetUnitLocationsById(unitId)
+    local unitData = QuestieGetUnitById(unitId)
+    if not unitData or not unitData.locations then
+        return {}, {}
+    end
+    
+    local locations = { ["locations"] = {} }
+    local mapIds = {}
+    
+    for i, loc in ipairs(unitData.locations) do
+        local mapId, x, y = loc[1], loc[2], loc[3]
+        if QuestieZoneIDLookup and QuestieZoneIDLookup[mapId] then
+            local MapInfo = QuestieZoneIDLookup[mapId]
+            local cIdx, zIdx = QuestieGetZoneIndices()
+            local reformattedLocation = {MapInfo[cIdx], MapInfo[zIdx], x, y}
+            table.insert(locations["locations"], reformattedLocation)
+            local c, z = reformattedLocation[1], reformattedLocation[2]
+            if not mapIds[c] then mapIds[c] = {} end
+            mapIds[c][z] = true
+        elseif table.getn(loc) == 4 then
+            -- New format: {continent, zone, x, y} - TurtleWoW zones
+            table.insert(locations["locations"], loc)
+            local c, z = loc[1], loc[2]
+            if not mapIds[c] then mapIds[c] = {} end
+            mapIds[c][z] = true
+        end
+    end
+    
+    return locations, mapIds
+end
+
+-- Get object locations by ID
+function QuestieGetObjectLocationsById(objectId)
+    local objectData = QuestieGetObjectById(objectId)
+    if not objectData or not objectData.locations then
+        return {}, {}
+    end
+    
+    local locations = { ["locations"] = {} }
+    local mapIds = {}
+    
+    for i, loc in ipairs(objectData.locations) do
+        local mapId, x, y = loc[1], loc[2], loc[3]
+        if QuestieZoneIDLookup and QuestieZoneIDLookup[mapId] then
+            local MapInfo = QuestieZoneIDLookup[mapId]
+            local cIdx, zIdx = QuestieGetZoneIndices()
+            local reformattedLocation = {MapInfo[cIdx], MapInfo[zIdx], x, y}
+            table.insert(locations["locations"], reformattedLocation)
+            local c, z = reformattedLocation[1], reformattedLocation[2]
+            if not mapIds[c] then mapIds[c] = {} end
+            mapIds[c][z] = true
+        elseif table.getn(loc) == 4 then
+            table.insert(locations["locations"], loc)
+            local c, z = loc[1], loc[2]
+            if not mapIds[c] then mapIds[c] = {} end
+            mapIds[c][z] = true
+        end
+    end
+    
+    return locations, mapIds
+end
+
+-- Get item drop locations by ID
+function QuestieGetItemLocationsById(itemId)
+    local itemData = QuestieGetItemById(itemId)
+    if not itemData then
+        return {}, {}
+    end
+    
+    local allLocations = {}
+    local allMapIds = {}
+    
+    -- Get locations from drop units
+    if itemData.dropUnits then
+        for _, unitId in ipairs(itemData.dropUnits) do
+            local locs, mapIds = QuestieGetUnitLocationsById(unitId)
+            if locs and locs["locations"] then
+                for _, loc in ipairs(locs["locations"]) do
+                    table.insert(allLocations, loc)
+                end
+            end
+            if mapIds then
+                for c, zs in pairs(mapIds) do
+                    if not allMapIds[c] then allMapIds[c] = {} end
+                    for z, _ in pairs(zs) do allMapIds[c][z] = true end
+                end
+            end
+        end
+    end
+    
+    -- Get locations from contained objects
+    if itemData.containedObjects then
+        for _, objectId in ipairs(itemData.containedObjects) do
+            local locs, mapIds = QuestieGetObjectLocationsById(objectId)
+            if locs and locs["locations"] then
+                for _, loc in ipairs(locs["locations"]) do
+                    table.insert(allLocations, loc)
+                end
+            end
+            if mapIds then
+                for c, zs in pairs(mapIds) do
+                    if not allMapIds[c] then allMapIds[c] = {} end
+                    for z, _ in pairs(zs) do allMapIds[c][z] = true end
+                end
+            end
+        end
+    end
+    
+    return { ["locations"] = allLocations }, allMapIds
+end
+
+-- Get quest objective coordinates by quest ID and objective index
+-- objIndex: -1 for turn-in, 0+ for objectives, 4+ typically for item objectives
+-- Returns: { locations = {{mapId, x, y}, ...} }, mapIds
+function QuestieGetQuestObjectiveCoords(questId, objIndex)
+    local questData = QuestieQuestData and QuestieQuestData[questId]
+    if not questData or not questData.objectiveCoords then
+        return {}, {}
+    end
+    
+    local coords = questData.objectiveCoords[objIndex]
+    if not coords then
+        return {}, {}
+    end
+    
+    local locations = {}
+    local mapIds = {}
+    
+    for _, coord in ipairs(coords) do
+        local mapId = coord[1]
+        local x = coord[2]
+        local y = coord[3]
+        
+        if mapId and x and y then
+            table.insert(locations, {mapId, x, y})
+            
+            -- Build mapIds structure (continent -> zone -> true)
+            -- For now, use mapId as both continent and zone
+            if not mapIds[mapId] then mapIds[mapId] = {} end
+            mapIds[mapId][1] = true
+        end
+    end
+    
+    return { ["locations"] = locations }, mapIds
+end
+
+-- Get all objective coordinates for a quest (for item objectives without drop sources)
+-- Returns coordinates for all non-turn-in objectives
+function QuestieGetAllQuestObjectiveCoords(questId)
+    local questData = QuestieQuestData and QuestieQuestData[questId]
+    if not questData or not questData.objectiveCoords then
+        return {}, {}
+    end
+    
+    local allLocations = {}
+    local allMapIds = {}
+    
+    for objIndex, coords in pairs(questData.objectiveCoords) do
+        -- Skip turn-in location (objIndex = -1)
+        if objIndex >= 0 then
+            for _, coord in ipairs(coords) do
+                local mapId = coord[1]
+                local x = coord[2]
+                local y = coord[3]
+                
+                if mapId and x and y and QuestieZoneIDLookup and QuestieZoneIDLookup[mapId] then
+                    local MapInfo = QuestieZoneIDLookup[mapId]
+                    local cIdx, zIdx = QuestieGetZoneIndices()
+                    local reformattedLocation = {MapInfo[cIdx], MapInfo[zIdx], x, y}
+                    table.insert(allLocations, reformattedLocation)
+                    
+                    local c, z = reformattedLocation[1], reformattedLocation[2]
+                    if not allMapIds[c] then allMapIds[c] = {} end
+                    allMapIds[c][z] = true
+                end
+            end
+        end
+    end
+    
+    return { ["locations"] = allLocations }, allMapIds
+end
+
+-- Lookup quest ID by item ID (for items that are quest objectives)
+-- This helps find the quest when an item has no drop source
+function QuestieGetQuestIdByItemObjective(itemId)
+    if not QuestieQuestData then return nil end
+    
+    for questId, questData in pairs(QuestieQuestData) do
+        if questData.objectiveItems then
+            for _, objItemId in ipairs(questData.objectiveItems) do
+                if objItemId == itemId then
+                    return questId
+                end
+            end
+        end
+    end
+    return nil
+end
+
+DEFAULT_CHAT_FRAME:AddMessage("Questie ID-based lookup tables built.");

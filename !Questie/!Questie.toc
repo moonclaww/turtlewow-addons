@@ -29,29 +29,34 @@ Libs\Tourist-2.0\Tourist-2.0.lua
 # Questie Utility Functions
 Modules\QuestieUtils.lua
 
-# Questie Database
-Database\items.lua
-Database\monsters.lua
-Database\events.lua
+# Questie Database (Shared files)
 Database\zone.lua
-Database\hash.lua
 Database\finishers.lua
-Database\objects.lua
 Database\newObjects.lua
 Database\reputations.lua
-Database\addendum.lua
-Database\zhCN\items.lua
-Database\zhCN\monsters.lua
-Database\zhCN\events.lua
-Database\zhCN\hash.lua
 Database\zhCN\finishers.lua
-Database\zhCN\objects.lua
 Database\zhCN\newObjects.lua
 Database\zhCN\reputations.lua
-Database\zhCN\addendum.lua
 
-Database\turtle\init.lua
-Database\turtle_zhCN\init.lua
+# ID-based data (vanilla)
+Database\data\units.lua
+Database\data\objects.lua
+Database\data\items.lua
+Database\data\quests.lua
+Database\locale\enUS\names.lua
+Database\locale\zhCN\names.lua
+
+# TurtleWoW overlay (ID-based)
+Database\turtle\data\units.lua
+Database\turtle\data\objects.lua
+Database\turtle\data\items.lua
+Database\turtle\data\quests.lua
+Database\turtle\locale\enUS\names.lua
+Database\turtle\locale\zhCN\names.lua
+
+# Addendum files (must load last - merges data and builds lookups)
+Database\addendum.lua
+Database\zhCN\addendum.lua
 
 Astrolabe\Astrolabe.lua
 

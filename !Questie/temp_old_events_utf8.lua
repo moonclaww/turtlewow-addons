@@ -1,6 +1,4 @@
-if GetLocale() ~= "zhCN" then return end
-
-QuestieEvents = {
+﻿QuestieEvents = {
   ["Wolves Across the Border"] = {
     ["locations"] = {
       [1] = {37.0, 0.4626, 0.3816, 100.0}

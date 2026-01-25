@@ -36,6 +36,7 @@ local LIBRARY_VERSION_MAJOR = "Astrolabe-0.2"
 local LIBRARY_VERSION_MINOR = "$Revision: 19 $"
 if not AceLibrary then error(LIBRARY_VERSION_MAJOR .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR) then return end
+
 Astrolabe = {};
 WorldMapSize, MinimapSize = {}, {}
 local initSizes
@@ -701,6 +702,31 @@ function initSizes()
                     xOffset = 17383.26626586914,
                     yOffset = 4266.5673828125,
                 },
+                -- TurtleWoW Kalimdor zones (unused on vanilla, no harm)
+                GMIsland = {
+                    height = 1608.0,
+                    width = 1075.0,
+                    xOffset = 23330.0,
+                    yOffset = 2797.0,
+                },
+                Icepoint = {
+                    height = 1608.0,
+                    width = 1075.0,
+                    xOffset = 25063.3,
+                    yOffset = 12530.2,
+                },
+                TelAbim = {
+                    height = 3227.0,
+                    width = 2187.0,
+                    xOffset = 3566.0,
+                    yOffset = 11861.2,
+                },
+                BlackstoneIsland = {
+                    height = 2472.0,
+                    width = 1665.0,
+                    xOffset = 10867.3,
+                    yOffset = 11479.2,
+                },
             },
         },
         -- Eastern Kingdoms
@@ -861,16 +887,211 @@ function initSizes()
                     xOffset = 16389.58331298828,
                     yOffset = 9614.5166015625,
                 },
+                -- TurtleWoW Eastern Kingdoms zones (unused on vanilla, no harm)
+                Gilneas = {
+                    height = 3666.0,
+                    width = 2442.0,
+                    xOffset = 13824.0,
+                    yOffset = 3053.6,
+                },
+                ScarletEnclave = {
+                    height = 3159.0,
+                    width = 2108.0,
+                    xOffset = 17604.0,
+                    yOffset = 3524.0,
+                },
+                ThalassianHighlands = {
+                    height = 3082.0,
+                    width = 2061.0,
+                    xOffset = 19516.0,
+                    yOffset = 6646.0,
+                },
+                Balor = {
+                    height = 3098.0,
+                    width = 2068.0,
+                    xOffset = 6980.0,
+                    yOffset = 5363.1,
+                },
+                Northwind = {
+                    height = 3241.0,
+                    width = 2157.0,
+                    xOffset = 8141.0,
+                    yOffset = 8750.2,
+                },
+                GrimReaches = {
+                    height = 5387.0,
+                    width = 3584.0,
+                    xOffset = 10137.0,
+                    yOffset = 12274.2,
+                },
+                LapidisIsle = {
+                    height = 2000.0,
+                    width = 1333.0,
+                    xOffset = 12500.0,
+                    yOffset = 8000.0,
+                },
+                GillijimsIsle = {
+                    height = 2000.0,
+                    width = 1333.0,
+                    xOffset = 11500.0,
+                    yOffset = 7500.0,
+                },
+                Alsarath = {
+                    height = 2000.0,
+                    width = 1333.0,
+                    xOffset = 18000.0,
+                    yOffset = 6000.0,
+                },
             },
         },
+        -- Deeprun Tram (continent 30 in vanilla client)
         [30] = {
             parentContinent = 0,
-            height = 0,
-            width = 0,
+            height = 312.0,
+            width = 208.0,
             xOffset = 0,
             yOffset = 0,
+            zoneData = {
+                DeeprunTram = {
+                    height = 312.0,
+                    width = 208.0,
+                    xOffset = 0,
+                    yOffset = 0,
+                },
+            },
+        },
+        -- TurtleWoW Instance Continents (each dungeon is its own continent on TurtleWoW)
+        -- These are unused on vanilla, no harm in having them defined
+        -- Winter Veil Vale (continent 3)
+        [3] = {
+            parentContinent = 0,
+            height = 1432.0,
+            width = 977.0,
+            xOffset = 0,
+            yOffset = 0,
+            zoneData = {
+                WinterVeilVale = {
+                    height = 1432.0,
+                    width = 977.0,
+                    xOffset = 0,
+                    yOffset = 0,
+                },
+            },
+        },
+        -- Gilneas City (continent 32)
+        [32] = {
+            parentContinent = 0,
+            height = 1250.18,
+            width = 837.44,
+            xOffset = 0,
+            yOffset = 0,
+            zoneData = {
+                GilneasCity = {
+                    height = 1250.18,
+                    width = 837.44,
+                    xOffset = 0,
+                    yOffset = 0,
+                },
+            },
+        },
+        -- Crescent Grove (continent 34)
+        [34] = {
+            parentContinent = 0,
+            height = 2643.21,
+            width = 1751.16,
+            xOffset = 0,
+            yOffset = 0,
+            zoneData = {
+                CrescentGrove = {
+                    height = 2643.21,
+                    width = 1751.16,
+                    xOffset = 0,
+                    yOffset = 0,
+                },
+            },
+        },
+        -- Hateforge Quarry (continent 35)
+        [35] = {
+            parentContinent = 0,
+            height = 752.12,
+            width = 510.33,
+            xOffset = 0,
+            yOffset = 0,
+            zoneData = {
+                HateforgeQuarry = {
+                    height = 752.12,
+                    width = 510.33,
+                    xOffset = 0,
+                    yOffset = 0,
+                },
+            },
+        },
+        -- Karazhan Crypt (continent 36)
+        [36] = {
+            parentContinent = 0,
+            height = 546.75,
+            width = 391.97,
+            xOffset = 0,
+            yOffset = 0,
+            zoneData = {
+                KarazhanCrypt = {
+                    height = 546.75,
+                    width = 391.97,
+                    xOffset = 0,
+                    yOffset = 0,
+                },
+            },
+        },
+        -- Stormwind Vault (continent 37)
+        [37] = {
+            parentContinent = 0,
+            height = 354.5,
+            width = 234.74,
+            xOffset = 0,
+            yOffset = 0,
+            zoneData = {
+                StormwindVault = {
+                    height = 354.5,
+                    width = 234.74,
+                    xOffset = 0,
+                    yOffset = 0,
+                },
+            },
+        },
+        -- Emerald Sanctum (continent 38)
+        [38] = {
+            parentContinent = 0,
+            height = 1273.1,
+            width = 853.72,
+            xOffset = 0,
+            yOffset = 0,
+            zoneData = {
+                EmeraldSanctum = {
+                    height = 1273.1,
+                    width = 853.72,
+                    xOffset = 0,
+                    yOffset = 0,
+                },
+            },
+        },
+        -- Dragonmaw Retreat (continent 41)
+        [41] = {
+            parentContinent = 0,
+            height = 1634.0,
+            width = 1073.0,
+            xOffset = 0,
+            yOffset = 0,
+            zoneData = {
+                DragonmawRetreat = {
+                    height = 1634.0,
+                    width = 1073.0,
+                    xOffset = 0,
+                    yOffset = 0,
+                },
+            },
         },
     }
+    
     local zeroData = { xOffset = 0, height = 0, yOffset = 0, width = 0 };
     for continent, zones in pairs(Astrolabe.ContinentList) do
         local mapData = WorldMapSize[continent];
