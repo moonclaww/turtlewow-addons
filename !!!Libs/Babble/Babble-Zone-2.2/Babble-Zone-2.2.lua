@@ -189,6 +189,19 @@ BabbleZone:RegisterTranslations("enUS", function()
 		["Lapidis Isle"] = true,
 		["Salas Highlands"] = true,
 		["Alsarath"] = true,
+		["Grim Reaches"] = true,
+		-- TurtleWoW Custom Instances
+		["Winter Veil Vale"] = true,
+		["Crescent Grove"] = true,
+		["Karazhan Crypt"] = true,
+		["Stormwind Vault"] = true,
+		["Emerald Sanctum"] = true,
+		["Hateforge Quarry"] = true,
+		["Moomoo Grove"] = true,
+		["Gilneas City"] = true,
+		["Dragonmaw Retreat"] = true,
+		["Sunnyglade Valley"] = true,
+		["Stormwrought Ruins"] = true,
 	}
 end)
 
@@ -804,6 +817,19 @@ BabbleZone:RegisterTranslations("zhCN", function()
 		["Lapidis Isle"] = "拉匹迪斯之岛",
 		["Salas Highlands"] = "萨拉斯高地",
 		["Alsarath"] = "阿尔萨拉斯",
+		["Grim Reaches"] = "冷酷海岸深处",
+		-- TurtleWoW Custom Instances
+		["Winter Veil Vale"] = "冬幕谷",
+		["Crescent Grove"] = "新月林地",
+		["Karazhan Crypt"] = "卡拉赞墓穴",
+		["Stormwind Vault"] = "暴风城地牢",
+		["Emerald Sanctum"] = "翡翠圣殿",
+		["Hateforge Quarry"] = "仇恨熔炉采石场",
+		["Moomoo Grove"] = "奶牛树林",
+		["Gilneas City"] = "吉尔尼斯城",
+		["Dragonmaw Retreat"] = "龙喉居所",
+		["Sunnyglade Valley"] = "阳光林地山谷",
+		["Stormwrought Ruins"] = "风暴废墟",
 	}
 end)
 
@@ -972,6 +998,19 @@ BabbleZone:RegisterTranslations("zhTW", function()
 		["Lapidis Isle"] = "拉匹迪斯之島",
 		["Salas Highlands"] = "薩拉斯高地",
 		["Alsarath"] = "阿爾薩拉斯",
+		["Grim Reaches"] = "冷酷海岸深處",
+		-- TurtleWoW Custom Instances
+		["Winter Veil Vale"] = "冬幕谷",
+		["Crescent Grove"] = "新月林地",
+		["Karazhan Crypt"] = "卡拉贊墓穴",
+		["Stormwind Vault"] = "暴風城地牢",
+		["Emerald Sanctum"] = "翡翠聖殿",
+		["Hateforge Quarry"] = "仇恨熔爐採石場",
+		["Moomoo Grove"] = "奶牛樹林",
+		["Gilneas City"] = "吉爾尼斯城",
+		["Dragonmaw Retreat"] = "龍喉居所",
+		["Sunnyglade Valley"] = "陽光林地山谷",
+		["Stormwrought Ruins"] = "風暴廢墟",
 	}
 end)
 

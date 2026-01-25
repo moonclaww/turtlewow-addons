@@ -16,10 +16,12 @@ if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
 
 if not AceLibrary:HasInstance("Babble-Zone-2.2") then error(MAJOR_VERSION .. " requires Babble-Zone-2.2.") end
+if not AceLibrary:HasInstance("GameVersion-1.0") then error(MAJOR_VERSION .. " requires GameVersion-1.0.") end
 
 local Tourist = {}
 
 local Z = AceLibrary("Babble-Zone-2.2")
+local GV = AceLibrary("GameVersion-1.0")
 
 local playerLevel = 1
 local _,race = UnitRace("player")
@@ -27,7 +29,8 @@ local isHorde = (race == "Orc" or race == "Troll" or race == "Tauren" or race ==
 local isWestern = GetLocale() == "enUS" or GetLocale() == "ruRU" or GetLocale() == "deDE" or GetLocale() == "frFR" or GetLocale() == "esES"
 local math_mod = math.fmod or math.mod
 
-local expansion = (MAX_PLAYER_LEVEL == 70)
+local expansion = GV:IsExpansion()
+local turtlewow = GV:IsTurtleWoW()
 
 local Kalimdor, Eastern_Kingdoms, Outland = GetMapContinents()
 if not Outland then
@@ -2103,6 +2106,187 @@ local function activate(self, oldLib, oldDeactivate)
 			continent = Outland,
 			paths = Z["Tempest Keep"],
 			groupSize = 25,
+			type = "Instance",
+		}
+	end
+	
+	-- TurtleWoW Custom Zones and Instances
+	if turtlewow then
+		-- TurtleWoW World Zones - Kalimdor
+		zones[Z["GM Island"]] = {
+			low = 1,
+			high = 60,
+			continent = Kalimdor,
+		}
+		
+		zones[Z["Frostpoint"]] = {
+			low = 45,
+			high = 55,
+			continent = Kalimdor,
+			paths = Z["Winterspring"],
+		}
+		
+		zones[Z["Telabim"]] = {
+			low = 35,
+			high = 45,
+			continent = Kalimdor,
+		}
+		
+		zones[Z["Blackrock Isle"]] = {
+			low = 55,
+			high = 60,
+			continent = Kalimdor,
+		}
+		
+		-- TurtleWoW World Zones - Eastern Kingdoms
+		zones[Z["Gilneas"]] = {
+			low = 18,
+			high = 30,
+			continent = Eastern_Kingdoms,
+			instances = Z["Gilneas City"],
+			paths = {
+				[Z["Silverpine Forest"]] = true,
+				[Z["Gilneas City"]] = true,
+			},
+		}
+		
+		zones[Z["Scarlet Enclave"]] = {
+			low = 53,
+			high = 58,
+			continent = Eastern_Kingdoms,
+			paths = Z["Eastern Plaguelands"],
+		}
+		
+		zones[Z["Salas Highlands"]] = {
+			low = 58,
+			high = 60,
+			continent = Eastern_Kingdoms,
+			instances = Z["Emerald Sanctum"],
+			paths = {
+				[Z["Eastern Plaguelands"]] = true,
+				[Z["Emerald Sanctum"]] = true,
+			},
+		}
+		
+		zones[Z["Northwind Cleft"]] = {
+			low = 58,
+			high = 60,
+			continent = Eastern_Kingdoms,
+		}
+		
+		zones[Z["Cold Coast"]] = {
+			low = 55,
+			high = 60,
+			continent = Eastern_Kingdoms,
+		}
+		
+		zones[Z["Grim Reaches"]] = {
+			low = 58,
+			high = 60,
+			continent = Eastern_Kingdoms,
+		}
+		
+		zones[Z["Balo"]] = {
+			low = 55,
+			high = 60,
+			continent = Eastern_Kingdoms,
+		}
+		
+		zones[Z["Lapidis Isle"]] = {
+			low = 35,
+			high = 45,
+			continent = Eastern_Kingdoms,
+		}
+		
+		zones[Z["Gillijim's Isle"]] = {
+			low = 35,
+			high = 45,
+			continent = Eastern_Kingdoms,
+		}
+		
+		zones[Z["Alsarath"]] = {
+			low = 58,
+			high = 60,
+			continent = Eastern_Kingdoms,
+		}
+		
+		-- TurtleWoW Custom Instances
+		zones[Z["Karazhan Crypt"]] = {
+			low = 58,
+			high = 60,
+			continent = Eastern_Kingdoms,
+			paths = Z["Deadwind Pass"],
+			groupSize = 10,
+			type = "Instance",
+		}
+		
+		zones[Z["Stormwind Vault"]] = {
+			low = 55,
+			high = 60,
+			continent = Eastern_Kingdoms,
+			paths = Z["Stormwind City"],
+			groupSize = 5,
+			type = "Instance",
+			faction = "Alliance",
+		}
+		
+		zones[Z["Emerald Sanctum"]] = {
+			low = 60,
+			high = 60,
+			continent = Eastern_Kingdoms,
+			paths = Z["Salas Highlands"],
+			groupSize = 40,
+			type = "Instance",
+		}
+		
+		zones[Z["Hateforge Quarry"]] = {
+			low = 55,
+			high = 60,
+			continent = Eastern_Kingdoms,
+			paths = Z["Searing Gorge"],
+			groupSize = 5,
+			type = "Instance",
+		}
+		
+		zones[Z["Gilneas City"]] = {
+			low = 25,
+			high = 30,
+			continent = Eastern_Kingdoms,
+			paths = Z["Gilneas"],
+			groupSize = 5,
+			type = "Instance",
+		}
+		
+		zones[Z["Crescent Grove"]] = {
+			low = 55,
+			high = 60,
+			continent = Kalimdor,
+			paths = Z["Darkshore"],
+			groupSize = 5,
+			type = "Instance",
+		}
+		
+		zones[Z["Winter Veil Vale"]] = {
+			low = 1,
+			high = 60,
+			continent = Kalimdor,
+			groupSize = 5,
+			type = "Instance",
+		}
+		
+		zones[Z["Moomoo Grove"]] = {
+			low = 1,
+			high = 60,
+			continent = Kalimdor,
+			groupSize = 5,
+			type = "Instance",
+		}
+		
+		zones[Z["Dragonmaw Retreat"]] = {
+			low = 58,
+			high = 60,
+			continent = Eastern_Kingdoms,
+			groupSize = 5,
 			type = "Instance",
 		}
 	end

@@ -10,6 +10,8 @@
 Ace2\AceLibrary\AceLibrary.lua
 Ace2\AceOO-2.0\AceOO-2.0.lua
 
+GameVersion-1.0\GameVersion-1.0.lua
+
 Compost-2.0\Compost-2.0.lua
 
 Ace2\AceEvent-2.0\AceEvent-2.0.lua
