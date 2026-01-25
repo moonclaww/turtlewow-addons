@@ -7,11 +7,13 @@ UIPanelWindows["BuffMasterConfigFrame"] = { area = "left", pushable = 1 }
 -- Default settings
 local BuffMaster_Defaults = {
     BuffMaster_Enable = "1",
-    ItemBuff_Enable = "1"
+    ItemBuff_Enable = "1",
+    Debuff_Enable = "1"
 }
 
--- Maximum number of buff buttons to track
+-- Maximum number of buff/debuff buttons to track
 local BUFF_BUTTON_COUNT = 24
+local DEBUFF_BUTTON_COUNT = 16
 
 -- Saved settings (loaded from SavedVariables)
 BuffMaster_SavedSettings = nil
@@ -52,6 +54,13 @@ function BuffMasterConfigFrame_OnEvent(event)
         else
             ItemBuffBar:Hide()
         end
+
+        -- Apply settings - show/hide debuff timer frame
+        if BuffMaster_SavedSettings.Debuff_Enable == "1" then
+            BuffMasterDebuffFrame:Show()
+        else
+            BuffMasterDebuffFrame:Hide()
+        end
     end
 
     BuffButtons_UpdatePositions()
@@ -77,6 +86,12 @@ function BuffMasterConfigFrame_OnShow()
     local checkButton2Text = getglobal(this:GetName() .. "CheckButton2Text")
     checkButton2Text:SetText(BuffMaster_GetLocale("SHOW_ITEMBUFF"))
 
+    -- Setup checkbox 3 - Show Debuff Timers
+    local checkButton3 = getglobal(this:GetName() .. "CheckButton3")
+    checkButton3:Show()
+    local checkButton3Text = getglobal(this:GetName() .. "CheckButton3Text")
+    checkButton3Text:SetText(BuffMaster_GetLocale("SHOW_DEBUFF"))
+
     -- Set checkbox states based on saved settings
     if BuffMaster_SavedSettings.BuffMaster_Enable == "1" then
         checkButton1:SetChecked(1)
@@ -89,6 +104,12 @@ function BuffMasterConfigFrame_OnShow()
     else
         checkButton2:SetChecked(nil)
     end
+
+    if BuffMaster_SavedSettings.Debuff_Enable == "1" then
+        checkButton3:SetChecked(1)
+    else
+        checkButton3:SetChecked(nil)
+    end
 end
 
 -- Defaults button click handler - resets checkboxes to default state
@@ -96,8 +117,10 @@ function BuffMasterConfigFrame_Defaults()
     local parent = this:GetParent()
     local checkButton1 = getglobal(parent:GetName() .. "CheckButton1")
     local checkButton2 = getglobal(parent:GetName() .. "CheckButton2")
+    local checkButton3 = getglobal(parent:GetName() .. "CheckButton3")
     checkButton1:SetChecked(1)
     checkButton2:SetChecked(1)
+    checkButton3:SetChecked(1)
 end
 
 -- Okay button click handler - saves settings and closes config
@@ -105,6 +128,7 @@ function BuffMasterConfigFrame_Okay()
     local parent = this:GetParent()
     local checkButton1 = getglobal(parent:GetName() .. "CheckButton1")
     local checkButton2 = getglobal(parent:GetName() .. "CheckButton2")
+    local checkButton3 = getglobal(parent:GetName() .. "CheckButton3")
 
     -- Save BuffMaster enable state
     if checkButton1:GetChecked() then
@@ -122,6 +146,15 @@ function BuffMasterConfigFrame_Okay()
     else
         BuffMaster_SavedSettings.ItemBuff_Enable = "0"
         ItemBuffBar:Hide()
+    end
+
+    -- Save Debuff enable state
+    if checkButton3:GetChecked() then
+        BuffMaster_SavedSettings.Debuff_Enable = "1"
+        BuffMasterDebuffFrame:Show()
+    else
+        BuffMaster_SavedSettings.Debuff_Enable = "0"
+        BuffMasterDebuffFrame:Hide()
     end
 
     HideUIPanel(parent)
@@ -155,6 +188,39 @@ function BuffMaster_UpdateTimers()
             end
         else
             buffLabel:Hide()
+        end
+    end
+end
+
+-- Update debuff timer labels on each frame update
+function BuffMaster_UpdateDebuffTimers()
+    for index = 0, DEBUFF_BUTTON_COUNT - 1, 1 do
+        local debuffButton = getglobal("DebuffButton" .. index)
+        local debuffLabel = getglobal("DebuffLabel" .. index)
+
+        if debuffButton and debuffButton:IsVisible() then
+            debuffLabel:Show()
+            local buffIndex = debuffButton.buffIndex
+            local timeLeft = GetPlayerBuffTimeLeft(buffIndex)
+
+            if timeLeft == 0 then
+                -- No duration (permanent debuff or unknown)
+                debuffLabel:SetTextColor(1.0, 0.5, 0.0)
+                debuffLabel:SetText("N/A")
+            elseif timeLeft < BUFF_WARNING_TIME then
+                -- Debuff about to expire (yellow - good news!)
+                debuffLabel:SetTextColor(1.0, 1.0, 0.0)
+                debuffLabel:SetText(BuffMaster_FormatTime(timeLeft))
+                debuffLabel:SetAlpha(debuffButton:GetAlpha())
+            else
+                -- Normal duration (red for debuffs)
+                debuffLabel:SetTextColor(1.0, 0.0, 0.0)
+                debuffLabel:SetText(BuffMaster_FormatTime(timeLeft))
+            end
+        else
+            if debuffLabel then
+                debuffLabel:Hide()
+            end
         end
     end
 end

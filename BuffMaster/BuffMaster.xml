@@ -238,4 +238,169 @@ BuffMaster_UpdateTimers();
 </OnUpdate>
 </Scripts>
 </Frame>
+<Frame name="BuffMasterDebuffFrame" parent="UIParent" frameStrata="LOW" toplevel="true">
+<Size>
+<AbsDimension x="50" y="50"/>
+</Size>
+<Anchors>
+<Anchor point="TOPRIGHT" relativeTo="BuffFrame" relativePoint="BOTTOMRIGHT">
+<Offset>
+<AbsDimension x="0" y="-100"/>
+</Offset>
+</Anchor>
+</Anchors>
+<Layers>
+<Layer level="ARTWORK">
+<FontString name="DebuffLabel0" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton0" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel1" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton1" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel2" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton2" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel3" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton3" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel4" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton4" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel5" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton5" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel6" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton6" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel7" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton7" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel8" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton8" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel9" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton9" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel10" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton10" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel11" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton11" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel12" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton12" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel13" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton13" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel14" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton14" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+<FontString name="DebuffLabel15" inherits="GameFontHighlightSmall" justifyH="LEFT" text="test">
+<Anchors>
+<Anchor point="TOP" relativeTo="DebuffButton15" relativePoint="BOTTOM">
+<Offset>
+<AbsDimension x="0" y="0"/>
+</Offset>
+</Anchor>
+</Anchors>
+</FontString>
+</Layer>
+</Layers>
+<Scripts>
+<OnUpdate>
+BuffMaster_UpdateDebuffTimers();
+</OnUpdate>
+</Scripts>
+</Frame>
 </Ui>
