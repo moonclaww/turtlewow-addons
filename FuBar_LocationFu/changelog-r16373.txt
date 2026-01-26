@@ -1,0 +1,235 @@
+------------------------------------------------------------------------
+r16373 | jerry | 2006-11-08 16:53:45 -0500 (Wed, 08 Nov 2006) | 2 lines
+
+FuBar_LocationFu : Fixed french translation
+
+------------------------------------------------------------------------
+r15934 | damjau | 2006-11-04 15:22:26 -0500 (Sat, 04 Nov 2006) | 1 line
+
+FuBar_LocationFu - add notes-koKR
+------------------------------------------------------------------------
+r15887 | ckknight | 2006-11-03 23:57:58 -0500 (Fri, 03 Nov 2006) | 1 line
+
+FuBar_LocationFu - fixed instance checking
+------------------------------------------------------------------------
+r15862 | xinsonic | 2006-11-03 19:48:16 -0500 (Fri, 03 Nov 2006) | 1 line
+
+FuBar_LocationFu: - add zhTW, thanks to Kayin.
+------------------------------------------------------------------------
+r15829 | rabbit | 2006-11-03 12:06:10 -0500 (Fri, 03 Nov 2006) | 1 line
+
+FuBar_LocationFu: Should fix the issue with slow coordinate updates. Problem was that since GetPlayerMapPosition returns 0, 0 if your current world map zone is not your current zone, the updater was rescheduled to 60sec intervals.
+------------------------------------------------------------------------
+r15608 | arrowmaster | 2006-10-31 08:57:59 -0500 (Tue, 31 Oct 2006) | 1 line
+
+FuBar_LocationFu - switched GetZoneText() to GetRealZoneText() to correct zone name detection bug and readded Arena as a status
+------------------------------------------------------------------------
+r15513 | damjau | 2006-10-30 05:06:55 -0500 (Mon, 30 Oct 2006) | 1 line
+
+FuBar_LocationFu - update koKR
+------------------------------------------------------------------------
+r15507 | ckknight | 2006-10-30 03:26:32 -0500 (Mon, 30 Oct 2006) | 1 line
+
+FuBar_LocationFu - added in walk paths (shiny)
+------------------------------------------------------------------------
+r15289 | damjau | 2006-10-27 01:58:01 -0400 (Fri, 27 Oct 2006) | 1 line
+
+FuBar_LocationFu - update koKR
+------------------------------------------------------------------------
+r15288 | ckknight | 2006-10-27 01:50:15 -0400 (Fri, 27 Oct 2006) | 1 line
+
+FuBar_LocationFu - added "%d-man" to localizations, now shows the group size of instances in the tooltip and on the map.
+------------------------------------------------------------------------
+r15286 | damjau | 2006-10-27 01:33:25 -0400 (Fri, 27 Oct 2006) | 1 line
+
+FuBar_LocationFu - add koKR
+------------------------------------------------------------------------
+r15262 | ckknight | 2006-10-26 20:16:18 -0400 (Thu, 26 Oct 2006) | 1 line
+
+FuBar_LocationFu - now checks level > 0 instead of level ~= -6
+------------------------------------------------------------------------
+r15254 | rabbit | 2006-10-26 17:54:38 -0400 (Thu, 26 Oct 2006) | 1 line
+
+FuBar_LocationFu: If the high level is the same as the low, just show (level). Support instance tagging on subzones.
+------------------------------------------------------------------------
+r15245 | rabbit | 2006-10-26 14:13:34 -0400 (Thu, 26 Oct 2006) | 1 line
+
+FuBar_LocationFu: Bugfix.
+------------------------------------------------------------------------
+r15244 | rabbit | 2006-10-26 14:03:24 -0400 (Thu, 26 Oct 2006) | 1 line
+
+FuBar_LocationFu: Adhere to the "show coordinates" option.
+------------------------------------------------------------------------
+r14679 | tazmanyak | 2006-10-21 14:28:00 -0400 (Sat, 21 Oct 2006) | 2 lines
+
+FuBar_LocationFu\LocationFuLocale-frFR.lua
+ - small fix for special characters
+------------------------------------------------------------------------
+r14599 | pettigrow | 2006-10-21 00:57:04 -0400 (Sat, 21 Oct 2006) | 1 line
+
+FuBar_LocationFu: Added French localization.
+------------------------------------------------------------------------
+r14463 | duglum | 2006-10-20 02:17:26 -0400 (Fri, 20 Oct 2006) | 1 line
+
+FuBar_LocationFu: externals fix
+------------------------------------------------------------------------
+r14351 | ckknight | 2006-10-18 23:24:52 -0400 (Wed, 18 Oct 2006) | 1 line
+
+FuBar_LocationFu - AceLocale-2.2
+------------------------------------------------------------------------
+r14007 | ckknight | 2006-10-15 10:54:14 -0400 (Sun, 15 Oct 2006) | 1 line
+
+LocationFu - flipped continent coloring
+------------------------------------------------------------------------
+r14001 | ckknight | 2006-10-15 10:12:33 -0400 (Sun, 15 Oct 2006) | 1 line
+
+LocationFu - add continent information
+------------------------------------------------------------------------
+r12492 | mikma | 2006-10-01 11:21:53 -0400 (Sun, 01 Oct 2006) | 1 line
+
+FuBar_LocationFu: externals
+------------------------------------------------------------------------
+r12402 | kergoth | 2006-09-30 18:58:37 -0400 (Sat, 30 Sep 2006) | 1 line
+
+Reversion is fun!
+------------------------------------------------------------------------
+r12400 | kergoth | 2006-09-30 18:47:50 -0400 (Sat, 30 Sep 2006) | 1 line
+
+Continuing the adjustment to use svn:eol-style of native on files to avoid line ending issues.
+------------------------------------------------------------------------
+r12057 | nevcairiel | 2006-09-26 13:04:50 -0400 (Tue, 26 Sep 2006) | 1 line
+
+Externals: All F, all FuBar plugins, i guess that was half of all addons.
+------------------------------------------------------------------------
+r11581 | ckknight | 2006-09-20 21:03:13 -0400 (Wed, 20 Sep 2006) | 1 line
+
+LocationFu - updated table.setn for upcoming lua 5.1
+------------------------------------------------------------------------
+r9539 | rabbit | 2006-08-30 06:40:08 -0400 (Wed, 30 Aug 2006) | 1 line
+
+FuBar_LocationFu: Coodinates?
+------------------------------------------------------------------------
+r9302 | sinaloit | 2006-08-27 15:44:12 -0400 (Sun, 27 Aug 2006) | 2 lines
+
+FuBar_LocationFu:
+- Updated .TOC file for svn auto-creation.
+------------------------------------------------------------------------
+r7853 | ckknight | 2006-08-12 18:15:59 -0400 (Sat, 12 Aug 2006) | 1 line
+
+LocationFu - bugfix
+------------------------------------------------------------------------
+r7769 | ckknight | 2006-08-12 03:30:23 -0400 (Sat, 12 Aug 2006) | 1 line
+
+LocationFu - committing localizations
+------------------------------------------------------------------------
+r7703 | sinaloit | 2006-08-11 14:10:16 -0400 (Fri, 11 Aug 2006) | 2 lines
+
+FuBar_LocationFu:
+Removed outdated svn:externals from FuBar_LocationFu folder itself.
+------------------------------------------------------------------------
+r7571 | ckknight | 2006-08-10 06:33:09 -0400 (Thu, 10 Aug 2006) | 1 line
+
+LocationFu - converted to 2.0 - not yet localized
+------------------------------------------------------------------------
+r7562 | ckknight | 2006-08-10 05:02:00 -0400 (Thu, 10 Aug 2006) | 1 line
+
+LocationFu - added libs dir.
+------------------------------------------------------------------------
+r2447 | ckknight | 2006-06-07 15:59:15 -0400 (Wed, 07 Jun 2006) | 1 line
+
+FuBar_LocationFu - updated externals and TOC
+------------------------------------------------------------------------
+r2436 | ckknight | 2006-06-07 00:50:13 -0400 (Wed, 07 Jun 2006) | 1 line
+
+FuBar_LocationFu - fixed SetIcon bug
+------------------------------------------------------------------------
+r2312 | ckknight | 2006-06-03 19:15:20 -0400 (Sat, 03 Jun 2006) | 1 line
+
+Changed FuBarUtils references to AbacusLib/CrayonLib references.
+------------------------------------------------------------------------
+r2027 | ckknight | 2006-05-20 22:32:03 -0400 (Sat, 20 May 2006) | 1 line
+
+FuBar_LocationFu - updated world map overlay for the "Under Attack" deal with 1.11
+------------------------------------------------------------------------
+r1551 | ckknight | 2006-05-07 00:08:11 -0400 (Sun, 07 May 2006) | 1 line
+
+Changed fuCompatible = 102 to :GetInstance("1.2")
+------------------------------------------------------------------------
+r1238 | ckknight | 2006-04-30 19:04:20 -0400 (Sun, 30 Apr 2006) | 1 line
+
+Changed author from Boss to ckknight.
+------------------------------------------------------------------------
+r1237 | ckknight | 2006-04-30 18:47:06 -0400 (Sun, 30 Apr 2006) | 1 line
+
+FuBar_LocationFu - updated for JostleLib
+------------------------------------------------------------------------
+r1190 | ckknight | 2006-04-29 20:43:16 -0400 (Sat, 29 Apr 2006) | 1 line
+
+FuBar_LocationFu - fixed localization
+------------------------------------------------------------------------
+r1161 | ckknight | 2006-04-29 09:56:18 -0400 (Sat, 29 Apr 2006) | 1 line
+
+FuBar_LocationFu - now uses Metrognome
+------------------------------------------------------------------------
+r1106 | ckknight | 2006-04-28 17:19:42 -0400 (Fri, 28 Apr 2006) | 1 line
+
+FuBar_LocationFu - updated for procedural tooltips.
+------------------------------------------------------------------------
+r1064 | ckknight | 2006-04-27 20:07:22 -0400 (Thu, 27 Apr 2006) | 1 line
+
+FuBar_LocationFu - fixed TOC and README.txt to say 1.1
+------------------------------------------------------------------------
+r1037 | ckknight | 2006-04-27 07:38:59 -0400 (Thu, 27 Apr 2006) | 1 line
+
+LocationFu - fixed tooltip coloring.
+------------------------------------------------------------------------
+r1005 | ckknight | 2006-04-26 19:58:58 -0400 (Wed, 26 Apr 2006) | 1 line
+
+FuBar_LocationFu - fixed typo.
+------------------------------------------------------------------------
+r994 | ckknight | 2006-04-26 19:17:35 -0400 (Wed, 26 Apr 2006) | 1 line
+
+FuBar_LocationFu - updated deDE translation
+------------------------------------------------------------------------
+r965 | ckknight | 2006-04-26 12:22:43 -0400 (Wed, 26 Apr 2006) | 1 line
+
+FuBAr_LocationFu - Addcategory -> AddCategory
+------------------------------------------------------------------------
+r933 | ckknight | 2006-04-26 06:46:16 -0400 (Wed, 26 Apr 2006) | 1 line
+
+FuBar_LocationFu - Updated for 1.1
+------------------------------------------------------------------------
+r881 | ckknight | 2006-04-25 21:53:12 -0400 (Tue, 25 Apr 2006) | 1 line
+
+FuBar_LocationFu - deDE Translations (thanks to Chinkuwaila)
+------------------------------------------------------------------------
+r824 | ckknight | 2006-04-24 16:45:14 -0400 (Mon, 24 Apr 2006) | 1 line
+
+FuBar_Location - updated to most recent TouristLib
+------------------------------------------------------------------------
+r819 | ckknight | 2006-04-24 15:51:52 -0400 (Mon, 24 Apr 2006) | 1 line
+
+FuBar_LocationFu - updated for most recent TouristLib
+------------------------------------------------------------------------
+r654 | ckknight | 2006-04-23 03:01:11 -0400 (Sun, 23 Apr 2006) | 1 line
+
+FuBar_LocationFu - Updated TouristLib path.
+------------------------------------------------------------------------
+r641 | ckknight | 2006-04-23 02:44:22 -0400 (Sun, 23 Apr 2006) | 1 line
+
+FuBar_LocationFu - made TouristLib an svn:external
+------------------------------------------------------------------------
+r588 | ckknight | 2006-04-22 19:25:13 -0400 (Sat, 22 Apr 2006) | 3 lines
+
+FuBar_LocationFu -
+Updated to recent TouristLib
+Can now show level range in the display text.
+------------------------------------------------------------------------
+r319 | ckknight | 2006-04-17 14:41:08 -0400 (Mon, 17 Apr 2006) | 1 line
+
+FuBar_LocationFu - Added TouristLib.lua to folder.
+------------------------------------------------------------------------
+r280 | ckknight | 2006-04-17 04:32:43 -0400 (Mon, 17 Apr 2006) | 1 line
+
+FuBar_LocationFu - Initial commit
+------------------------------------------------------------------------

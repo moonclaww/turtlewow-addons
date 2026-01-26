@@ -1,0 +1,8 @@
+## Interface: 11200
+## Title: [地图]MetaMapBKP
+## Author: MetaHawk
+## Notes: 用于数据备份及恢复的备份模块。
+## Dependencies: MetaMap
+## LoadOnDemand: 1
+## SavedVariables: BKP_MetaMapNotes_Data, BKP_MetaMapNotes_Lines, BKP_MetaKB_Data, BKP_QST_QuestBase
+MetaMapBKP.xml

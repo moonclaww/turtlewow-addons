@@ -1,0 +1,62 @@
+------------------------------------------------------------------------
+r11681 | etten | 2006-09-22 09:41:20 -0700 (Fri, 22 Sep 2006) | 1 line
+
+Correctly added the externals for AceDebug and AceHook
+------------------------------------------------------------------------
+r11680 | etten | 2006-09-22 09:34:52 -0700 (Fri, 22 Sep 2006) | 1 line
+
+Removed Keyword property tags
+------------------------------------------------------------------------
+r11679 | etten | 2006-09-22 09:33:51 -0700 (Fri, 22 Sep 2006) | 1 line
+
+Switched back to my date codes and version numbers. SVN is only updating the numbers when I change that specific file.
+------------------------------------------------------------------------
+r11678 | etten | 2006-09-22 09:29:32 -0700 (Fri, 22 Sep 2006) | 1 line
+
+Added note about re-adding ACEHook and ACEDebug that were removed by rabbit. 
+------------------------------------------------------------------------
+r11100 | etten | 2006-09-16 17:28:38 -0700 (Sat, 16 Sep 2006) | 1 line
+
+Updated with rabbit's changes to remove metrognome.
+------------------------------------------------------------------------
+r11078 | rabbit | 2006-09-16 13:16:53 -0700 (Sat, 16 Sep 2006) | 1 line
+
+FuBar_GroupFu: Add CrayonLib to optionaldeps and remove metrognome and AceHook.
+------------------------------------------------------------------------
+r11077 | rabbit | 2006-09-16 13:08:23 -0700 (Sat, 16 Sep 2006) | 1 line
+
+FuBar_GroupFu: Set externals.
+------------------------------------------------------------------------
+r11063 | etten | 2006-09-16 11:26:55 -0700 (Sat, 16 Sep 2006) | 1 line
+
+SVN Keywords try 5
+------------------------------------------------------------------------
+r11061 | etten | 2006-09-16 11:21:05 -0700 (Sat, 16 Sep 2006) | 1 line
+
+SVN Keywords try 4
+------------------------------------------------------------------------
+r11058 | etten | 2006-09-16 11:18:54 -0700 (Sat, 16 Sep 2006) | 1 line
+
+SVN Keywords try 3
+------------------------------------------------------------------------
+r11056 | etten | 2006-09-16 11:13:31 -0700 (Sat, 16 Sep 2006) | 1 line
+
+Try number 2 for getting the SVN tags to work
+------------------------------------------------------------------------
+r11055 | etten | 2006-09-16 11:09:09 -0700 (Sat, 16 Sep 2006) | 1 line
+
+Added SVN tags for date and revision.
+------------------------------------------------------------------------
+r11051 | etten | 2006-09-16 10:56:46 -0700 (Sat, 16 Sep 2006) | 2 lines
+
+Fix for the !cff prepended to the hex color code from  GetItemQualityColor
+Fix for the menu update bug with check and radio buttons. True bug is in dewdrop. It needs to redraw the menu on the update. 
+------------------------------------------------------------------------
+r10992 | gamefaq | 2006-09-15 05:33:03 -0700 (Fri, 15 Sep 2006) | 1 line
+
+Updated deDE Translation
+------------------------------------------------------------------------
+r10936 | etten | 2006-09-14 22:17:58 -0700 (Thu, 14 Sep 2006) | 1 line
+
+Initial entry into SVN
+------------------------------------------------------------------------

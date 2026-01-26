@@ -1,0 +1,9 @@
+## Interface: 11200
+## Title: [地图]MetaMapQST
+## Notes: 显示你的任务并且保存一个历史数据库。
+## Author: Urshurak
+## SavedVariables: QST_Options, QST_QuestLog, QST_QuestBase
+## Dependencies: MetaMap
+## LoadOnDemand: 1
+MetaMapQST.xml
+

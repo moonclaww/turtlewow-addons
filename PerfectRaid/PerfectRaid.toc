@@ -1,0 +1,25 @@
+﻿## Interface: 11200
+## Author: Cladhaire
+## Title: PerfectRaid
+## Title-koKR: |CFF6666CCP|CFFFFFFFFerfect|CFF6666CCR|CFFFFFFFFaid
+## Notes: Minimalistic, but functional raid frames
+## Notes-koKR: 작지만 다양한 기능의 공격대 프레임
+## Notes-zhCN: 简约，不过完整的团队框架
+## DefaultState: enabled
+## Dependencies:
+## OptionalDeps: Ace2, ProximityLib, RosterLib
+## X-Embeds: Ace2, ProximityLib, RosterLib
+## X-Category: UnitFrame
+## SavedVariables: PerfectRaidDB
+
+
+
+Localization.enUS.lua
+Localization.koKR.lua
+Localization.zhCN.lua
+Localization.deDE.lua
+
+PerfectRaid.lua
+PerfectRaidConfig.lua
+PerfectRaidOptions.lua
+RaidSimulation.lua

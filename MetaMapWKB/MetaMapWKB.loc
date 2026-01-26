@@ -1,0 +1,68 @@
+-- Default English localisation
+
+METAKB_MAIN_HEADER = "MetaMap知识库"
+METAKB_OPTIONS_HEADER = "MetaKB选项"
+METAKB_RETAIN = "总是在启动时加载";
+METAKB_MOB_LEVEL = "等级"
+METAKB_SHOW_ALLZONES = "显示所有地区";
+METAKB_SHOW_LOCALZONE = "只显示本地区";
+METAKB_MAPNOTES_NW_BOUND = "西北边界"
+METAKB_MAPNOTES_NE_BOUND = "东北边界"
+METAKB_MAPNOTES_SE_BOUND = "东南边界"
+METAKB_MAPNOTES_SW_BOUND = "西南边界"
+METAKB_MAPNOTES_CENTER = "中心"
+METAKB_SHOW_UPDATES = "显示更新"
+METAKB_BOUNDING_BOX = "创建MapNotes范围框"
+METAKB_SEARCH_BOX = "搜索"
+METAKB_OPTIONS_BUTTON = "选项"
+METAKB_REFRESH_BUTTON = "刷新"
+METAKB_AUTO_TRACK = "自动追踪";
+METAKB_SET_DSEARCH = "使用动态搜索";
+METAKB_USE_KB = "添加到数据库";
+METAKB_TARGET_NOTE = "添加新目标标记";
+METAKB_OPTIONS_RANGETEXT = "目标距离:";
+METAKB_SET_MAPSHOW = "查询时在地图上设置标记";
+METAKB_EMBED_KB = "插入知识库到世界地图";
+
+METAKB_HEADER_NAME = "名称";
+METAKB_HEADER_DESC = "描述";
+METAKB_HEADER_LEVEL = "等级";
+METAKB_HEADER_LOCATION = "位置";
+
+METAKB_QUICK_MENU_1 = "设置地图标记"
+METAKB_QUICK_MENU_2 = "设置迷你地图标记"
+METAKB_QUICK_MENU_3 = "从地图中移除"
+METAKB_QUICK_MENU_4 = "从地图中全部移除"
+METAKB_QUICK_MENU_5 = "从数据库中移除"
+METAKB_QUICK_MENU_6 = "整理数据库"
+METAKB_QUICK_MENU_7 = "插入信息盒"
+METAKB_QUICK_MENU_8 = "在世界地图上显示";
+
+METAKB_SHOW_UPDATES_HELP = "任何数据库的变动都会在聊天框中显示。"
+METAKB_CLEAR_NOTES_HELP = "只从地图中清理全部通过知识库建立的地图标记。全部资料一直保留在数据库中。"
+METAKB_BOUNDING_BOX_HELP = "点击左键来添加MapNotes此时将添加一个"..
+    "由范围框的对角线交叉形成的中心点。否则只有中心"..
+    "标记点被添加。"
+METAKB_AUTO_TRACK_HELP = "打开/关闭 当鼠标移上去后自动添加 NPC 或者怪物信息";
+METAKB_SET_DSEARCH_HELP = "搜索你的文本类数据库。否则，当按下<回车键>时开始搜索";
+METAKB_USE_KB_HELP = "打开/关闭 添加目标信息到数据库";
+METAKB_TARGET_NOTE_HELP = "打开/关闭 添加目标信息到地图标记。打开本此功能可能会使标记布满整个地图 "..
+													"建议结合 <CTRL>+<绑定键位>使用。";
+METAKB_SET_MAPSHOW_HELP = "当从菜单中选择 '在世界地图上显示' 时，为选择的数据库的项目设置一个标记";
+METAKB_EMBED_KB_HELP = "插入知识库在世界地图显示，给与额外的灵活性。";
+METAKB_RETAIN_HELP = "当开始时总是加载MetaMapWKB模块";
+
+METAKB_NO_NPC_MOB_FOUND = "没有找到匹配 \"%s\" 的 NPC或者怪物"
+METAKB_REMOVED_FROM_DATABASE = "从数据库中删除 \"%s\" 于 \"%s\""
+METAKB_DISCOVERED_UNIT = "发现 %s！"
+METAKB_ADDED_UNIT_IN_ZONE = "添加 %s 到 %s"
+METAKB_UPDATED_MINMAX_XY = "更新 %s 的坐标信息于 %s"
+METAKB_UPDATED_INFO = "更新 %s 的信息于 %s"
+METAKB_IMPORT_SUCCESSFUL = "Meta知识库数据导入成功，添加 %u 项NPC/怪物信息从一个总计为 %u 包含 %u 个未知和 %u 重复的个不能被导入。"
+METAKB_STATS_LINE = "%u 个NPC在 %u 区域/副本"
+METAKB_NOTARGET = "首先需要选择一个目标您才能创建档案。"
+METAKB_TRIM_DBASE = "这将删除从数据库搜索结果列表里的全部条目。\n如果搜索信息盒为空，全部列表的条目将从数据库中移除。";
+
+WKB_TTHINT_H0 = "鼠标提示";
+WKB_TTHINT_T0 = "显示快捷菜单";
+WKB_TTHINT_T1 = "设置为路点";

@@ -1,0 +1,10 @@
+﻿#
+## Interface: 11200
+## Title: [其它]DistanceWarning
+##Version: 1.59 Beta
+## Notes: 测量并显示你与目标的距离。无需设置。
+## Author: 雪夜之狼
+## SavedVariables: DISTANCEWARNING_SAVE
+## OptionalDeps:
+## Dependencies: 
+DistanceWarning.xml

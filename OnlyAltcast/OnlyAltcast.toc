@@ -1,0 +1,6 @@
+﻿## Interface: 11200
+## Title: OnlyAltCast
+## Author: hdll
+## Version:1.2
+## Notes: 按住Alt键自我施法
+OnlyAltCast.xml

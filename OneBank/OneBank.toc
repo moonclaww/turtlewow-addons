@@ -1,0 +1,20 @@
+﻿## $Id: OneBank.toc 23717 2007-01-06 11:30:30Z funkydude $ 
+## Interface: 11200
+## Title: OneBank |cff7fff7f -Ace2-|r
+## Notes: A plugin for OneBag to display your bank inventory as an AllInOneInventory.
+## Notes-zhCN: 整合背包插件，以整合方式显示你的银行。
+## Notes-zhTW: 整合銀行及所有銀行的背包在一起。
+## Notes-deDE: Eine Tasche um sie alle zu beherrschen, und in der Dunkelheit zu binden. 
+## Version: 2.0.$Revision: 23717 $
+## Author: Kaelten
+## X-Date: $Date: 2007-01-06 06:30:30 -0500 (Sat, 06 Jan 2007) $
+## X-Category: Frame Modification
+## X-eMail: kaelten@gmail.com
+## X-Website: http://www.wowace.com
+## SavedVariables: OneBankDB
+## Dependencies: OneBag
+## LoadOnDemand: 1
+ 
+locals.lua
+OneBank.xml
+OneBank.lua  

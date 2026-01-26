@@ -1,0 +1,7 @@
+## Interface: 11200
+## Title: [地图]MetaMapFWM
+## Notes: 为 MetaMap 增加查看未探索区域地图的功能。
+## Dependencies: MetaMap
+## LoadOnDemand: 1
+## SavedVariables: FWM_Options
+MetaMapFWM.xml

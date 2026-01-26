@@ -1,0 +1,8 @@
+## Interface: 11200
+## Title: [地图]MetaMapWKB
+## Author: MetaHawk
+## Notes: MetaMapWKB  获得目标怪物/NPC的信息加入用户数据库。
+## Dependencies: MetaMap
+## LoadOnDemand: 1
+## SavedVariables: MetaKBOptions, MetaKB_Data
+MetaMapWKB.xml

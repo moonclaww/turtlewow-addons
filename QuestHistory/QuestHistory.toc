@@ -1,0 +1,15 @@
+﻿## Interface: 11200
+## Version: 11100-1
+## Title: QuestHistory
+## Title-zhCN: [任务]任务历史库
+## Title-zhTW: 任務歷史庫
+## Author: Dsanai
+## Notes: An in-game history of quests accepted, completed, and abandoned.
+## Notes-zhCN: 游戏中的任务库, 记录你曾经接受、完成和放弃的任务。
+## Notes-zhTW: 遊戲中的任務庫, 記錄你曾經接受、完成和放棄的任務。
+## UIType: 任务相关
+## UIType-zhTW: 任務相關
+## SavedVariables: QuestHistory_List, QuestHistory_Flags, QuestHistory_StatusColors, QuestHistory_Options
+## OptionalDeps: MapNotes, MetaMap
+## Dependencies:
+QuestHistory.xml

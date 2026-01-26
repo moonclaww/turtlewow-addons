@@ -1,0 +1,7 @@
+## Interface: 11200
+## Title: [地图]MetaMapBLT
+## Notes: 为MetaMap增加Boss掉落信息察看，由Daviesh基于他的AtlasLoot Enhanced 编辑开发。
+## Dependencies: MetaMap
+## LoadOnDemand: 1
+## SavedVariables: MetaMapBLTData
+MetaMapBLT.xml

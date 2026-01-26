@@ -1,0 +1,38 @@
+## Interface: 11200
+## Title: FuBar - |cffffffffBag|r|cff00ff00Fu|r
+## Title-zhCN: FuBar - |cffffffff背包|r
+## Title-koKR: |CFF99FF99F|CFFFFFFFFu|CFF99FF99B|CFFFFFFFFar - |cffffffffBag|r|cff00ff00Fu|r
+## Notes: Keeps track of space left in your bags.
+## Notes-deDE: \195\156berwacht die Taschenpl\195\164tze.
+## Notes-frFR: Surveille et affiche la place disponible dans vos sacs.
+## Notes-koKR: 가방의 남은 빈 슬롯의 수를 표시합니다.
+## Notes-zhTW: 顯示背包的剩餘空格數量。
+## Author: phyber
+## Dependencies: FuBar
+## OptionalDeps: Ace2, DewdropLib, TabletLib, FuBarPlugin-2.0, CrayonLib
+## SavedVariables: BagFuDB
+## Version: 2.0
+## X-Category: Inventory
+## LoadOnDemand: 1
+
+libs\AceLibrary\AceLibrary.lua
+libs\AceOO-2.0\AceOO-2.0.lua
+libs\AceAddon-2.0\AceAddon-2.0.lua
+libs\AceDB-2.0\AceDB-2.0.lua
+libs\AceLocale-2.2\AceLocale-2.2.lua
+libs\AceEvent-2.0\AceEvent-2.0.lua
+libs\AceConsole-2.0\AceConsole-2.0.lua
+
+libs\Dewdrop-2.0\Dewdrop-2.0.lua
+libs\Tablet-2.0\Tablet-2.0.lua
+libs\FuBarPlugin-2.0\FuBarPlugin-2.0.lua
+libs\Crayon-2.0\Crayon-2.0.lua
+
+BagFuLocale-enUS.lua
+BagFuLocale-deDE.lua
+BagFuLocale-frFR.lua
+BagFuLocale-koKR.lua
+BagFuLocale-zhCN.lua
+BagFuLocale-zhTW.lua
+BagFu.lua
+

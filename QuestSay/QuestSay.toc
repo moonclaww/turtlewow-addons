@@ -1,0 +1,8 @@
+﻿## Interface: 11200
+## Title: [任务]QuestSay
+## Author: carahuevo
+## Version: 0.2
+## Note : 在聊天窗口显示任务信息。在选中你的任务并将其设置为跟踪后，输入/qs即可。
+## Description:
+QuestSay.xml
+

@@ -1,0 +1,8 @@
+## Interface: 11200
+## Title: [地图]MetaMapZSM
+## Author: MetaHawk
+## Notes: 用于德文和法文客户端的地区转换模块。
+## Dependencies: MetaMap
+## LoadOnDemand: 1
+## SavedVariables:
+MetaMapZSM.xml

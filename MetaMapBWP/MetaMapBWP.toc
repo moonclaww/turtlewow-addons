@@ -1,0 +1,8 @@
+## Interface: 11200
+## Title: [地图]MetaMapBWP
+## Author: MetaHawk
+## Notes: 路点系统模块
+## LoadOnDemand: 1
+## Dependencies: MetaMap
+## SavedVariables: BWP_Options, BWP_Destination, BWP_QuestList, BWP_AbandonedQuests
+MetaMapBWP.xml

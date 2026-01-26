@@ -1,0 +1,11 @@
+## Interface: 11200
+## Version: 1.0
+## Title: |cff7fff7f-Ace2-|r GMail
+## Notes: Grennon Mail
+## Notes-zhCN: 批量邮件收取发送
+## Author: Grennon
+## X-Category: Interface
+## Dependencies: !!!Libs
+## OptionalDeps: Ace2
+
+GMail.xml

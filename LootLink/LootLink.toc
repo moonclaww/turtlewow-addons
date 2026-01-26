@@ -1,0 +1,12 @@
+## Interface: 11200
+## Title: Telo's LootLink
+## Title-zhCN: [物品]LootLink
+## Title-zhTW: 物品信息庫
+## Notes: An in-game browseable, searchable item database, with loot link coloring based on rarity.  Use << /lootlink >> or << /ll >> or bind a key through Blizzard's Key Bindings to open the browse window.  Use << /ll help >> or << /lootlink help >> for a helpful list of commands.
+## Notes-zhCN: 一个游戏内的物品库，可以浏览、查找你见过的任何物品。使用/lootlink或通过热键绑定来打开浏览窗口。
+## Notes-zhTW: 一個遊戲內的物品庫，可以瀏覽、查找你見過的任何物品.  使用 << /lootlink >> 或 << /ll >> 或者通過熱鍵綁定來打開瀏覽窗口.  使用 << /ll help >> 或 << /lootlink help >> 得到命令列表.
+## UIType: 物品相关
+## UIType-zhTW: 物品相關
+## OptionalDeps: EarthFeatureFrame
+## SavedVariables: ItemLinks, LootLinkState
+LootLink.xml

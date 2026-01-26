@@ -1,0 +1,20 @@
+<Ui>
+	<Script file="QuestSay.lua"/>
+	<Frame name="QuestSayFrame" inherits="UIDropDownMenuTemplate" id="1" hidden="true">
+		<Size>
+			<AbsDimension x="10" y="10"/>
+		</Size>
+		<Anchors>
+			<Anchor point="TOPLEFT" relativeTo="TOPRIGHT">
+				<Offset>
+					<AbsDimension x="0" y="0"/>
+				</Offset>
+			</Anchor>
+		</Anchors>
+		<Scripts>
+			<OnLoad>
+				QS_OnLoad();
+			</OnLoad>
+		</Scripts>
+	</Frame>
+</Ui>

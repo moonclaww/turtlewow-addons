@@ -1,0 +1,12 @@
+﻿## Interface: 11200
+## Title: Improved Error Frame
+## Title-zhCN: [其它]错误提示增强
+## Title-zhTW: 錯誤提示增強
+## Notes: Display errors in scrollable/selecting frame
+## Notes-zhCN: 在可滚动/选择的窗口中显示错误。输入/ief进行设置。
+## Notes-zhTW: 在可滾動/選擇的窗口中顯示錯誤
+## UIType: 界面增强
+## UIType-zhTW: 界面增強
+## SavedVariables: IEFMinimapButton_OffsetX, IEFMinimapButton_OffsetY, ImprovedErrorSettings
+..\..\FrameXML\ClassTrainerFrameTemplates.xml
+ImprovedErrorFrame.xml

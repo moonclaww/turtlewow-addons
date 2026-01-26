@@ -1,0 +1,15 @@
+﻿## Interface: 11200
+## Title: [德鲁伊]FeralSkills
+## Author: Astryl
+## Version: 1.5
+## Notes: 集成大多数常用野性德系技能到4个高定制化的宏。输入/FeralSkills进行设置。必须设置后才能使用。
+## eMail: cnervig@hotmail.com
+## URL: http://astryl.wowinterface.com/
+## OptionalDeps: Khaos,MobHealth,MobHealth2,MobInfo2
+## DefaultState: Enabled
+## LoadOnDemand: 0
+## SavedVariables: FeralSkills_Settings,FeralSkills_Immunities
+FeralSkillsLocalization.lua
+FeralSkills.lua
+FeralSkills.xml
+FeralSkillsDropDowns.xml

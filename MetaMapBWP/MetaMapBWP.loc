@@ -1,0 +1,29 @@
+-- Default English Localisation
+
+BWP_NILLOCATION = "没有可用的目的地"
+BWP_SELECTMSG = "选择目的地"
+BINDING_NAME_BWP_CLEAR = "清除路点";
+BWP_CLEAR_DEST = "清除目的地"
+BWP_CLEAR_ARRIVE = "到达后清除路点"
+BWP_NPC_TEXT = "QNPC: "
+BWP_ARRIVED = "到达！"
+BWP_BUTTON_TOOLTIP = "MetaMapBWP\n鼠标左键显示菜单\n鼠标右键拖动"
+BWPGROUPERROR = "你和目标必须是队伍或者团队的队员并且在同一地图来使BWP利用这个功能"
+BWPGROUPERROR1 = "被请求的目标不在你当前的团队。"
+BWPGROUPERROR2 = "被请求的目标不在你当前的小组。"
+BWP_QUEST_NPCSTRING ="任务NPCs"
+
+BWP_ALWAYS_LOAD = "总是在启动时加载"
+BWP_SHOW_MAPPOINTS = "在菜单显示地点"
+BWP_SHOW_CORPSE = "显示尸体路点"
+BWP_SHOW_GUARD = "显示警戒路点"
+BWP_SHOW_YARDS = "显示距离为码"
+BWP_SHOW_METRES = "显示距离为米"
+BWP_CLEARDIST_TEXT = "离目的地多远显示到达信息"
+BWP_SHOW_QNPC = "显示任务NPCs"
+
+BWP_CORPSE_TEXT = "尸体"
+BWP_OPTION_TEXT = "选项"
+BWP_INFO_TEXT1 = "你们必须在同一地区\n来设置"
+BWP_INFO_TEXT3 = "为路点"
+BWP_INFO_TEXT2 = "设置"

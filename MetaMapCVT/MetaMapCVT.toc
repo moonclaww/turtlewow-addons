@@ -1,0 +1,7 @@
+## Interface: 11200
+## Title: [地图]MetaMapCVT
+## Notes: 转换以及导入模块
+## Dependencies: MetaMap
+## LoadOnDemand: 1
+## SavedVariables:
+..\MetaMap\MetaMapCVT.xml

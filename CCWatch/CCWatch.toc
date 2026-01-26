@@ -1,0 +1,14 @@
+## Interface: 11200
+## Title: [战斗]CCWatch
+## Notes: Displays a progress bar for any class CCs, Debuffs and Durations
+## Notes-zhCN: 显示一个支持全职业的控制技能、Buff、Debuff监视条。输入/ccw进行设置。
+## Notes-zhTW: 顯示一個支持全職業的控制技能、Buff、Debuff監視條.
+## Author: Elwen+phoenixfire2001
+## Version: 11000.1
+## UIType: 界面增强
+## UIType-zhTW: 界面增強
+## SavedVariables: CCWatch_Save
+## OptionalDeps: myAddOns, EarthFeatureFrame
+## Dependencies: 
+CCWatch.xml
+UI\CCWatch_Options.xml

@@ -1,0 +1,13 @@
+﻿## Interface: 11200
+## Title: [任务]AtlasQuest
+## Notes: 显示副本任务列表。这是英文版本。
+## Author: Asurn
+## Version: 3.14.28
+## Notes-deDE: Zeigt die Quests, die es f\195\88r die jeweiligen Instanzen gibt.
+## Notes-frFR: Shows the Quests for the instance. (French translator needed)
+## Notes-koKR: Shows the Quests for the instance. (translator needed)
+## SavedVariables:
+## OptionalDeps: Atlasloot
+## Dependencies: Atlas
+AtlasQuest_InsideFrame.xml
+AtlasQuest.xml

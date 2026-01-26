@@ -1,0 +1,55 @@
+﻿-- Default English localisation
+QST_QUEST_TEXT  	= "任务";
+QST_QUEST_DONE		= "完成";
+QST_QUEST_FAILED	= "失败";
+QST_QUEST_ABANDON	= "放弃";
+QST_QUEST_ACTIVE	= "进行中";
+QST_QUEST_UNKNOWN	= "未知";
+QST_QUEST_START	  = "开始任务";
+QST_QUEST_END	    = "结束任务";
+QST_QUEST_HISTORY	= "历史";
+QST_TOOLTIP_SLAIN	= "杀死";
+QST_DUNGEON				= "地下城";
+QST_PVP						= "PvP";
+
+QST_START_LOAD    = "总是在开始时加载";
+QST_OPTIONS_TEXT  = "选项";
+QST_TEXT_PADDING  = "文本间隔";
+QST_MAPQUERY      = "当设置标记时自动定位";
+QST_NOTE_FLAG     = "Noted";
+QST_FILTER_ALL    = "显示所有任务";
+QST_FILTER_ACT    = "只显示进行中任务";
+QST_FILTER_MAP    = "显示地图任务";
+QST_SORT_TITLE    = "按名称排列";
+QST_SORT_LEVEL    = "按等级排列";
+QST_SORT_LOGGED   = "按Logged排列";
+QST_NOTES_TITLE   = "Quest Notes";
+QST_NOTES_SAVE    = "保存笔记";
+QST_NOTES_EXIT    = "取消";
+QST_MENU_NOTE     = "编辑笔记";
+QST_MENU_FLAGS    = "Edit Flags";
+QST_MENU_REMOVE   = "移除任务";
+QST_MENU_INSERT1  = "插入任务名称";
+QST_MENU_INSERT2  = "插入任务物品";
+QST_MENU_SHARE    = "共享任务";
+QST_MENU_GIVER    = "地图标记NPC1";
+QST_MENU_COMP     = "地图标记NPC2";
+
+QST_HISTORY_SAVE  = "维持一个历史数据库";
+QST_HISTORY_DESC  = "保存描述到历史";
+QST_HISTORY_REW   = "保存奖励到历史";
+QST_QUESTDELETE   = "从历史数据库移除任务 '%s' ?";
+QST_QREMOVED      = "已从历史数据库移除";
+QST_NOREMOVE      = "不能放弃另一个人物进行的任务";
+QST_NO_NPC1       = "未找到此任务的给与者";
+QST_NO_NPC2       = "未找到此任务的结束者";
+
+QST_TTHINT_H0     = "鼠标提示";
+QST_TTHINT_H1     = "任务文本";
+QST_TTHINT_H2     = "奖励物品";
+QST_TTHINT_T0     = "玩家/NPC信息";
+QST_TTHINT_T1     = "显示笔记";
+QST_TTHINT_T2     = "显示奖励";
+QST_TTHINT_T3     = "快捷菜单";
+QST_TTHINT_T4     = "物品链接";
+QST_TTHINT_T5     = "试衣间";

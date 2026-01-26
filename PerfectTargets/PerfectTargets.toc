@@ -1,0 +1,20 @@
+## Interface: 11200
+
+## Title: |cff7fff7f-Ace2-|r PerfectTargets
+## Notes: Minimalistic set of target frames
+## Author: Tekkub Stoutwrithe
+## Version: 2.0
+## X-ReleaseDate: "$Date: 2006-09-23 15:48:08 -0700 (Sat, 23 Sep 2006) $"
+## X-Website: http://www.wowace.com/index.php/PerfectTargets
+## X-Email: tekkub@gmail.com
+## X-GoogleCode-Project: wowace
+## X-GoogleCode-Label: PerfectTargets
+## X-Category: UnitFrame
+## Dependencies: !!!Libs
+## OptionalDeps: Ace2, CompostLib, GratuityLib, DewdropLib, MetrognomeLib
+
+## SavedVariables: PerfectTargetsDB
+
+
+TargetFrame.lua
+Core.lua
