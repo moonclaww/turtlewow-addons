@@ -31,10 +31,8 @@ Modules\QuestieUtils.lua
 
 # Questie Database (Shared files)
 Database\zone.lua
-Database\finishers.lua
 Database\newObjects.lua
 Database\reputations.lua
-Database\zhCN\finishers.lua
 Database\zhCN\newObjects.lua
 Database\zhCN\reputations.lua
 
@@ -57,8 +55,6 @@ Database\turtle\locale\zhCN\names.lua
 # Addendum files (must load last - merges data and builds lookups)
 Database\addendum.lua
 Database\zhCN\addendum.lua
-
-Astrolabe\Astrolabe.lua
 
 # Questie
 Questie.lua

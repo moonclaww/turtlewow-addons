@@ -66,6 +66,12 @@ end
 function MetaMap_ExportMetaNotes()
 	MyNotes_Data = {};
 	MyLines_Data = {};
+	if(MetaMapNotes_Data.__canonical) then
+		MyNotes_Data.__canonical = MetaMapNotes_Data.__canonical;
+	end
+	if(MetaMapNotes_Lines.__canonical) then
+		MyLines_Data.__canonical = MetaMapNotes_Lines.__canonical;
+	end
 	for continent=1, 2, 1 do
 		MyNotes_Data[continent] = {};
 		for zone, zoneTable in MetaMapNotes_Data[continent] do

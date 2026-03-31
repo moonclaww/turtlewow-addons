@@ -11,6 +11,14 @@ Ace2\AceLibrary\AceLibrary.lua
 Ace2\AceOO-2.0\AceOO-2.0.lua
 
 GameVersion-1.0\GameVersion-1.0.lua
+MapRegistry-1.0\TurtleVersions.lua
+# BEGIN MapRegistry Turtle Versions
+MapRegistry-1.0\TurtleVersions\1_18_1.lua
+# END MapRegistry Turtle Versions
+MapRegistry-1.0\MapRegistry-1.0.lua
+Astrolabe-0.2\Astrolabe.lua
+Astrolabe-0.2\GeneratedZoneData.lua
+MapRegistry-1.0\AstrolabeBridge.lua
 
 Compost-2.0\Compost-2.0.lua
 

@@ -92,6 +92,7 @@ function MetaMapBKP_RestoreNotes()
 		MetaMapNotes_Lines = {};
 		MetaMapNotes_Lines = BKP_MetaMapNotes_Lines;
 	end
+	MetaMap_LoadZones();
 end
 
 function MetaMapBKP_RestoreWKB()
@@ -99,6 +100,7 @@ function MetaMapBKP_RestoreWKB()
 		MetaKB_Data = {};
 		MetaKB_Data[MetaKB_dbID] = {};
 		MetaKB_Data[MetaKB_dbID] = BKP_MetaKB_Data[MetaKB_dbID];
+		MetaMapWKB_VerifyData();
 		info = info.."\nMetaMapWKB: |cff00ff00"..METAMAPBKP_RESTORE_DONE.."|r";
 	else
 		info = info.."\nMetaMapWKB: |cffff0000"..METAMAPBKP_RESTORE_FAIL.."|r";

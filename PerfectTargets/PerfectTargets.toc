@@ -10,7 +10,6 @@
 ## X-GoogleCode-Project: wowace
 ## X-GoogleCode-Label: PerfectTargets
 ## X-Category: UnitFrame
-## Dependencies: !!!Libs
 ## OptionalDeps: Ace2, CompostLib, GratuityLib, DewdropLib, MetrognomeLib
 
 ## SavedVariables: PerfectTargetsDB

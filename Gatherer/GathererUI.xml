@@ -1178,8 +1178,8 @@
 						getglobal(this:GetName().."Text"):SetText(GATHERER_TEXT_FADEDIST);
 						getglobal(this:GetName().."High"):SetText();
 						getglobal(this:GetName().."Low"):SetText();
-						this:SetMinMaxValues(10, 60);
-						this:SetValueStep(1);
+						this:SetMinMaxValues(0, 5000);
+						this:SetValueStep(50);
 						this.tooltipText = GATHERER_TEXT_FADEDIST_TIP;
 					</OnLoad>
 					<OnShow>
@@ -1189,7 +1189,7 @@
 					</OnShow>
 					<OnValueChanged>
 						GatherConfig.fadeDist = this:GetValue();
-						getglobal(this:GetName().."Text"):SetText(GATHERER_TEXT_FADEDIST.." : "..this:GetValue()..".");
+						getglobal(this:GetName().."Text"):SetText(GATHERER_TEXT_FADEDIST.." : "..this:GetValue().." yards");
 					</OnValueChanged>
 					<OnEnter>
 						GameTooltip:SetOwner(GathererUI_DialogFrame, "ANCHOR_TOPLEFT");
@@ -1300,8 +1300,8 @@
 						getglobal(this:GetName().."Text"):SetText(GATHERER_TEXT_MINIIDIST);
 						getglobal(this:GetName().."High"):SetText();
 						getglobal(this:GetName().."Low"):SetText();
-						this:SetMinMaxValues(0, 60);
-						this:SetValueStep(1);
+						this:SetMinMaxValues(0, 5000);
+						this:SetValueStep(50);
 						this.tooltipText = GATHERER_TEXT_MINIIDIST_TIP;
 					</OnLoad>
 					<OnShow>
@@ -1311,7 +1311,7 @@
 					</OnShow>
 					<OnValueChanged>
 						GatherConfig.miniIconDist = this:GetValue();
-						getglobal(this:GetName().."Text"):SetText(GATHERER_TEXT_MINIIDIST.." : "..this:GetValue()..".");
+						getglobal(this:GetName().."Text"):SetText(GATHERER_TEXT_MINIIDIST.." : "..this:GetValue().." yards");
 					</OnValueChanged>
 					<OnEnter>
 						GameTooltip:SetOwner(GathererUI_DialogFrame, "ANCHOR_TOPLEFT");
@@ -1340,8 +1340,8 @@
 						getglobal(this:GetName().."Text"):SetText(GATHERER_TEXT_MAXDIST);
 						getglobal(this:GetName().."High"):SetText();
 						getglobal(this:GetName().."Low"):SetText();
-						this:SetMinMaxValues(0, 100);
-						this:SetValueStep(1);
+						this:SetMinMaxValues(0, 5000);
+						this:SetValueStep(50);
 						this.tooltipText = GATHERER_TEXT_MAXDIST_TIP;
 					</OnLoad>
 					<OnShow>
@@ -1351,7 +1351,7 @@
 					</OnShow>
 					<OnValueChanged>
 						GatherConfig.maxDist = this:GetValue();
-						getglobal(this:GetName().."Text"):SetText(GATHERER_TEXT_MAXDIST.." : "..this:GetValue()..".");
+						getglobal(this:GetName().."Text"):SetText(GATHERER_TEXT_MAXDIST.." : "..this:GetValue().." yards");
 					</OnValueChanged>
 					<OnEnter>
 						GameTooltip:SetOwner(GathererUI_DialogFrame, "ANCHOR_TOPLEFT");

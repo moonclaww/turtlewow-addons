@@ -1,7 +1,7 @@
-# WorldMapArea.dbc bounds extracted from WoW 1.12.1
+# WorldMapArea.dbc bounds extracted from WoW client
 # Format: mapAreaId: (locLeft, locRight, locTop, locBottom)
-# locLeft/locRight = Y-axis boundaries
-# locTop/locBottom = X-axis boundaries
+# locLeft/locRight = Y-axis boundaries (positive = north)
+# locTop/locBottom = X-axis boundaries (positive = west)
 # Conversion: mapX = (worldY - locLeft) / (locRight - locLeft)
 #             mapY = (worldX - locTop) / (locBottom - locTop)
 

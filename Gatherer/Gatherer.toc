@@ -1,4 +1,4 @@
-﻿## Interface: 11200
+## Interface: 11200
 ## Title: [物品]Gatherer
 ## Title-frFR: Gatherer
 ## Title-deDE: Gatherer

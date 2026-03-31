@@ -18,7 +18,6 @@
 
 ## OptionalDeps: Ace2, DewdropLib
 ## X-Embeds: Ace2, DewdropLib
-## Dependencies: !!!Libs
 
 localizations\locals.xml
 

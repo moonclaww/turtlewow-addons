@@ -2,6 +2,13 @@
 -- Written by MetaHawk - aka Urshurak
 
 function MetaMapZSM_Init()
+	if((MetaMapNotes_Data and MetaMapNotes_Data.__canonical) or
+		(MetaMapNotes_Lines and MetaMapNotes_Lines.__canonical) or
+		(MetaKB_Data and MetaKB_Data[MetaKB_dbID] and MetaKB_Data[MetaKB_dbID].__canonical)) then
+		MetaMap_OptionsInfo:SetText("Zone shifting is obsolete when canonical map IDs are enabled.");
+		MetaMapZSM_Update:Disable();
+		return;
+	end
 	MetaMap_OptionsInfo:SetText(METAMAPZSM_NEW_VERSION);
 	for index, versions in MetaMapZSM_VersionData do
 		for version, value in versions do
@@ -46,6 +53,12 @@ function MetaMapZSM_OnClick(id, button)
 end
 
 function MetaMapZSM_Convert(newShift)
+	if((MetaMapNotes_Data and MetaMapNotes_Data.__canonical) or
+		(MetaMapNotes_Lines and MetaMapNotes_Lines.__canonical) or
+		(MetaKB_Data and MetaKB_Data[MetaKB_dbID] and MetaKB_Data[MetaKB_dbID].__canonical)) then
+		MetaMap_OptionsInfo:SetText("Zone shifting is obsolete when canonical map IDs are enabled.");
+		return;
+	end
 	local temp = {}
 	for z=1, 2, 1 do
 		for index, value in MetaMapNotes_Data[z] do

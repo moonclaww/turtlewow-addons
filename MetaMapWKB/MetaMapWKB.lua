@@ -36,6 +36,54 @@ local MetaKB_LastSearch = "";
 local MetaKB_SearchResults = {};
 local MetaKB_PlayerX = 0;
 local MetaKB_PlayerY = 0;
+local MetaKB_MapRegistry = AceLibrary("MapRegistry-1.0")
+
+local function MetaKB_RebuildFromCanonical()
+	for name, dataSet in MetaKB_Data[MetaKB_dbID] do
+		if(type(name) == "string" and dataSet.__canonical) then
+			for mapId, zoneData in dataSet.__canonical do
+				local canonicalId = tonumber(mapId)
+				if(canonicalId) then
+					local continent, zone = MetaKB_MapRegistry:GetClientZone(canonicalId)
+					if(continent and zone and continent > 0 and zone > 0) then
+						if(dataSet[continent] == nil) then
+							dataSet[continent] = {}
+						end
+						dataSet[continent][zone] = zoneData
+					end
+				end
+			end
+		end
+	end
+end
+
+local function MetaKB_EnsureCanonicalUnit(unitName, continent, zone)
+	if(type(continent) == "string" or continent == nil or zone == nil or continent <= 0 or zone <= 0) then
+		return MetaKB_Data[MetaKB_dbID][unitName]
+	end
+
+	local currentUnit = MetaKB_Data[MetaKB_dbID][unitName]
+	local mapId = MetaKB_MapRegistry:GetCanonicalMapID(continent, zone)
+	if(not mapId) or mapId < 0 then
+		return currentUnit
+	end
+
+	if(currentUnit.__canonical == nil) then
+		currentUnit.__canonical = {}
+	end
+	if(currentUnit.__canonical[mapId] == nil) then
+		if(currentUnit[continent] and currentUnit[continent][zone]) then
+			currentUnit.__canonical[mapId] = currentUnit[continent][zone]
+		else
+			currentUnit.__canonical[mapId] = {}
+		end
+	end
+	if(currentUnit[continent] == nil) then
+		currentUnit[continent] = {}
+	end
+	currentUnit[continent][zone] = currentUnit.__canonical[mapId]
+	return currentUnit
+end
 
 function MetaKB_EventFrame_OnLoad()
 	this:RegisterEvent("ADDON_LOADED");
@@ -88,26 +136,28 @@ function MetaKB_InitFrame()
 end
 
 function MetaMapWKB_VerifyData()
-	local TempData = {}
-	TempData[MetaKB_dbID] = {};
+	local rebuilt = {};
 	for name, continentTable in MetaKB_Data[MetaKB_dbID] do
-		for continent, zoneTable in continentTable do
-			if(type(continent) ~= "String") then
-				for zone, value in zoneTable do
-					if(zone ~= 0) then
-						TempData[MetaKB_dbID][name] = {};
-						TempData[MetaKB_dbID][name][continent] = {};
-						TempData[MetaKB_dbID][name][continent][zone] = {};
-						TempData[MetaKB_dbID][name][continent][zone] = value;
+		if(type(name) == "string") then
+			rebuilt[name] = rebuilt[name] or {};
+			if(continentTable.__canonical) then
+				rebuilt[name].__canonical = continentTable.__canonical;
+			end
+			for continent, zoneTable in continentTable do
+				if(type(continent) ~= "string") then
+					rebuilt[name][continent] = rebuilt[name][continent] or {};
+					for zone, value in zoneTable do
+						if(zone ~= 0) then
+							rebuilt[name][continent][zone] = value;
+						end
 					end
 				end
 			end
 		end
 	end
 	MetaKB_Data = {};
-	MetaKB_Data[MetaKB_dbID] = {};
-	MetaKB_Data[MetaKB_dbID] = TempData[MetaKB_dbID];
-	TempData = nil;
+	MetaKB_Data[MetaKB_dbID] = rebuilt;
+	MetaKB_RebuildFromCanonical();
 end
 
 function MetaKB_ToggleFrame(mode)
@@ -243,7 +293,7 @@ function MetaKB_AddUnitInfo(UnitSelect)
 		MetaKB_Data[MetaKB_dbID][unitName] = {};
 		MetaMap_StatusPrint(format(TEXT(METAKB_DISCOVERED_UNIT), unitName), true);
 	end
-	currentUnit = MetaKB_Data[MetaKB_dbID][unitName];
+	currentUnit = MetaKB_EnsureCanonicalUnit(unitName, continent, zone);
 	if(currentUnit[continent] == nil) then
 		currentUnit[continent] = {};
 	end

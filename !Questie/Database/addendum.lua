@@ -1,5 +1,71 @@
 if GetLocale() ~= "enUS" then return end
 
+local MapRegistry = AceLibrary("MapRegistry-1.0")
+local QuestieAddendumRaceBitIndexTable = {
+    ['human'] = 1,
+    ['orc'] = 2,
+    ['dwarf'] = 3,
+    ['nightelf'] = 4,
+    ['night elf'] = 4,
+    ['scourge'] = 5,
+    ['undead'] = 5,
+    ['tauren'] = 6,
+    ['gnome'] = 7,
+    ['troll'] = 8,
+    ['goblin'] = 9,
+}
+local QuestieAddendumClassBitIndexTable = {
+    ['warrior'] = 1,
+    ['paladin'] = 2,
+    ['hunter'] = 3,
+    ['rogue'] = 4,
+    ['priest'] = 5,
+    ['shaman'] = 7,
+    ['mage'] = 8,
+    ['warlock'] = 9,
+    ['druid'] = 11,
+}
+
+local function QuestieAddendumUnpackBinary(val)
+    local ret = {}
+
+    for q = 0, 16 do
+        ret[q + 1] = bit.band(bit.rshift(val, q), 1) == 1
+    end
+
+    return ret
+end
+
+local function QuestieCheckRequirements(class, race, dbClass, dbRace)
+    local valid = true
+
+    if race and dbRace and dbRace ~= 0 then
+        local raceIndex = QuestieAddendumRaceBitIndexTable[strlower(race)]
+        if raceIndex then
+            local raceMap = QuestieAddendumUnpackBinary(dbRace)
+            valid = raceMap[raceIndex]
+        else
+            valid = false
+        end
+    end
+
+    if class and dbClass and valid and dbClass ~= 0 then
+        local classIndex = QuestieAddendumClassBitIndexTable[strlower(class)]
+        if classIndex then
+            local classMap = QuestieAddendumUnpackBinary(dbClass)
+            valid = classMap[classIndex]
+        else
+            valid = false
+        end
+    end
+
+    return valid
+end
+
+if not checkRequirements then
+    checkRequirements = QuestieCheckRequirements
+end
+
 local N = UnitName("player");
 local R = UnitRace("player");
 QuestieLevLookup = {
@@ -55601,23 +55667,8 @@ function GetEntityLocations(entity)
             local class = UnitClass("Player")
             local race = UnitRace("Player")
             for i, location in pairs(sources) do
-                if (not entity['locations_rr']) or (not entity['locations_rr'][i]) or checkRequirements(class, race, nil, entity['locations_rr'][i]) then
-                    local reformattedLocation
-                    if location[2] >= 1 then
-                        -- new location format: {continent, vanillaZone, x, y}
-                        -- Convert vanilla zone to TurtleWoW zone if needed
-                        if QuestieIsTurtleWoW then
-                            local turtleZone = QuestieConvertVanillaZone(location[1], location[2])
-                            reformattedLocation = {location[1], turtleZone, location[3], location[4]}
-                        else
-                            reformattedLocation = location
-                        end
-                    elseif QuestieZoneIDLookup[location[1]] then
-                        -- old location format: {mapID, x, y, ???}
-                        local MapInfo = QuestieZoneIDLookup[location[1]]
-                        local cIdx, zIdx = QuestieGetZoneIndices()
-                        reformattedLocation = {MapInfo[cIdx], MapInfo[zIdx], location[2], location[3]}
-                    end
+                if (not entity['locations_rr']) or (not entity['locations_rr'][i]) or QuestieCheckRequirements(class, race, nil, entity['locations_rr'][i]) then
+                    local reformattedLocation = MapRegistry:ResolveLocationTuple(location)
 
                     if reformattedLocation then
                         if locations[sourceType] == nil then locations[sourceType] = {} end
@@ -55646,13 +55697,6 @@ function GetMonsterLocations(monsterName)
     local unitId = QuestieUnitIds and QuestieUnitIds[monsterName]
     if unitId and QuestieUnitData and QuestieUnitData[unitId] then
         return GetEntityLocations(QuestieUnitData[unitId])
-    elseif QuestieAdditionalStartFinishLookup and QuestieAdditionalStartFinishLookup[monsterName] then
-        return GetEntityLocations({
-            ["locations"] = {
-                [1] = QuestieAdditionalStartFinishLookup[monsterName]
-            },
-            ["locationCount"] = 1
-        })
     end
     return {}, {}
 end
@@ -55725,9 +55769,10 @@ end
 QuestieZoneLevelMap = {
 }
 
-function addQuestToZoneLevelMap(c, z, questHash, questInfo, locationMeta)
+function addQuestToZoneLevelMap(c, z, questHash, questInfo, locationMeta, questId)
     local level = questInfo['level']
-    locationMeta['questName'] = questInfo['name']
+    local variantLocationMeta = locationMeta
+    variantLocationMeta['questName'] = questInfo['name']
     if QuestieZoneLevelMap[c] == nil then
         QuestieZoneLevelMap[c] = {};
     end
@@ -55737,39 +55782,11 @@ function addQuestToZoneLevelMap(c, z, questHash, questInfo, locationMeta)
     if QuestieZoneLevelMap[c][z][level] == nil then
         QuestieZoneLevelMap[c][z][level] = {};
     end
-    QuestieZoneLevelMap[c][z][level][questHash] = locationMeta
+    if QuestieZoneLevelMap[c][z][level][questHash] == nil then
+        QuestieZoneLevelMap[c][z][level][questHash] = { ["variants"] = {} }
+    end
+    QuestieZoneLevelMap[c][z][level][questHash]["variants"][questId or questInfo.questId or 0] = variantLocationMeta
 end
-
-local start = GetTime();
-for questHash, questInfo in pairs(QuestieHashMap) do
-    if questInfo['startedType'] == "monster" then
-        local locationMeta, mapIds = GetMonsterLocations(questInfo['startedBy'])
-        for c, zs in pairs(mapIds) do
-            for z, b in pairs(zs) do
-                addQuestToZoneLevelMap(c, z, questHash, questInfo, locationMeta)
-            end
-        end
-    end
-    if questInfo['startedType'] == "item" and questInfo['startedBy'] ~= "unknown" then
-        local locationMeta, mapIds = GetItemLocations(questInfo['startedBy'])
-        for c, zs in pairs(mapIds) do
-            for z, b in pairs(zs) do
-                addQuestToZoneLevelMap(c, z, questHash, questInfo, locationMeta)
-            end
-        end
-    end
-    if questInfo['startedType'] == "object" then
-        local locationMeta, mapIds = GetObjectLocations(questInfo['startedBy'])
-        for c, zs in pairs(mapIds) do
-            for z, b in pairs(zs) do
-                addQuestToZoneLevelMap(c, z, questHash, questInfo, locationMeta)
-            end
-        end
-    end
-end
-
-local ttl = GetTime() - start;
-DEFAULT_CHAT_FRAME:AddMessage("Compiled AvailableQuests in " .. math.floor(ttl*1000) .. "ms");
 
 -- ============================================================================
 -- ID-Based Lookup System (New Architecture)
@@ -55845,47 +55862,16 @@ if QuestieIsTurtleWoW then
 end
 
 -- Build reverse lookup tables (name → ID)
-QuestieUnitIds = {}      -- ["暗礁蟹幼崽"] = 2234
-QuestieObjectIds = {}    -- ["铜矿"] = 1731
-QuestieItemIds = {}      -- ["小蜘蛛腿"] = 5465
-QuestieQuestLookup = {}  -- ["加瑞克·帕德弗特的赏金"]["杀死加瑞克..."] = 6
-
-if QuestieUnitNames then
-    for id, name in pairs(QuestieUnitNames) do
-        if name and name ~= "" then
-            QuestieUnitIds[name] = id
-        end
-    end
-end
-
-if QuestieObjectNames then
-    for id, name in pairs(QuestieObjectNames) do
-        if name and name ~= "" then
-            QuestieObjectIds[name] = id
-        end
-    end
-end
-
-if QuestieItemNames then
-    for id, name in pairs(QuestieItemNames) do
-        if name and name ~= "" then
-            QuestieItemIds[name] = id
-        end
-    end
-end
-
-if QuestieQuestNames then
-    for id, info in pairs(QuestieQuestNames) do
-        local title = info.title
-        local objectives = info.objectives or ""
-        if title and title ~= "" then
-            if not QuestieQuestLookup[title] then
-                QuestieQuestLookup[title] = {}
-            end
-            QuestieQuestLookup[title][objectives] = id
-        end
-    end
-end
+QuestieUnitIds = {}
+QuestieObjectIds = {}
+QuestieItemIds = {}
+QuestieQuestLookup = {}
+QuestieHashMap = {}
+QuestieLevLookup = {}
+QuestieHashVariants = {}
+QuestieQuestMetaById = {}
+QuestieQuestIdToHash = {}
+QuestieRequiredQuestHashByQuestId = {}
 
 -- Custom modulo function (same as Questie:Modulo for Lua 5.0 compatibility)
 local function QuestieModulo(val, by)
@@ -55902,117 +55888,128 @@ local function QuestieAdler32(text)
     return b * 65536 + a
 end
 
--- Build questId mapping from ID-based quest data
--- First: Add questId to EXISTING QuestieHashMap entries by looking up through QuestieLevLookup
--- This handles pre-existing entries where hash was calculated differently
-if QuestieQuestNames and QuestieQuestData and QuestieLevLookup and QuestieHashMap then
-    for questId, info in pairs(QuestieQuestNames) do
-        local title = info.title
-        if title and title ~= "" then
-            local questData = QuestieQuestData[questId]
-            if questData then
-                -- Look up existing hash from QuestieLevLookup
-                local levEntry = QuestieLevLookup[title]
-                if levEntry then
-                    -- Iterate through all objective variants for this quest title
-                    for objectives, hashInfo in pairs(levEntry) do
-                        local existingHash = hashInfo[2]
-                        if existingHash and QuestieHashMap[existingHash] then
-                            -- Add questId to existing entry if missing
-                            if not QuestieHashMap[existingHash].questId then
-                                QuestieHashMap[existingHash].questId = questId
-                            end
-                        end
-                    end
-                end
-            end
+local function QuestieGetSortedNumericKeys(source)
+    local keys = {}
+    if not source then
+        return keys
+    end
+
+    for key in pairs(source) do
+        if type(key) == "number" then
+            table.insert(keys, key)
         end
     end
+
+    table.sort(keys)
+    return keys
 end
 
--- Second pass: Create new entries for quests not in pre-existing data (e.g., TurtleWoW quests)
-if QuestieQuestNames and QuestieQuestData then
-    QuestieLevLookup = QuestieLevLookup or {}
-    QuestieHashMap = QuestieHashMap or {}
-    
-    for questId, info in pairs(QuestieQuestNames) do
-        local title = info.title
-        local objectives = info.objectives or ""
-        
+local function QuestieBuildReverseNameLookup(source)
+    local lookup = {}
+
+    for _, id in ipairs(QuestieGetSortedNumericKeys(source)) do
+        local name = source[id]
+        if name and name ~= "" and lookup[name] == nil then
+            lookup[name] = id
+        end
+    end
+
+    return lookup
+end
+
+local function QuestieBuildQuestNameLookup()
+    local lookup = {}
+
+    for _, questId in ipairs(QuestieGetSortedNumericKeys(QuestieQuestNames)) do
+        local info = QuestieQuestNames[questId]
+        local title = info and info.title
+        local objectives = info and info.objectives or ""
+
         if title and title ~= "" then
-            local questData = QuestieQuestData[questId]
-            
-            if questData then
-                -- Check if quest already exists in QuestieLevLookup
-                local existsInLookup = false
-                if QuestieLevLookup[title] then
-                    for _, hashInfo in pairs(QuestieLevLookup[title]) do
-                        if hashInfo[2] and QuestieHashMap[hashInfo[2]] then
-                            existsInLookup = true
-                            break
-                        end
-                    end
-                end
-                
-                -- Only create new entry if quest doesn't exist
-                if not existsInLookup then
-                    -- Calculate hash from title + objectives
-                    local questHash = QuestieAdler32(title .. objectives)
-                    
-                    if not QuestieHashMap[questHash] then
-                        -- Get quest giver/finisher names
-                        local startedBy = "Unknown"
-                        local startedType = "monster"
-                        local finishedBy = "Unknown"
-                        local finishedType = "monster"
-                        
-                        if questData.startUnit and QuestieUnitNames then
-                            startedBy = QuestieUnitNames[questData.startUnit] or ("Unit_" .. questData.startUnit)
-                            startedType = "monster"
-                        elseif questData.startObject and QuestieObjectNames then
-                            startedBy = QuestieObjectNames[questData.startObject] or ("Object_" .. questData.startObject)
-                            startedType = "object"
-                        elseif questData.startItem and QuestieItemNames then
-                            startedBy = QuestieItemNames[questData.startItem] or ("Item_" .. questData.startItem)
-                            startedType = "item"
-                        end
-                        
-                        if questData.endUnit and QuestieUnitNames then
-                            finishedBy = QuestieUnitNames[questData.endUnit] or ("Unit_" .. questData.endUnit)
-                            finishedType = "monster"
-                        elseif questData.endObject and QuestieObjectNames then
-                            finishedBy = QuestieObjectNames[questData.endObject] or ("Object_" .. questData.endObject)
-                            finishedType = "object"
-                        end
-                        
-                        -- Add to QuestieHashMap
-                        QuestieHashMap[questHash] = {
-                            ["name"] = title,
-                            ["startedType"] = startedType,
-                            ["finishedType"] = finishedType,
-                            ["startedBy"] = startedBy,
-                            ["finishedBy"] = finishedBy,
-                            ["level"] = questData.minLevel or 1,
-                            ["questLevel"] = tostring(questData.level or 1),
-                            ["rr"] = questData.race or 0,
-                            ["rc"] = questData.class or 0,
-                            ["rq"] = questData.preQuests and questData.preQuests[1] or nil,
-                            ["questId"] = questId,
-                        }
-                        
-                        -- Add to QuestieLevLookup
-                        if not QuestieLevLookup[title] then
-                            QuestieLevLookup[title] = {}
-                        end
-                        local faction = questData.race or 0
-                        if not QuestieLevLookup[title][objectives] then
-                            QuestieLevLookup[title][objectives] = {faction, questHash}
-                        end
-                    end
+            if lookup[title] == nil then
+                lookup[title] = {}
+            end
+            if lookup[title][objectives] == nil then
+                lookup[title][objectives] = questId
+            end
+        end
+    end
+
+    return lookup
+end
+
+local function QuestieBuildLegacyRequiredSkillMap(legacyLevLookup, legacyHashMap, questLookup)
+    local requiredSkillByQuestId = {}
+
+    if not legacyLevLookup or not legacyHashMap or not questLookup then
+        return requiredSkillByQuestId
+    end
+
+    for title, objectiveEntries in pairs(legacyLevLookup) do
+        local questIdsByObjective = questLookup[title]
+        if questIdsByObjective then
+            for objectives, hashInfo in pairs(objectiveEntries) do
+                local legacyHash = hashInfo and hashInfo[2]
+                local legacyQuest = legacyHash and legacyHashMap[legacyHash]
+                local questId = questIdsByObjective[objectives]
+
+                if questId and legacyQuest and legacyQuest.rs and requiredSkillByQuestId[questId] == nil then
+                    requiredSkillByQuestId[questId] = legacyQuest.rs
                 end
             end
         end
     end
+
+    return requiredSkillByQuestId
+end
+
+local function QuestieGetDisplayName(nameTable, entityId, prefix)
+    if entityId and nameTable and nameTable[entityId] then
+        return nameTable[entityId]
+    end
+
+    if prefix == "Object" and entityId and QuestieNewObjects and QuestieNewObjects[entityId] and QuestieNewObjects[entityId].name then
+        return QuestieNewObjects[entityId].name
+    end
+
+    if entityId then
+        return prefix .. "_" .. entityId
+    end
+
+    return "unknown"
+end
+
+local function QuestieResolveStartInfo(questData)
+    if not questData then
+        return "unknown", "unknown"
+    end
+
+    if questData.startUnit then
+        return "monster", QuestieGetDisplayName(QuestieUnitNames, questData.startUnit, "Unit")
+    end
+    if questData.startObject then
+        return "object", QuestieGetDisplayName(QuestieObjectNames, questData.startObject, "Object")
+    end
+    if questData.startItem then
+        return "item", QuestieGetDisplayName(QuestieItemNames, questData.startItem, "Item")
+    end
+
+    return "unknown", "unknown"
+end
+
+local function QuestieResolveFinishInfo(questData)
+    if not questData then
+        return "unknown", "unknown"
+    end
+
+    if questData.endUnit then
+        return "monster", QuestieGetDisplayName(QuestieUnitNames, questData.endUnit, "Unit")
+    end
+    if questData.endObject then
+        return "object", QuestieGetDisplayName(QuestieObjectNames, questData.endObject, "Object")
+    end
+
+    return "unknown", "unknown"
 end
 
 -- ID-based lookup functions
@@ -56034,6 +56031,9 @@ end
 function QuestieGetObjectById(objectId)
     if QuestieObjectData and QuestieObjectData[objectId] then
         return QuestieObjectData[objectId]
+    end
+    if QuestieNewObjects and QuestieNewObjects[objectId] then
+        return QuestieNewObjects[objectId]
     end
     return nil
 end
@@ -56150,19 +56150,10 @@ function QuestieGetUnitLocationsById(unitId)
     local mapIds = {}
     
     for i, loc in ipairs(unitData.locations) do
-        local mapId, x, y = loc[1], loc[2], loc[3]
-        if QuestieZoneIDLookup and QuestieZoneIDLookup[mapId] then
-            local MapInfo = QuestieZoneIDLookup[mapId]
-            local cIdx, zIdx = QuestieGetZoneIndices()
-            local reformattedLocation = {MapInfo[cIdx], MapInfo[zIdx], x, y}
+        local reformattedLocation = MapRegistry:ResolveLocationTuple(loc)
+        if reformattedLocation then
             table.insert(locations["locations"], reformattedLocation)
             local c, z = reformattedLocation[1], reformattedLocation[2]
-            if not mapIds[c] then mapIds[c] = {} end
-            mapIds[c][z] = true
-        elseif table.getn(loc) == 4 then
-            -- New format: {continent, zone, x, y} - TurtleWoW zones
-            table.insert(locations["locations"], loc)
-            local c, z = loc[1], loc[2]
             if not mapIds[c] then mapIds[c] = {} end
             mapIds[c][z] = true
         end
@@ -56182,18 +56173,10 @@ function QuestieGetObjectLocationsById(objectId)
     local mapIds = {}
     
     for i, loc in ipairs(objectData.locations) do
-        local mapId, x, y = loc[1], loc[2], loc[3]
-        if QuestieZoneIDLookup and QuestieZoneIDLookup[mapId] then
-            local MapInfo = QuestieZoneIDLookup[mapId]
-            local cIdx, zIdx = QuestieGetZoneIndices()
-            local reformattedLocation = {MapInfo[cIdx], MapInfo[zIdx], x, y}
+        local reformattedLocation = MapRegistry:ResolveLocationTuple(loc)
+        if reformattedLocation then
             table.insert(locations["locations"], reformattedLocation)
             local c, z = reformattedLocation[1], reformattedLocation[2]
-            if not mapIds[c] then mapIds[c] = {} end
-            mapIds[c][z] = true
-        elseif table.getn(loc) == 4 then
-            table.insert(locations["locations"], loc)
-            local c, z = loc[1], loc[2]
             if not mapIds[c] then mapIds[c] = {} end
             mapIds[c][z] = true
         end
@@ -56202,131 +56185,417 @@ function QuestieGetObjectLocationsById(objectId)
     return locations, mapIds
 end
 
--- Get item drop locations by ID
+local function QuestieMergeLocationResults(allLocations, allMapIds, locations, mapIds)
+    if locations and locations["locations"] then
+        for _, loc in ipairs(locations["locations"]) do
+            table.insert(allLocations, loc)
+        end
+    end
+
+    if mapIds then
+        for c, zs in pairs(mapIds) do
+            if not allMapIds[c] then
+                allMapIds[c] = {}
+            end
+            for z in pairs(zs) do
+                allMapIds[c][z] = true
+            end
+        end
+    end
+end
+
+-- Get item drop or vendor locations by ID
 function QuestieGetItemLocationsById(itemId)
     local itemData = QuestieGetItemById(itemId)
     if not itemData then
         return {}, {}
     end
-    
+
     local allLocations = {}
     local allMapIds = {}
-    
-    -- Get locations from drop units
+
     if itemData.dropUnits then
         for _, unitId in ipairs(itemData.dropUnits) do
             local locs, mapIds = QuestieGetUnitLocationsById(unitId)
-            if locs and locs["locations"] then
-                for _, loc in ipairs(locs["locations"]) do
-                    table.insert(allLocations, loc)
-                end
-            end
-            if mapIds then
-                for c, zs in pairs(mapIds) do
-                    if not allMapIds[c] then allMapIds[c] = {} end
-                    for z, _ in pairs(zs) do allMapIds[c][z] = true end
-                end
-            end
+            QuestieMergeLocationResults(allLocations, allMapIds, locs, mapIds)
         end
     end
-    
-    -- Get locations from contained objects
+
     if itemData.containedObjects then
         for _, objectId in ipairs(itemData.containedObjects) do
             local locs, mapIds = QuestieGetObjectLocationsById(objectId)
-            if locs and locs["locations"] then
-                for _, loc in ipairs(locs["locations"]) do
-                    table.insert(allLocations, loc)
-                end
-            end
-            if mapIds then
-                for c, zs in pairs(mapIds) do
-                    if not allMapIds[c] then allMapIds[c] = {} end
-                    for z, _ in pairs(zs) do allMapIds[c][z] = true end
-                end
-            end
+            QuestieMergeLocationResults(allLocations, allMapIds, locs, mapIds)
         end
     end
-    
+
+    if itemData.vendorUnits then
+        for _, unitId in ipairs(itemData.vendorUnits) do
+            local locs, mapIds = QuestieGetUnitLocationsById(unitId)
+            QuestieMergeLocationResults(allLocations, allMapIds, locs, mapIds)
+        end
+    end
+
     return { ["locations"] = allLocations }, allMapIds
 end
 
+function QuestieGetQuestStartLocationsById(questId)
+    local questData = QuestieGetQuestById(questId)
+    if not questData then
+        return {}, {}
+    end
+
+    if questData.startUnit then
+        return QuestieGetUnitLocationsById(questData.startUnit)
+    end
+    if questData.startObject then
+        return QuestieGetObjectLocationsById(questData.startObject)
+    end
+    if questData.startItem then
+        return QuestieGetItemLocationsById(questData.startItem)
+    end
+
+    return {}, {}
+end
+
+function QuestieGetQuestFinisherLocationsById(questId)
+    local questData = QuestieGetQuestById(questId)
+    if not questData then
+        return {}, {}
+    end
+
+    if questData.endUnit then
+        return QuestieGetUnitLocationsById(questData.endUnit)
+    end
+    if questData.endObject then
+        return QuestieGetObjectLocationsById(questData.endObject)
+    end
+
+    return {}, {}
+end
+
 -- Get quest objective coordinates by quest ID and objective index
--- objIndex: -1 for turn-in, 0+ for objectives, 4+ typically for item objectives
--- Returns: { locations = {{mapId, x, y}, ...} }, mapIds
 function QuestieGetQuestObjectiveCoords(questId, objIndex)
     local questData = QuestieQuestData and QuestieQuestData[questId]
     if not questData or not questData.objectiveCoords then
         return {}, {}
     end
-    
+
     local coords = questData.objectiveCoords[objIndex]
     if not coords then
         return {}, {}
     end
-    
+
     local locations = {}
     local mapIds = {}
-    
+
     for _, coord in ipairs(coords) do
-        local mapId = coord[1]
-        local x = coord[2]
-        local y = coord[3]
-        
-        if mapId and x and y then
-            table.insert(locations, {mapId, x, y})
-            
-            -- Build mapIds structure (continent -> zone -> true)
-            -- For now, use mapId as both continent and zone
-            if not mapIds[mapId] then mapIds[mapId] = {} end
-            mapIds[mapId][1] = true
+        local reformattedLocation = MapRegistry:ResolveLocationTuple(coord)
+        if reformattedLocation then
+            table.insert(locations, reformattedLocation)
+
+            local c, z = reformattedLocation[1], reformattedLocation[2]
+            if not mapIds[c] then
+                mapIds[c] = {}
+            end
+            mapIds[c][z] = true
         end
     end
-    
+
     return { ["locations"] = locations }, mapIds
 end
 
 -- Get all objective coordinates for a quest (for item objectives without drop sources)
--- Returns coordinates for all non-turn-in objectives
 function QuestieGetAllQuestObjectiveCoords(questId)
     local questData = QuestieQuestData and QuestieQuestData[questId]
     if not questData or not questData.objectiveCoords then
         return {}, {}
     end
-    
+
     local allLocations = {}
     local allMapIds = {}
-    
-    for objIndex, coords in pairs(questData.objectiveCoords) do
-        -- Skip turn-in location (objIndex = -1)
+
+    for objIndex in pairs(questData.objectiveCoords) do
         if objIndex >= 0 then
-            for _, coord in ipairs(coords) do
-                local mapId = coord[1]
-                local x = coord[2]
-                local y = coord[3]
-                
-                if mapId and x and y and QuestieZoneIDLookup and QuestieZoneIDLookup[mapId] then
-                    local MapInfo = QuestieZoneIDLookup[mapId]
-                    local cIdx, zIdx = QuestieGetZoneIndices()
-                    local reformattedLocation = {MapInfo[cIdx], MapInfo[zIdx], x, y}
-                    table.insert(allLocations, reformattedLocation)
-                    
-                    local c, z = reformattedLocation[1], reformattedLocation[2]
-                    if not allMapIds[c] then allMapIds[c] = {} end
-                    allMapIds[c][z] = true
+            local locs, mapIds = QuestieGetQuestObjectiveCoords(questId, objIndex)
+            QuestieMergeLocationResults(allLocations, allMapIds, locs, mapIds)
+        end
+    end
+
+    return { ["locations"] = allLocations }, allMapIds
+end
+
+local function QuestieCopyArray(source)
+    local copy = {}
+
+    if not source then
+        return copy
+    end
+
+    for index, value in ipairs(source) do
+        copy[index] = value
+    end
+
+    return copy
+end
+
+local function QuestieCloneQuestMeta(questMeta, questIds)
+    local clone = {}
+
+    if not questMeta then
+        return clone
+    end
+
+    for key, value in pairs(questMeta) do
+        clone[key] = value
+    end
+
+    if questIds then
+        clone.questIds = QuestieCopyArray(questIds)
+    end
+
+    return clone
+end
+
+local function QuestieResolveRequiredQuestHash(questData)
+    if not questData or not questData.preQuests or not questData.preQuests[1] then
+        return nil
+    end
+
+    local requiredQuestId = questData.preQuests[1]
+    local requiredQuestInfo = QuestieQuestNames and QuestieQuestNames[requiredQuestId]
+    if not requiredQuestInfo or not requiredQuestInfo.title then
+        return nil
+    end
+
+    return QuestieAdler32(requiredQuestInfo.title .. (requiredQuestInfo.objectives or ""))
+end
+
+local function QuestieBuildQuestHashEntry(questId, questData, info, legacyRequiredSkillByQuestId)
+    local startedType, startedBy = QuestieResolveStartInfo(questData)
+    local finishedType, finishedBy = QuestieResolveFinishInfo(questData)
+
+    return {
+        ["name"] = info.title,
+        ["startedType"] = startedType,
+        ["finishedType"] = finishedType,
+        ["startedBy"] = startedBy,
+        ["finishedBy"] = finishedBy,
+        ["level"] = questData.minLevel or 1,
+        ["questLevel"] = tostring(questData.level or 1),
+        ["rr"] = questData.race or 0,
+        ["rc"] = questData.class or 0,
+        ["rq"] = QuestieResolveRequiredQuestHash(questData),
+        ["rs"] = questData.skill or legacyRequiredSkillByQuestId[questId],
+        ["questId"] = questId,
+    }
+end
+
+local function QuestieQuestVariantHasLocations(locationVariants, questId)
+    local locationMeta = locationVariants and locationVariants[questId]
+    return locationMeta and locationMeta["locations"] and next(locationMeta["locations"]) ~= nil
+end
+
+local function QuestieSelectBestQuestVariant(questIds, locationVariants, currentQuestId)
+    local playerClass = UnitClass("Player")
+    local playerRace = UnitRace("Player")
+    local bestQuestId = nil
+    local bestScore = nil
+
+    if not questIds then
+        return nil
+    end
+
+    for _, questId in ipairs(questIds) do
+        local questData = QuestieQuestData and QuestieQuestData[questId]
+        local questMeta = QuestieQuestMetaById and QuestieQuestMetaById[questId]
+        local score = 0
+
+        if currentQuestId and questId == currentQuestId then
+            score = score + 100000
+        end
+
+        if questData then
+            local requiredClass = questData.class or 0
+            local requiredRace = questData.race or 0
+            if QuestieCheckRequirements(playerClass, playerRace, requiredClass, requiredRace) then
+                score = score + 1000
+                if requiredClass ~= 0 then
+                    score = score + 10
+                end
+                if requiredRace ~= 0 then
+                    score = score + 10
+                end
+            else
+                score = score - 1000
+            end
+        end
+
+        local requiredQuestHash = QuestieRequiredQuestHashByQuestId and QuestieRequiredQuestHashByQuestId[questId]
+        if requiredQuestHash then
+            if QuestieSeenQuests and QuestieSeenQuests[requiredQuestHash] then
+                score = score + 100
+            else
+                score = score - 100
+            end
+        else
+            score = score + 5
+        end
+
+        if QuestieQuestVariantHasLocations(locationVariants, questId) then
+            score = score + 25
+        elseif locationVariants then
+            score = score - 25
+        end
+
+        if questMeta then
+            if questMeta.startedType ~= "unknown" then
+                score = score + 5
+            end
+            if questMeta.finishedType ~= "unknown" then
+                score = score + 5
+            end
+        end
+
+        if bestScore == nil or score > bestScore or (score == bestScore and (bestQuestId == nil or questId < bestQuestId)) then
+            bestQuestId = questId
+            bestScore = score
+        end
+    end
+
+    return bestQuestId
+end
+
+function QuestieResolveZoneLevelVariant(questHash, zoneLevelEntry, currentQuestId)
+    if zoneLevelEntry and zoneLevelEntry.variants then
+        local questIds = QuestieHashVariants and QuestieHashVariants[questHash]
+        local selectedQuestId = QuestieSelectBestQuestVariant(questIds, zoneLevelEntry.variants, currentQuestId)
+        if selectedQuestId and zoneLevelEntry.variants[selectedQuestId] then
+            return selectedQuestId, zoneLevelEntry.variants[selectedQuestId]
+        end
+
+        for questId, locationMeta in pairs(zoneLevelEntry.variants) do
+            return questId, locationMeta
+        end
+
+        return nil, {}
+    end
+
+    local questInfo = QuestieHashMap and QuestieHashMap[questHash]
+    return questInfo and questInfo.questId or nil, zoneLevelEntry
+end
+
+function QuestieResolveQuestIdByHash(questHash)
+    local questIds = QuestieHashVariants and QuestieHashVariants[questHash]
+    if questIds and table.getn(questIds) > 0 then
+        return QuestieSelectBestQuestVariant(questIds)
+    end
+
+    if QuestieHashMap and QuestieHashMap[questHash] then
+        return QuestieHashMap[questHash].questId
+    end
+
+    return nil
+end
+
+local function QuestieBuildStructuredQuestTables()
+    local buildStart = GetTime()
+    local legacyLevLookup = QuestieLevLookup or {}
+    local legacyHashMap = QuestieHashMap or {}
+
+    QuestieUnitIds = QuestieBuildReverseNameLookup(QuestieUnitNames)
+    QuestieObjectIds = QuestieBuildReverseNameLookup(QuestieObjectNames)
+    QuestieItemIds = QuestieBuildReverseNameLookup(QuestieItemNames)
+    QuestieQuestLookup = QuestieBuildQuestNameLookup()
+
+    if QuestieNewObjects then
+        for objectId, objectData in pairs(QuestieNewObjects) do
+            local objectName = objectData and objectData.name
+            if objectName and objectName ~= "" and QuestieObjectIds[objectName] == nil then
+                QuestieObjectIds[objectName] = objectId
+            end
+        end
+    end
+
+    local legacyRequiredSkillByQuestId = QuestieBuildLegacyRequiredSkillMap(legacyLevLookup, legacyHashMap, QuestieQuestLookup)
+
+    QuestieHashMap = {}
+    QuestieLevLookup = {}
+    QuestieZoneLevelMap = {}
+    QuestieHashVariants = {}
+    QuestieQuestMetaById = {}
+    QuestieQuestIdToHash = {}
+    QuestieRequiredQuestHashByQuestId = {}
+    local questGroups = {}
+
+    for _, questId in ipairs(QuestieGetSortedNumericKeys(QuestieQuestNames)) do
+        local info = QuestieQuestNames[questId]
+        local questData = QuestieQuestData and QuestieQuestData[questId]
+        local title = info and info.title
+        local objectives = info and info.objectives or ""
+
+        if title and title ~= "" and questData then
+            local questHash = QuestieAdler32(title .. objectives)
+            local questMeta = QuestieBuildQuestHashEntry(questId, questData, info, legacyRequiredSkillByQuestId)
+
+            QuestieQuestMetaById[questId] = questMeta
+            QuestieQuestIdToHash[questId] = questHash
+            QuestieRequiredQuestHashByQuestId[questId] = questMeta["rq"]
+
+            if questGroups[questHash] == nil then
+                questGroups[questHash] = {
+                    ["questIds"] = {},
+                    ["title"] = title,
+                    ["objectives"] = objectives,
+                }
+            end
+            table.insert(questGroups[questHash]["questIds"], questId)
+
+            if QuestieLevLookup[title] == nil then
+                QuestieLevLookup[title] = {}
+            end
+            if QuestieLevLookup[title][objectives] == nil then
+                QuestieLevLookup[title][objectives] = { questData.race or 0, questHash }
+            end
+        end
+    end
+
+    for questHash, group in pairs(questGroups) do
+        table.sort(group["questIds"])
+        QuestieHashVariants[questHash] = QuestieCopyArray(group["questIds"])
+
+        local selectedQuestId = QuestieSelectBestQuestVariant(group["questIds"])
+        local selectedQuestMeta = selectedQuestId and QuestieQuestMetaById[selectedQuestId]
+        if selectedQuestMeta then
+            QuestieHashMap[questHash] = QuestieCloneQuestMeta(selectedQuestMeta, group["questIds"])
+        end
+    end
+
+    for questHash, group in pairs(questGroups) do
+        local questInfo = QuestieHashMap[questHash]
+
+        if questInfo then
+            for _, questId in ipairs(group["questIds"]) do
+                local locationMeta, mapIds = QuestieGetQuestStartLocationsById(questId)
+                for c, zs in pairs(mapIds) do
+                    for z in pairs(zs) do
+                        addQuestToZoneLevelMap(c, z, questHash, questInfo, locationMeta, questId)
+                    end
                 end
             end
         end
     end
-    
-    return { ["locations"] = allLocations }, allMapIds
+
+    if DEFAULT_CHAT_FRAME and DEFAULT_CHAT_FRAME.AddMessage then
+        DEFAULT_CHAT_FRAME:AddMessage("Compiled AvailableQuests in " .. math.floor((GetTime() - buildStart) * 1000) .. "ms")
+        DEFAULT_CHAT_FRAME:AddMessage("Questie ID-based lookup tables built.")
+    end
 end
 
 -- Lookup quest ID by item ID (for items that are quest objectives)
 -- This helps find the quest when an item has no drop source
 function QuestieGetQuestIdByItemObjective(itemId)
     if not QuestieQuestData then return nil end
-    
+
     for questId, questData in pairs(QuestieQuestData) do
         if questData.objectiveItems then
             for _, objItemId in ipairs(questData.objectiveItems) do
@@ -56339,4 +56608,4 @@ function QuestieGetQuestIdByItemObjective(itemId)
     return nil
 end
 
-DEFAULT_CHAT_FRAME:AddMessage("Questie ID-based lookup tables built.");
+QuestieBuildStructuredQuestTables()

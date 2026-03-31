@@ -407,16 +407,12 @@ end
 ---------------------------------------------------------------------------------------------------
 -- Finds quest finisher location by type and name
 ---------------------------------------------------------------------------------------------------
-function QuestieTracker:GetFinisherLocations(typ, name)
-    local C, Z, X, Y;
-    if typ == "monster" then
-        local paths = GetMonsterLocations(name);
-        return Questie:RecursiveGetPathLocations(paths);
-    elseif typ == "object" then
-        local paths = GetObjectLocations(name);
+function QuestieTracker:GetFinisherLocations(questId)
+    if questId and QuestieGetQuestFinisherLocationsById then
+        local paths = QuestieGetQuestFinisherLocationsById(questId);
         return Questie:RecursiveGetPathLocations(paths);
     end
-    return C, Z, X, Y;
+    return {};
 end
 ---------------------------------------------------------------------------------------------------
 -- Updates the QuestieTracker frames distance sorting feature
@@ -462,7 +458,7 @@ function QuestieTracker:SortTrackingFrame()
                     -- Show quest finished in tracker
                     local quest = QuestieHashMap[hash];
                     if quest ~= nil then
-                        local locations = QuestieTracker:GetFinisherLocations(quest.finishedType, quest.finishedBy) or {};
+                        local locations = QuestieTracker:GetFinisherLocations(quest.questId) or {};
                         for i, location in pairs(locations) do
                             local dist, xDelta, yDelta = Astrolabe:ComputeDistance( C, Z, X, Y, location[1], location[2], location[3], location[4]);
                             if dist and xDelta and yDelta then
@@ -947,6 +943,7 @@ function QuestieTracker:addQuestToTrackerCache(hash, logId, level)
     QuestieCachedQuests[hash]["logId"] = logId;
     QuestieCachedQuests[hash]["questTag"] = questTag;
     QuestieCachedQuests[hash]["isComplete"] = isComplete;
+    QuestieCachedQuests[hash]["questId"] = (QuestieResolveQuestIdByHash and QuestieResolveQuestIdByHash(hash)) or (QuestieHashMap and QuestieHashMap[hash] and QuestieHashMap[hash].questId) or nil;
     QuestieCachedQuests[hash]["leaderboards"] = QGet_NumQuestLeaderBoards(logId);
     for i=1, QGet_NumQuestLeaderBoards(logId) do
         local desc, type, done = QGet_QuestLogLeaderBoard(i, logId);
@@ -1022,6 +1019,7 @@ function QuestieTracker:updateTrackerCache(hash, logId, level)
     QuestieCachedQuests[hash]["questTag"] = questTag;
     QuestieCachedQuests[hash]["level"] = level;
     QuestieCachedQuests[hash]["logId"] = logId;
+    QuestieCachedQuests[hash]["questId"] = (QuestieResolveQuestIdByHash and QuestieResolveQuestIdByHash(hash)) or (QuestieHashMap and QuestieHashMap[hash] and QuestieHashMap[hash].questId) or nil;
     QuestieCachedQuests[hash]["leaderboards"] = QGet_NumQuestLeaderBoards(logId);
     QuestieTracker:updateQuestWatchLogId(hash, logId);
     local uggo = 0;

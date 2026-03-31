@@ -5,7 +5,6 @@
 ## Notes-zhCN: 批量邮件收取发送
 ## Author: Grennon
 ## X-Category: Interface
-## Dependencies: !!!Libs
 ## OptionalDeps: Ace2
 
 GMail.xml

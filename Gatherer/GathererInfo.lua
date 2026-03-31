@@ -21,6 +21,10 @@ GathererInfoZones = {};
 numGathererInfo = 0;
 GI_totalCount = 0;
 
+local function GathererInfo_IsNumericKey(key)
+	return type(key) == "number";
+end
+
 
 -- show display frame
 function showGathererInfo(tab)
@@ -61,11 +65,13 @@ function GathererInfo_LocContinentDropDown_Initialize()
 	local info = {};
 	
 	for index in GatherItems do
-		-- grab zone text from table initiated by Gatherer Main
-		info.text = GathererInfoContinents[index];
-		info.checked = nil;
-		info.func = GathererInfo_LocContinentDropDown_OnClick;
-		UIDropDownMenu_AddButton(info);
+		if (GathererInfo_IsNumericKey(index)) then
+			-- grab zone text from table initiated by Gatherer Main
+			info.text = GathererInfoContinents[index];
+			info.checked = nil;
+			info.func = GathererInfo_LocContinentDropDown_OnClick;
+			UIDropDownMenu_AddButton(info);
+		end
 	end
 end
 
@@ -97,11 +103,13 @@ function GathererInfo_LocZoneDropDown_Initialize()
 		gi_cont = GathererInfoContinents[gi_t_cont];
 
 		for index in GatherItems[gi_cont] do
-			-- grab zone text from table initiated by Gatherer Main
-			info.text = GathererInfoZones[gi_cont][index].zone;
-			info.checked = nil;
-			info.func = GathererInfo_LocZoneDropDown_OnClick;
-			UIDropDownMenu_AddButton(info);
+			if (GathererInfo_IsNumericKey(index)) then
+				-- grab zone text from table initiated by Gatherer Main
+				info.text = GathererInfoZones[gi_cont][index].zone;
+				info.checked = nil;
+				info.func = GathererInfo_LocZoneDropDown_OnClick;
+				UIDropDownMenu_AddButton(info);
+			end
 		end
 	end
 end
@@ -150,7 +158,7 @@ function GathererInfo_SetDefaultLocation()
 	end
 
 	for l_cnt in GatherItems do
-		if( l_cnt == gi_cont ) then
+		if( GathererInfo_IsNumericKey(l_cnt) and l_cnt == gi_cont ) then
 			UIDropDownMenu_SetSelectedName(GathererInfo_LocContinentDropDown, gi_t_cont);
 			UIDropDownMenu_SetText(gi_t_cont, GathererInfo_LocContinentDropDown);
 			
@@ -506,31 +514,35 @@ function GathererInfo_GatherItem_OnClick()
 	GI_totalCount = 0;
 
 	for gi_cont in GatherItems do
-		for gi_zone in GatherItems[gi_cont] do
-			for gi_node in GatherItems[gi_cont][gi_zone] do
-				if ( string.find(gi_node, search_item, 1, true) ) then
-					local skip_node=-1;
-					for gi_index in GatherItems[gi_cont][gi_zone][gi_node] do
-						if ( skip_node == -1 ) then
-							local locIcon, locGtype;
+		if (GathererInfo_IsNumericKey(gi_cont)) then
+			for gi_zone in GatherItems[gi_cont] do
+				if (GathererInfo_IsNumericKey(gi_zone)) then
+					for gi_node in GatherItems[gi_cont][gi_zone] do
+						if ( string.find(gi_node, search_item, 1, true) ) then
+							local skip_node=-1;
+							for gi_index in GatherItems[gi_cont][gi_zone][gi_node] do
+								if ( skip_node == -1 ) then
+									local locIcon, locGtype;
 
-							-- check gather type
-							locGtype = GatherItems[gi_cont][gi_zone][gi_node][gi_index].gtype;
-							if ( locGtype and type(locGtype) == "string" ) then
-								locGtype = Gather_DB_TypeIndex[locGtype];
+									-- check gather type
+									locGtype = GatherItems[gi_cont][gi_zone][gi_node][gi_index].gtype;
+									if ( locGtype and type(locGtype) == "string" ) then
+										locGtype = Gather_DB_TypeIndex[locGtype];
+									end
+									locIcon = GatherItems[gi_cont][gi_zone][gi_node][gi_index].icon;
+									if ( (type(locIcon) == "string" and locIcon == search_item) or
+										 (type(locIcon) == "number" and locIcon == Gather_DB_IconIndex[locGtype][item_to_search] )) then
+										skip_node=0
+										GI_totalCount = GI_totalCount +1;
+									else
+										skip_node=1
+									end
+								elseif ( skip_node == 0 ) then
+									GI_totalCount = GI_totalCount +1;
+								else
+									break;
+								end
 							end
-							locIcon = GatherItems[gi_cont][gi_zone][gi_node][gi_index].icon;
-							if ( (type(locIcon) == "string" and locIcon == search_item) or
-								 (type(locIcon) == "number" and locIcon == Gather_DB_IconIndex[locGtype][item_to_search] )) then
-								skip_node=0
-								GI_totalCount = GI_totalCount +1;
-							else
-								skip_node=1
-							end
-						elseif ( skip_node == 0 ) then
-							GI_totalCount = GI_totalCount +1;
-						else
-							break;
 						end
 					end
 				end
@@ -557,11 +569,15 @@ function GathererInfo_SearchUpdate()
 	if ( GatherItems and item_to_search ) then
 		_, _, search_item = string.find(item_to_search, "([^ ]+)");
 		for gi_cont in GatherItems do
-			if ( gi_cont == 0 or not GathererInfoZones[gi_cont] ) then
+			if (not GathererInfo_IsNumericKey(gi_cont)) then
+				-- Canonical metadata buckets are not region buckets.
+			elseif ( gi_cont == 0 or not GathererInfoZones[gi_cont] ) then
 				Gatherer_ChatPrint("Gatherer: Warning invalid continent index ("..gi_cont..") found in data.");
 			else 
 				for gi_zone in GatherItems[gi_cont] do
-					if ( gi_zone == 0 or not GathererInfoZones[gi_cont][gi_zone] ) then
+					if (not GathererInfo_IsNumericKey(gi_zone)) then
+						-- Canonical metadata buckets are not zone buckets.
+					elseif ( gi_zone == 0 or not GathererInfoZones[gi_cont][gi_zone] ) then
 						Gatherer_ChatPrint("Gatherer: Warning invalid zone index ("..gi_zone..") found in "..gi_cont.." continent data.");
 					else
 						local nodeCount = 0;

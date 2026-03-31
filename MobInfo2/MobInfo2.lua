@@ -28,6 +28,7 @@ MI2_IMPORT_DB_VERSION = 6
 MobInfoDB		= { ["DatabaseVersion:0"] = { ver = MI2_DB_VERSION } }
 MI2_CharTable	= { charCount = 0 }
 MI2_ZoneTable	= { cnt = 0 }
+local MI2_MapRegistry = AceLibrary("MapRegistry-1.0")
 MI2_ItemNameTable = {}
 MobHealthPlayerDB = {}
 MobHealthDB		= {	}
@@ -244,7 +245,7 @@ function MI2_DecodeMobLocation( mobInfo, mobData, mobIndex )
 	end
 
 	if mobInfo.ml then
-		local a,b,x1,y1,x2,y2,c,z = string.find( mobInfo.ml, "(%d*)/(%d*)/(%d*)/(%d*)/(%d*)/(%d*)")
+		local a,b,x1,y1,x2,y2,c,z,m = string.find( mobInfo.ml, "(%d*)/(%d*)/(%d*)/(%d*)/(%d*)/(%d*)/?(%d*)")
 		mobData.location = {}
 		mobData.location.x1	= tonumber(x1)
 		mobData.location.y1	= tonumber(y1)
@@ -252,6 +253,7 @@ function MI2_DecodeMobLocation( mobInfo, mobData, mobIndex )
 		mobData.location.y2	= tonumber(y2)
 		mobData.location.c	= tonumber(c)
 		mobData.location.z	= (tonumber(z) or 0)
+		mobData.location.m	= tonumber(m)
 		if not mobData.location.x1 or not mobData.location.x2 or 
 				not mobData.location.y1 or not mobData.location.y2 or 
 				not mobData.location.c or mobData.location.z == 0 then
@@ -359,7 +361,7 @@ function MI2x_StoreMobData( mobData, mobName, mobLevel, playerName, mobIndex )
 	-- create the mob location data
 	-- note: a copy of this code can be found in MI2_AdaptImportLocation()
 	local loc = mobData.location or {}
-	local locationInfo = (loc.x1 or "").."/"..(loc.y1 or "").."/"..(loc.x2 or "").."/"..(loc.y2 or "").."/"..(loc.c or "").."/"..(loc.z or "")
+	local locationInfo = (loc.x1 or "").."/"..(loc.y1 or "").."/"..(loc.x2 or "").."/"..(loc.y2 or "").."/"..(loc.c or "").."/"..(loc.z or "").."/"..(loc.m or "")
 
 	-- create loot item list string for database
 	local itemList = ""
@@ -878,7 +880,7 @@ local function MI2_RecordLocation( index )
 		local x, y = GetPlayerMapPosition("player")
 		x = floor( x * 100.0 )
 		y = floor( y * 100.0 )
-		mobData.location = { x1=x, x2=x, y1=y, y2=y, c=MI2_CurContinent, z=MI2_CurZone }
+		mobData.location = { x1=x, x2=x, y1=y, y2=y, c=MI2_CurContinent, z=MI2_CurZone, m=MI2_CurMapId }
 	end
 end -- MI2_RecordLocation()
 
@@ -961,6 +963,9 @@ function MI2_AddTwoMobs( mobData1, mobData2 )
 			end
 			if mobData1.location.c == 0 then
 				mobData1.location.c = mobData2.location.c
+			end
+			if not mobData1.location.m and mobData2.location.m then
+				mobData1.location.m = mobData2.location.m
 			end
 		end
 	end
@@ -1527,6 +1532,15 @@ local function MI2_AddLocationToTooltip( location, showFullLocation )
 	local x = floor( (location.x1 + location.x2) / 2 )
 	local y = floor( (location.y1 + location.y2) / 2 )
 	local zone = nil
+	if location.m then
+		local mapRecord = MI2_MapRegistry:GetMapRecord(location.m)
+		if mapRecord and mapRecord.currentContinent and mapRecord.currentZone and MI2_Zones[mapRecord.currentContinent] then
+			zone = MI2_Zones[mapRecord.currentContinent][mapRecord.currentZone]
+		end
+		if not zone and mapRecord then
+			zone = mapRecord.mapFile
+		end
+	end
 	if MI2_Zones[location.c] then
 		zone = MI2_Zones[location.c][location.z]
 	end

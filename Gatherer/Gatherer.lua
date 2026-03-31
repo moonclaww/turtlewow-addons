@@ -17,6 +17,12 @@ if (GATHERER_VERSION == "<%version%>") then
 	GATHERER_VERSION = "2.2.3.1";
 end
 
+local Gatherer_MapRegistry = AceLibrary("MapRegistry-1.0")
+
+local function Gatherer_IsNumericKey(key)
+	return type(key) == "number";
+end
+
 -- Global variables
 GATHERNOTE_UPDATE_INTERVAL = 0.25;
 GATHERNOTE_CHECK_INTERVAL = 5.0;
@@ -27,7 +33,6 @@ Gatherer_RecordFlag=0;
 Gatherer_currentNode="";
 Gatherer_currentAction="";
 
-GatherMap_InCity = false;
 Gatherer_LoadCount = 0;
 Gatherer_MapOpen = false;
 Gatherer_UpdateWorldMap = -1;
@@ -35,7 +40,7 @@ Gatherer_UpdateWorldMap = -1;
 Gatherer_InWorld = false;
 GatherItems = { };
 GatherSkills = { };
-GatherConfig = {useMinimap = true, maxDist = 20, number = 10, useMinimapText = "on", iconSet = "shaded", miniIconDist = 40, filter = "all"};
+GatherConfig = {useMinimap = true, maxDist = 800, number = 10, useMinimapText = "on", iconSet = "shaded", miniIconDist = 400, filter = "all"};
 GatherZoneData = { };
 GatherMainMapItem = { };
 -- UI variables
@@ -44,6 +49,64 @@ Gatherer_WorldMapDetailFrameHeight = 0;
 Gatherer_WorldMapPlayerFrameLevel = 0;
 
 Gather_Player = UnitName("player");
+
+local function Gatherer_GetCanonicalStore()
+	if (not GatherItems) then
+		GatherItems = {};
+	end
+	if (not GatherItems.__canonical) then
+		GatherItems.__canonical = {};
+	end
+	return GatherItems.__canonical;
+end
+
+local function Gatherer_RebuildLegacyBucketsFromCanonical()
+	if (not GatherItems) or (not GatherItems.__canonical) then
+		return;
+	end
+
+	local canonical = GatherItems.__canonical;
+	local rebuilt = { __canonical = canonical };
+
+	for mapId, zoneData in canonical do
+		local canonicalId = tonumber(mapId);
+		if (canonicalId) then
+			local continent, zone = Gatherer_MapRegistry:GetClientZone(canonicalId);
+			if (continent and zone and continent > 0 and zone > 0) then
+				if (not rebuilt[continent]) then
+					rebuilt[continent] = {};
+				end
+				rebuilt[continent][zone] = zoneData;
+			end
+		end
+	end
+
+	GatherItems = rebuilt;
+end
+
+local function Gatherer_GetCanonicalZoneData(continent, zone)
+	local canonicalId = Gatherer_MapRegistry:GetCanonicalMapID(continent, zone);
+	if (not canonicalId) or (canonicalId < 0) then
+		return nil, nil;
+	end
+
+	local canonical = Gatherer_GetCanonicalStore();
+	local zoneData = canonical[canonicalId];
+
+	if (not zoneData) then
+		if (GatherItems[continent] and GatherItems[continent][zone]) then
+			zoneData = GatherItems[continent][zone];
+		else
+			zoneData = {};
+		end
+		canonical[canonicalId] = zoneData;
+	end
+
+	if (not GatherItems[continent]) then GatherItems[continent] = {}; end
+	GatherItems[continent][zone] = zoneData;
+
+	return canonicalId, zoneData;
+end
 
 StaticPopupDialogs["GATHERER_VERSION_DIALOG"] = {
 	text = TEXT(GATHERER_VERSION_WARNING),
@@ -149,10 +212,10 @@ function Gatherer_Command(command)
 		Gatherer_ChatPrint("  |cffffffff/gather minder (on|off|toggle|<n>)|r |cff2040ff["..mapMinder.."]|r - turns the gather map minder on and off (remembers and reopens your last open main map; within "..minderTime..")");
 		Gatherer_ChatPrint("  |cffffffff/gather dist <n>|r |cff2040ff["..GatherConfig.maxDist.."]|r - sets the maximum search distance for display (0=infinite(default), typical=10)");
 		Gatherer_ChatPrint("  |cffffffff/gather num <n>|r |cff2040ff["..GatherConfig.number.."]|r - sets the maximum number of items to display (default=10, up to 25)");
-		Gatherer_ChatPrint("  |cffffffff/gather fdist <n>|r |cff2040ff["..GatherConfig.fadeDist.."]|r - sets a fade distance (in units) for the icons to fade out by (default = 20)");
+		Gatherer_ChatPrint("  |cffffffff/gather fdist <n>|r |cff2040ff["..GatherConfig.fadeDist.."]|r - sets a fade distance (in yards) for the icons to fade out by (default = 500)");
 		Gatherer_ChatPrint("  |cffffffff/gather fperc <n>|r |cff2040ff["..GatherConfig.fadePerc.."]|r - sets the percentage for fade at max fade distance (default = 80 [=80% faded])");
 		Gatherer_ChatPrint("  |cffffffff/gather theme <name>|r |cff2040ff["..GatherConfig.iconSet.."]|r - sets the icon theme: original, shaded (default), iconic or iconshade");
-		Gatherer_ChatPrint("  |cffffffff/gather idist <n>|r |cff2040ff["..GatherConfig.miniIconDist.."]|r - sets the minimap distance at which the gather icon will become iconic (0 = off, 1-60 = pixel radius on minimap, default = 40)");
+		Gatherer_ChatPrint("  |cffffffff/gather idist <n>|r |cff2040ff["..GatherConfig.miniIconDist.."]|r - sets the minimap distance in yards at which the gather icon will become iconic (0 = off, default = 400)");
 		Gatherer_ChatPrint("  |cffffffff/gather herbs (on|off|toggle|auto)|r |cff2040ff["..Gatherer_GetFilterVal("herbs").."]|r - select whether to show herb data on the minimap");
 		Gatherer_ChatPrint("  |cffffffff/gather mining (on|off|toggle|auto)|r |cff2040ff["..Gatherer_GetFilterVal("mining").."]|r - select whether to show mining data on the minimap");
 		Gatherer_ChatPrint("  |cffffffff/gather treasure (on|off|toggle|auto)|r |cff2040ff["..Gatherer_GetFilterVal("treasure").."]|r - select whether to show treasure data on the minimap");
@@ -490,11 +553,28 @@ function Gatherer_OnEvent(event)
 			end
 			GatherConfig.iconSet = GatherConfig.iconSet or "shaded";
 			GatherConfig.number = GatherConfig.number or 10;
-			GatherConfig.maxDist = GatherConfig.maxDist or 20;
-			GatherConfig.fadeDist = GatherConfig.fadeDist or 40;
+			GatherConfig.maxDist = GatherConfig.maxDist or 800;
+			GatherConfig.fadeDist = GatherConfig.fadeDist or 500;
 			GatherConfig.fadePerc = GatherConfig.fadePerc or 80;
-			GatherConfig.miniIconDist = GatherConfig.miniIconDist or 40;
+			GatherConfig.miniIconDist = GatherConfig.miniIconDist or 400;
 			GatherConfig.minderTime = GatherConfig.minderTime or 5;
+
+			-- One-time migration: convert old normalized-unit configs to yards
+			if (not GatherConfig.astrolabeMigrated) then
+				-- Old maxDist typical: 10-20 (= 0.01-0.02 normalized ~= 360-720 yards)
+				if (GatherConfig.maxDist and GatherConfig.maxDist <= 100) then
+					GatherConfig.maxDist = GatherConfig.maxDist * 36;
+				end
+				-- Old fadeDist typical: 20-60 (= 0.02-0.06 normalized ~= 720-2160 yards)
+				if (GatherConfig.fadeDist and GatherConfig.fadeDist <= 200) then
+					GatherConfig.fadeDist = GatherConfig.fadeDist * 12;
+				end
+				-- Old miniIconDist typical: 20-60 (pixel radius, ~= 200-600 yards)
+				if (GatherConfig.miniIconDist and GatherConfig.miniIconDist <= 100) then
+					GatherConfig.miniIconDist = GatherConfig.miniIconDist * 10;
+				end
+				GatherConfig.astrolabeMigrated = true;
+			end
 			GatherConfig.rareOre = GatherConfig.rareOre or 0;
 			GatherConfig.logInfo = GatherConfig.logInfo or "on";
 			if (not GatherConfig.mapMinder) then GatherConfig.mapMinder = false; end;
@@ -533,21 +613,23 @@ function Gatherer_OnEvent(event)
 			-- Gatherer as a Java applet)
 			if (GatherItemBase ~= nil) then
 				for c, cd in GatherItems do
-					for z, zd in cd do
-						for n,nd in zd do
-							for i,id in nd do
-								local matched = 0;
-								local max = 0;
-								for j,jd in GatherItemBase[c][z][n] do
-									if (math.abs(id.x- jd.y) < 0.05) then
-										matched = j;
+					if (Gatherer_IsNumericKey(c)) then
+						for z, zd in cd do
+							for n,nd in zd do
+								for i,id in nd do
+									local matched = 0;
+									local max = 0;
+									for j,jd in GatherItemBase[c][z][n] do
+										if (math.abs(id.x- jd.y) < 0.05) then
+											matched = j;
+										end
+										max = j;
 									end
-									max = j;
-								end
-								if (matched > 0) then
-									GatherItemBase[c][z][n][matched] = id;
-								else
-									GatherItemBase[c][z][n][max+1] = id;
+									if (matched > 0) then
+										GatherItemBase[c][z][n][matched] = id;
+									else
+										GatherItemBase[c][z][n][max+1] = id;
+									end
 								end
 							end
 						end
@@ -555,6 +637,8 @@ function Gatherer_OnEvent(event)
 				end
 				GatherItems = GatherItemBase;
 			end
+
+			Gatherer_RebuildLegacyBucketsFromCanonical();
 		end
 	elseif ( event == "PLAYER_LOGIN" ) then
 		if ( GatherConfig ) then
@@ -699,18 +783,18 @@ end
 function Gatherer_OnUpdate(timeDelta, force)
 	if (not GATHERER_LOADED) then
 		Gatherer_Print("Gatherer not loaded");
-		return; 
+		return;
 	end
 
 	if (Gatherer_InWorld == false ) then
 		return;
 	end
-	
+
 	if (not GatherConfig.useMinimap) then
 		Gatherer_HideAll();
 		return;
 	end
-	
+
 	local recalculate = false;
 	local needsUpdate = false;
 	if (not GatherNotes) then
@@ -736,11 +820,9 @@ function Gatherer_OnUpdate(timeDelta, force)
 			return;
 		end
 
-		local inCity = GatherMap_InCity;
-		local zoomLevel = Minimap:GetZoom();
 		local px, py = Gatherer_PlayerPos();
-		if ((px == 0) and (py == 0)) then 
-			return; 
+		if ((px == 0) and (py == 0)) then
+			return;
 		end
 		local xMovement = 0; if (ClosestGathers and ClosestGathers.px) then xMovement = math.abs(ClosestGathers.px - px); end
 		local yMovement = 0; if (ClosestGathers and ClosestGathers.py) then yMovement = math.abs(ClosestGathers.py - py); end
@@ -756,26 +838,18 @@ function Gatherer_OnUpdate(timeDelta, force)
 			displayNumber = GatherConfig.number;
 		end
 
-		local playerDeltaX = 0;
-		local playerDeltaY = 0;
 		if (recalculate == true) then
+			-- Remove old minimap icons from Astrolabe
+			for i = 1, GATHERER_MAXNUMNOTES do
+				local oldNote = getglobal("GatherNote"..i);
+				Gatherer_AstrolabeRemoveFromMinimap(oldNote);
+			end
 			ClosestGathers = {};
 			ClosestGathers = Gatherer_FindClosest(displayNumber);
-			if (ClosestGathers.count > 0) then
-				ClosestGathers.inCity = inCity;
-				ClosestGathers.zoomLevel = zoomLevel;
-				ClosestGathers.scaleX, ClosestGathers.scaleY = Gatherer_GetMapScale(continent, zone, inCity, zoomLevel);
-			end
-		else
-			if ((inCity ~= ClosestGathers.inCity) or (zoomLevel ~= ClosestGathers.zoomLevel)) then
-				ClosestGathers.inCity = inCity;
-				ClosestGathers.zoomLevel = zoomLevel;
-				ClosestGathers.scaleX, ClosestGathers.scaleY = Gatherer_GetMapScale(continent, zone, inCity, zoomLevel);
-			end
-			local absX, absY = Gatherer_AbsCoord(continent, zone, px, py);
-			playerDeltaX = ClosestGathers.playerX - absX;
-			playerDeltaY = ClosestGathers.playerY - absY;
 		end
+
+		-- miniIconDist threshold in yards for switching to iconic set
+		local miniIconDistYards = (GatherConfig.miniIconDist or 400);
 
 		local maxPos = 0;
 		if (ClosestGathers and ClosestGathers.count > 0) then
@@ -790,29 +864,27 @@ function Gatherer_OnUpdate(timeDelta, force)
 					-- need to position and label the corresponding button
 					local gatherNote = getglobal("GatherNote"..currentPos);
 					local gatherNoteTexture = getglobal("GatherNote"..currentPos.."Texture");
-	
-					local itemDeltaX = closestGather.deltax+playerDeltaX;
-					local itemDeltaY = closestGather.deltay+playerDeltaY;
-					local offsX, offsY, gDist = Gatherer_MiniMapPos(itemDeltaX, itemDeltaY, ClosestGathers.scaleX, ClosestGathers.scaleY);
-					gatherNote:SetPoint("CENTER", Minimap, "CENTER", offsX, -offsY);
-				
-					local iconSet = GatherConfig.iconSet;
-					local iDist = GatherConfig.miniIconDist;
-					if (not iconSet) then iconSet = "shaded"; end
-					if (not iDist) then iDist = 38; end
-					
-					local _, _, sDist = Gatherer_MiniMapPos(iDist/10000, 0, ClosestGathers.scaleX, ClosestGathers.scaleY);
 
-					if ((iDist > 0) and (gDist > (math.floor(sDist)-1))) then
+					-- Place icon via Astrolabe (handles all coordinate conversion and minimap projection)
+					local gX = closestGather.item.x / 100;
+					local gY = closestGather.item.y / 100;
+					Gatherer_AstrolabePlaceOnMinimap(gatherNote, continent, zone, gX, gY);
+
+					-- Distance in yards from Gatherer_FindClosest
+					local gDist = closestGather.dist;
+
+					local iconSet = GatherConfig.iconSet;
+					if (not iconSet) then iconSet = "shaded"; end
+
+					if (miniIconDistYards > 0 and gDist > miniIconDistYards) then
 						iconSet = "iconic";
 					end
 
-					local fadeDist = GatherConfig.fadeDist / 1000;
-					local fadePerc = GatherConfig.fadePerc / 100;
+					local fadeDist = (GatherConfig.fadeDist or 0);
+					local fadePerc = (GatherConfig.fadePerc or 0) / 100;
 					local alpha = 1.0;
-					local objDist = Gatherer_Pythag(itemDeltaX, itemDeltaY);
 					if ((fadeDist > 0) and (fadePerc > 0)) then
-						local distRatio = objDist / fadeDist ;
+						local distRatio = gDist / fadeDist;
 						alpha = 1.0 - (math.min(1.0, math.max(0.0, distRatio)) * fadePerc);
 					end
 
@@ -822,16 +894,16 @@ function Gatherer_OnUpdate(timeDelta, force)
 					if ( type(textureType) == "number" ) then
 						textureType = Gather_DB_TypeIndex[textureType];
 					end
-					
+
 					if ( type(textureIcon) == "number" ) then
 						textureIcon = Gatherer_GetDB_IconIndex(textureIcon, textureType);
-					end	
+					end
 
 					if (not textureIcon) then textureIcon = "default"; end;
-					if (GatherConfig.iconSet == "iconshade" ) 
-					then 
+					if (GatherConfig.iconSet == "iconshade" )
+					then
 						iconSet="iconic";
-						if ( gDist < (math.floor(sDist)-1) )
+						if ( gDist < miniIconDistYards )
 						then
 							alpha=0.4;
 						end
@@ -849,12 +921,13 @@ function Gatherer_OnUpdate(timeDelta, force)
 
 					-- Added to allow hiding if under min distance
 					if ( GatherConfig.NoIconOnMinDist ~= nil and GatherConfig.NoIconOnMinDist == 1 ) then
-						if ( gDist < (math.floor(sDist)-1) ) then
+						if ( gDist < miniIconDistYards ) then
+							Gatherer_AstrolabeRemoveFromMinimap(gatherNote);
 							gatherNote:Hide();
 						else
 							gatherNote:Show();
 						end
-					elseif ( (not GatherConfig.NoIconOnMinDist or GatherConfig.NoIconOnMinDist == 0) and GatherConfig.alphaUnderMinIcon and gDist < (math.floor(sDist)-1) ) then
+					elseif ( (not GatherConfig.NoIconOnMinDist or GatherConfig.NoIconOnMinDist == 0) and GatherConfig.alphaUnderMinIcon and gDist < miniIconDistYards ) then
 						if ( GatherConfig.iconSet and GatherConfig.iconSet ~= "iconshade" ) then
 							gatherNote:SetAlpha(GatherConfig.alphaUnderMinIcon / 100);
 						end
@@ -864,17 +937,18 @@ function Gatherer_OnUpdate(timeDelta, force)
 					end
 
 					if (currentPos > maxPos) then maxPos = currentPos; end
-					
+
 					currentPos = currentPos + 1;
 				end
 				skip_node = 0;
 			end
 		end
-		
+
 		while (maxPos < GATHERER_MAXNUMNOTES) do
 			maxPos = maxPos+1;
 			local gatherNote = getglobal("GatherNote"..maxPos);
 			if ( gatherNote:IsShown() ) then
+				Gatherer_AstrolabeRemoveFromMinimap(gatherNote);
 				gatherNote:Hide();
 			end
 		end
@@ -910,6 +984,7 @@ function Gatherer_HideAll()
 	while (mmPos < GATHERER_MAXNUMNOTES) do
 		mmPos = mmPos+1;
 		local gatherNote = getglobal("GatherNote"..mmPos);
+		Gatherer_AstrolabeRemoveFromMinimap(gatherNote);
 		gatherNote:Hide();
 	end
 end
@@ -1031,17 +1106,20 @@ function GatherMain_Draw()
 							local mainNote = Gatherer_CreateNoteObject(lastUnused);
 --							getglobal("GatherMain"..lastUnused);
 
-							local mnX,mnY;
-							mnX = gatherInfo.x / 100 * Gatherer_WorldMapDetailFrameWidth;
-							mnY = -gatherInfo.y / 100 * Gatherer_WorldMapDetailFrameHeight;
-
 							if ( GatherConfig and GatherConfig.IconAlpha ~= nil ) then
 								mainNote:SetAlpha(GatherConfig.IconAlpha / 100);
-							else				
+							else
 								mainNote:SetAlpha(0.8);
 							end
-							
-							mainNote:SetPoint("CENTER", "GathererMapOverlayFrame", "TOPLEFT", mnX, mnY);
+
+							-- Place via Astrolabe for correct coordinate translation
+							local nX, nY = Gatherer_AstrolabePlaceOnWorldMap(GathererMapOverlayFrame, mainNote, mapContinent, mapZone, gatherInfo.x / 100, gatherInfo.y / 100);
+							if (not nX or not nY) then
+								-- Fallback: direct placement (same zone)
+								local mnX = gatherInfo.x / 100 * Gatherer_WorldMapDetailFrameWidth;
+								local mnY = -gatherInfo.y / 100 * Gatherer_WorldMapDetailFrameHeight;
+								mainNote:SetPoint("CENTER", "GathererMapOverlayFrame", "TOPLEFT", mnX, mnY);
+							end
 							
 							if	( GatherConfig and GatherConfig.ToggleWorldNotes and GatherConfig.ToggleWorldNotes == 1)
 							then
@@ -1140,13 +1218,13 @@ function Gatherer_FindClosest(num, interested)
 	local px,py = Gatherer_PlayerPos();
 	if ((px == 0) and (py == 0)) then return gatherLocal; end
 
-	local absPx, absPy = Gatherer_AbsCoord(continent, zone, px, py);
-	gatherLocal = { playerC=continent, playerZ=zone, playerX=absPx, playerY=absPy, px=px, py=py, items={}, count=0 };
+	gatherLocal = { playerC=continent, playerZ=zone, playerX=0, playerY=0, px=px, py=py, items={}, count=0 };
 
 	local gatherCount = 0;
+	-- maxDist is in yards (converted from old normalized units on first load)
 	local maxAllowable = 0;
 	if ((GatherConfig.maxDist) and (GatherConfig.maxDist > 0)) then
-		maxAllowable = GatherConfig.maxDist / 1000;
+		maxAllowable = GatherConfig.maxDist;
 	end
 	
 	if (not GatherItems[continent] or (GatherItems[continent] and not GatherItems[continent][zone])) then return gatherLocal; end
@@ -1231,14 +1309,13 @@ function Gatherer_FindClosest(num, interested)
 						gatherInfo.icon = Gatherer_GetDB_IconIndex(specificType, gatherType);
 					end
 					
-					absHx, absHy = Gatherer_AbsCoord(continent, zone, gatherInfo.x/100, gatherInfo.y/100);
---					absHx, absHy = Gatherer_AbsCoord(continent, gatherZone, gatherInfo.x/100, gatherInfo.y/100);					absHx = math.floor(absHx * 100000)/100000;
-					absHy = math.floor(absHy * 100000)/100000;
+					local gX = gatherInfo.x / 100;
+					local gY = gatherInfo.y / 100;
 
-					if ((absHx ~= 0) and (absHy ~= 0)) then
+					if ((gX ~= 0) and (gY ~= 0)) then
 						local maxLocalPos = 0;
 						local replCandidate = 0;
-						local dist, deltaX, deltaY = Gatherer_Distance(absPx, absPy, absHx, absHy);
+						local dist, deltaX, deltaY = Gatherer_AstrolabeDistance(continent, zone, px, py, continent, zone, gX, gY);
 
 						if ((maxAllowable == 0) or (dist < maxAllowable)) then
 							local localPos, localInfo;
@@ -1297,88 +1374,6 @@ end
 
 -- *************************************************************************
 -- Coordinates computing related functions
-
-function isMinimapInCity()
-	local tempzoom = 0;
-	local inCity = false;
-	if (GetCVar("minimapZoom") == GetCVar("minimapInsideZoom")) then
-		if (GetCVar("minimapInsideZoom")+0 >= 3) then 
-			Minimap:SetZoom(Minimap:GetZoom() - 1);
-			tempzoom = 1;
-		else
-			Minimap:SetZoom(Minimap:GetZoom() + 1);
-			tempzoom = -1;
-		end
-	end
-	if (GetCVar("minimapInsideZoom")+0 == Minimap:GetZoom()) then inCity = true; end
-	Minimap:SetZoom(Minimap:GetZoom() + tempzoom);
-	return inCity;
-end
-
-function Gatherer_AbsCoord(continent, zone, x, y)
-	if ((continent == 0) or (zone == 0)) then return x, y; end
-	local r = GatherRegionData[continent] and GatherRegionData[continent][zone];
-	if not r then return x, y; end
-	local absX = x * r.scale + r.xoffset;
-	local absY = y * r.scale + r.yoffset;
-	return absX, absY;
-end
-
-function Gatherer_Distance(originX, originY, targetX, targetY)
-	local dx = (targetX - originX);
-	local dy = (targetY - originY);
-	local d = Gatherer_Pythag(dx, dy);
-	return d, dx, dy;
-end
-
-function Gatherer_Pythag(dx, dy)
-	local d = math.sqrt(dx*dx + dy*dy); -- (a*a) is usually computationally faster than math.pow(a,2)
-	if (d == 0) then d = 0.0000000001; end -- to avoid divide by zero errors.
-	return d;
-end
-
-function Gatherer_GetMapScale(continent, zone, inCity, zoomLevel)
-	if ((continent == nil) or (zoomLevel == nil)) then return 0,0; end
-	if ((not GatherRegionData) or 
-	(not GatherRegionData[continent]) or 
-	(not GatherRegionData[continent].scales) or 
-	(not GatherRegionData[continent].scales[zoomLevel]) or 
-	(not GatherRegionData[continent].scales[zoomLevel].xscale) or
-	(not GatherRegionData[continent].scales[zoomLevel].yscale)) then
-		return 0,0;
-	end
-
-	local scaleX = GatherRegionData[continent].scales[zoomLevel].xscale;
-	local scaleY = GatherRegionData[continent].scales[zoomLevel].yscale;
-	if (inCity == true) then
-		local cityScale = GatherRegionData.cityZoom[zoomLevel];
-		scaleX = scaleX * cityScale;
-		scaleY = scaleY * cityScale;
-	end
-	
-	return scaleX, scaleY;
-end
-
-function Gatherer_MiniMapPos(deltaX, deltaY, scaleX, scaleY) -- works out the distance on the minimap
-	local mapX = deltaX * scaleX;
-	local mapY = deltaY * scaleY;
-	local mapDist = 0;
-
-	mapDist = Gatherer_Pythag(mapX, mapY);
-
-	if (mapDist >= 57) then
-		-- Remap it to just inside the minimap, by:converting dx,dy to angle,distance 
-		-- then truncate distance to 58 and convert angle,58 to dx,dy
-		local flipAxis = 1;
-		if (mapX == 0) then mapX = 0.0000000001;
-		elseif (mapX < 0) then flipAxis = -1;
-		end
-		local angle = math.atan(mapY / mapX);
-		mapX = math.cos(angle) * 58 * flipAxis;
-		mapY = math.sin(angle) * 58 * flipAxis;
-	end
-	return mapX, mapY, mapDist;
-end
 
 -- *************************************************************************
 -- Recording related functions
@@ -1525,9 +1520,11 @@ function Gatherer_AddGatherHere(gather, gatherType, gatherIcon, gatherEventType)
 	end
 
 	local function Gatherer_AddGatherToBase(gather, gatherType, gatherC, gatherZ, gatherX, gatherY, gatherIcon, gatherEventType)
+		local canonicalMapId, canonicalZoneData = Gatherer_GetCanonicalZoneData(gatherC, gatherZ);
+		if (not canonicalZoneData) then return; end
 		local hPos, gatherData;
 		if (not GatherItems[gatherC]) then GatherItems[gatherC] = { }; end
-		if (not GatherItems[gatherC][gatherZ]) then GatherItems[gatherC][gatherZ] = { }; end
+		GatherItems[gatherC][gatherZ] = canonicalZoneData;
 		if (not GatherItems[gatherC][gatherZ][gather]) then GatherItems[gatherC][gatherZ][gather] = { }; end
 	
 		local found = 0;
@@ -1540,7 +1537,9 @@ function Gatherer_AddGatherHere(gather, gatherType, gatherIcon, gatherEventType)
 			if ( first_hole == 0 and hPos ~= count ) then
 				first_hole = count;
 			end
-			local dist, deltaX, deltaY = Gatherer_Distance(gatherX,gatherY, gatherData.x,gatherData.y);
+			local deltaX = gatherData.x - gatherX;
+				local deltaY = gatherData.y - gatherY;
+				local dist = math.sqrt(deltaX * deltaX + deltaY * deltaY);
 			local maxCheckDist = 0.5;
 			if ( gatherEventType and gatherEventType == 2 ) then maxCheckDist = 1; end
 			if ((dist < maxCheckDist) and ((closest == 0) or (closest > dist))) then -- same gather
@@ -1585,6 +1584,7 @@ function Gatherer_AddGatherHere(gather, gatherType, gatherIcon, gatherEventType)
 		GatherItems[gatherC][gatherZ][gather][found].gtype = gatherType;
 		GatherItems[gatherC][gatherZ][gather][found].count = gatherCount;
 		GatherItems[gatherC][gatherZ][gather][found].icon = Gatherer_GetDB_IconIndex(gatherIcon, gatherType);
+		GatherItems[gatherC][gatherZ][gather][found].mapId = canonicalMapId;
 	end
 
 	Gatherer_AddGatherToBase(gather, gatherType, gatherC, gatherZ, gatherX, gatherY, gatherIcon, gatherEventType);
@@ -1597,7 +1597,7 @@ end
 -- Miscellaneous functions (clearing DB, dumping DB content)
 function Gatherer_Clear()
 	Gatherer_Print("Clearing your gather data");
-	GatherItems = { };
+	GatherItems = { __canonical = {} };
 	ClosestList = { };
 	ClosestSearchGather = "";
 	Gatherer_OnUpdate(0,true);
@@ -1608,10 +1608,12 @@ function Gatherer_Show()
 	local gatherCont, gatherZone, gatherName, contData, zoneData, nameData, gatherPos, gatherItem;
 	
 	for gatherCont, contData in GatherItems do
-		for gatherZone, zoneData in contData do
-			for gatherName, nameData in zoneData do
-				for gatherPos, gatherItem in nameData do
-					Gatherer_Print(Gather_DB_TypeIndex[gatherItem.gtype].." "..gatherName.." was found in zone "..gatherCont..":"..gatherZone.." at "..gatherItem.x..","..gatherItem.y.."  ("..gatherItem.count.." times)");
+		if (Gatherer_IsNumericKey(gatherCont)) then
+			for gatherZone, zoneData in contData do
+				for gatherName, nameData in zoneData do
+					for gatherPos, gatherItem in nameData do
+						Gatherer_Print(Gather_DB_TypeIndex[gatherItem.gtype].." "..gatherName.." was found in zone "..gatherCont..":"..gatherZone.." at "..gatherItem.x..","..gatherItem.y.."  ("..gatherItem.count.." times)");
+					end
 				end
 			end
 		end
@@ -1659,7 +1661,7 @@ function Gatherer_MakeName(frameID)
 		tmpItemIDtable[tmpCount] = {};
 		tmpItemIDtable[tmpCount].name  = Gatherer_GetMenuName(gatherInfo.name);
 		tmpItemIDtable[tmpCount].count = gatherInfo.item.count;
-		tmpItemIDtable[tmpCount].dist  = math.floor(gatherInfo.dist*10000)/10;
+		tmpItemIDtable[tmpCount].dist  = math.floor(gatherInfo.dist + 0.5);
 		
 		tmpCount = tmpCount + 1;
 		
@@ -1672,7 +1674,7 @@ function Gatherer_MakeName(frameID)
 				tmpItemIDtable[tmpCount] = {};
 				tmpItemIDtable[tmpCount].name  = Gatherer_GetMenuName(tmpClosest.items[id].name);
 				tmpItemIDtable[tmpCount].count = tmpClosest.items[id].item.count;
-				tmpItemIDtable[tmpCount].dist  = math.floor(tmpClosest.items[id].dist*10000)/10;
+				tmpItemIDtable[tmpCount].dist  = math.floor(tmpClosest.items[id].dist + 0.5);
 
 				tmpCount = tmpCount + 1;
 			end

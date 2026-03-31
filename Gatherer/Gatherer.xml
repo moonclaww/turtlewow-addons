@@ -6,6 +6,7 @@
 	<Script file="localization.lua"/>
 	<Script file="UI_localization.lua"/>
 	<Script file="GatherRegionData.lua"/>
+	<Script file="GatherAstrolabe.lua"/>
 	<Script file="GatherIcons.lua"/>
 	<Script file="Gatherer.lua"/>
 	<Script file="GatherBase.lua"/>
@@ -51,7 +52,7 @@
 							GameTooltip:AddLine("Count: "..itemIDtable[id].count, 0.82, 1.0, 0.0);
 						end
 					end
-					GameTooltip:AddLine(itemIDtable[1].dist.." units ("..(itemIDtable[1].dist * 4).." secs)", 0.0, 0.82, 1.0);
+					GameTooltip:AddLine(itemIDtable[1].dist.." yards ("..math.floor(itemIDtable[1].dist / 7 + 0.5).." secs)", 0.0, 0.82, 1.0);
 					GameTooltip:Show();
 				end
 			</OnEnter>
@@ -70,12 +71,6 @@
 			<OnUpdate>
 				Gatherer_OnUpdate(arg1);
 			</OnUpdate>
-			<OnLoad>
-				this:RegisterEvent("MINIMAP_UPDATE_ZOOM");
-			</OnLoad>
-			<OnEvent>
-				GatherMap_InCity = isMinimapInCity();
-			</OnEvent>
 		</Scripts>
 	</Button>		
 

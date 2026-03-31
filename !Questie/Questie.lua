@@ -17,6 +17,7 @@ if GetLocale() == "zhCN" then
 else
     QuestieLanguage = "enUS"
 end
+local MapRegistry = AceLibrary("MapRegistry-1.0")
 ---------------------------------------------------------------------------------------------------
 --Setup Default Profile
 ---------------------------------------------------------------------------------------------------
@@ -1215,16 +1216,7 @@ function Questie:LinkToID(link)
 end
 ---------------------------------------------------------------------------------------------------
 function GetCurrentMapID()
-    local file = GetMapInfo();
-    if file == nil then
-        return -1;
-    end
-    local zid = QuestieZones[file];
-    if zid == nil then
-        return -1;
-    else
-        return zid[1];
-    end
+    return MapRegistry:GetCurrentMapID()
 end
 ---------------------------------------------------------------------------------------------------
 function Questie:MixString(mix, str)

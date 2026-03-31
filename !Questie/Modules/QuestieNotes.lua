@@ -15,11 +15,17 @@ local Dewdrop = AceLibrary("Dewdrop-2.0");
 local specialSources = { ["openedby"] = 1, };
 local QGet_QuestLogTitle = GetQuestLogTitle;
 local QGet_NumQuestLeaderBoards = GetNumQuestLeaderBoards;
+local QGet_NumQuestLogEntries = GetNumQuestLogEntries;
 local QSelect_QuestLogEntry = SelectQuestLogEntry;
 local QGet_QuestLogLeaderBoard = GetQuestLogLeaderBoard;
 local QGet_QuestLogQuestText = GetQuestLogQuestText;
 local QGet_TitleText = GetTitleText;
 local QGet_QuestLogSelection = GetQuestLogSelection;
+
+local function QuestieNotesHasValidQuestLogId(questLogId)
+    local numEntries = QGet_NumQuestLogEntries()
+    return type(questLogId) == "number" and questLogId > 0 and questLogId <= numEntries
+end
 ---------------------------------------------------------------------------------------------------
 -- Global Vars
 ---------------------------------------------------------------------------------------------------
@@ -110,15 +116,10 @@ function Questie:AddQuestToMap(questHash, redraw)
         local addedNote = false
         local questInfo = QuestieHashMap[Quest.questHash];
         if questInfo ~= nil then
-            local typeFunctions = {
-                ['monster'] = GetMonsterLocations,
-                ['object'] = GetObjectLocations,
-                ['unknown'] = function() return nil; end
-            };
-            local typeFunction = typeFunctions[questInfo.finishedType];
-            local finishPath = typeFunction(questInfo.finishedBy);
-            if finishPath == nil or (not next(finishPath)) then
-                finishPath = typeFunction(QuestieFinishers[Quest.name]);
+            local finishPath = nil;
+            local questId = Quest.questId or (QuestieResolveQuestIdByHash and QuestieResolveQuestIdByHash(questHash)) or questInfo.questId;
+            if questId and QuestieGetQuestFinisherLocationsById then
+                finishPath = QuestieGetQuestFinisherLocationsById(questId);
             end
             if(finishPath) then
                 local locations = Questie:RecursiveGetPathLocations(finishPath);
@@ -168,6 +169,11 @@ function Questie:UpdateQuestNotes(questHash, redraw)
     end
     local prevQuestLogSelection = QGet_QuestLogSelection()
     local QuestLogID = Questie:GetQuestIdFromHash(questHash);
+    if not QuestieNotesHasValidQuestLogId(QuestLogID) then
+        QSelect_QuestLogEntry(prevQuestLogSelection)
+        Questie:RemoveQuestFromMap(questHash, redraw)
+        return;
+    end
     QSelect_QuestLogEntry(QuestLogID);
     local q, level, questTag, isHeader, isCollapsed, isComplete = QGet_QuestLogTitle(QuestLogID);
     local count =  QGet_NumQuestLeaderBoards();
@@ -378,65 +384,67 @@ function Questie:Tooltip(this, forceShow, bag, slot)
         local prevQuestLogSelection = QGet_QuestLogSelection()
         for questHash, quest in pairs(QuestieHandledQuests) do
             local QuestLogID = Questie:GetQuestIdFromHash(questHash)
-            QSelect_QuestLogEntry(QuestLogID)
-            local drawnQuestTitle = false
-            for objectiveid, objectiveInfo in pairs(quest.objectives) do
-                local highlightInfo = {
-                    ["text"] = objective,
-                    ["color"] = unitColor
-                }
-                local sourceNames = Questie:RecursiveGetSourceNamesFromRawPath(objectiveInfo.path)
-                if objectiveInfo.name == objective or sourceNames[objective] then
-                    local lineIndex = Questie_TooltipCache[cacheKey]['lineCount']
-                    if drawnQuestTitle == false then
-                        local questInfo = QuestieHashMap[questHash]
-                        local colorString = "|c" .. QuestieTracker:GetDifficultyColor(questInfo.questLevel)
-                        local title = colorString
-                        title = title .. "[" .. questInfo.questLevel .. "] "
-                        -- Use localized quest name instead of English name
-                        local localizedName = Questie:GetLocalizedQuestName(questHash) or questInfo.name
-                        title = title .. localizedName .. "|r"
-                        Questie_TooltipCache[cacheKey]['lines'][lineIndex] = {
-                            ['color'] = {1,1,1},
-                            ['data'] = " "
-                        }
-                        lineIndex = lineIndex + 1
-                        Questie_TooltipCache[cacheKey]['lines'][lineIndex] = {
-                            ['color'] = {1,1,1},
-                            ['data'] = title,
-                            ['wrap'] = false
-                        }
-                        lineIndex = lineIndex + 1
-                        drawnQuestTitle = true
-                    end
-                    local desc, type, done = QGet_QuestLogLeaderBoard(objectiveid)
-                    if done then
-                        Questie_TooltipCache[cacheKey]['lines'][lineIndex] = {
-                            ['color'] = {0.2,1,0.3},
-                            ['data'] = desc,
-                            ['wrap'] = false
-                        }
-                        lineIndex = lineIndex + 1
-                        Questie_TooltipCache[cacheKey]['lineCount'] = lineIndex
-                    else
-                        local objectivePath = deepcopy(objectiveInfo.path)
-                        Questie:PostProcessIconPath(objectivePath)
-                        local lines = Questie:GetTooltipLines(objectivePath, 1, highlightInfo)
-                        desc = string.gsub(desc, objective, "|c"..unitColor..objective.."|r")
-                        Questie_TooltipCache[cacheKey]['lines'][lineIndex] = {
-                            ['color'] = {1,1,1},
-                            ['data'] = desc,
-                            ['wrap'] = false
-                        }
-                        lineIndex = lineIndex + 1
-                        for i, line in pairs(lines) do
+            if QuestieNotesHasValidQuestLogId(QuestLogID) then
+                QSelect_QuestLogEntry(QuestLogID)
+                local drawnQuestTitle = false
+                for objectiveid, objectiveInfo in pairs(quest.objectives) do
+                    local highlightInfo = {
+                        ["text"] = objective,
+                        ["color"] = unitColor
+                    }
+                    local sourceNames = Questie:RecursiveGetSourceNamesFromRawPath(objectiveInfo.path)
+                    if objectiveInfo.name == objective or sourceNames[objective] then
+                        local lineIndex = Questie_TooltipCache[cacheKey]['lineCount']
+                        if drawnQuestTitle == false then
+                            local questInfo = QuestieHashMap[questHash]
+                            local colorString = "|c" .. QuestieTracker:GetDifficultyColor(questInfo.questLevel)
+                            local title = colorString
+                            title = title .. "[" .. questInfo.questLevel .. "] "
+                            -- Use localized quest name instead of English name
+                            local localizedName = Questie:GetLocalizedQuestName(questHash) or questInfo.name
+                            title = title .. localizedName .. "|r"
                             Questie_TooltipCache[cacheKey]['lines'][lineIndex] = {
                                 ['color'] = {1,1,1},
-                                ['data'] = line
+                                ['data'] = " "
                             }
                             lineIndex = lineIndex + 1
+                            Questie_TooltipCache[cacheKey]['lines'][lineIndex] = {
+                                ['color'] = {1,1,1},
+                                ['data'] = title,
+                                ['wrap'] = false
+                            }
+                            lineIndex = lineIndex + 1
+                            drawnQuestTitle = true
                         end
-                        Questie_TooltipCache[cacheKey]['lineCount'] = lineIndex
+                        local desc, type, done = QGet_QuestLogLeaderBoard(objectiveid)
+                        if done then
+                            Questie_TooltipCache[cacheKey]['lines'][lineIndex] = {
+                                ['color'] = {0.2,1,0.3},
+                                ['data'] = desc,
+                                ['wrap'] = false
+                            }
+                            lineIndex = lineIndex + 1
+                            Questie_TooltipCache[cacheKey]['lineCount'] = lineIndex
+                        else
+                            local objectivePath = deepcopy(objectiveInfo.path)
+                            Questie:PostProcessIconPath(objectivePath)
+                            local lines = Questie:GetTooltipLines(objectivePath, 1, highlightInfo)
+                            desc = string.gsub(desc, objective, "|c"..unitColor..objective.."|r")
+                            Questie_TooltipCache[cacheKey]['lines'][lineIndex] = {
+                                ['color'] = {1,1,1},
+                                ['data'] = desc,
+                                ['wrap'] = false
+                            }
+                            lineIndex = lineIndex + 1
+                            for i, line in pairs(lines) do
+                                Questie_TooltipCache[cacheKey]['lines'][lineIndex] = {
+                                    ['color'] = {1,1,1},
+                                    ['data'] = line
+                                }
+                                lineIndex = lineIndex + 1
+                            }
+                            Questie_TooltipCache[cacheKey]['lineCount'] = lineIndex
+                        end
                     end
                 end
             end
@@ -553,7 +561,7 @@ function Questie_Tooltip_OnEnter()
                 local Quest = Questie:IsQuestFinished(data.questHash);
                 if not Quest then
                     local QuestLogID = Questie:GetQuestIdFromHash(data.questHash);
-                    if QuestLogID then
+                    if QuestieNotesHasValidQuestLogId(QuestLogID) then
                         QSelect_QuestLogEntry(QuestLogID);
                         local q, level, questTag, isHeader, isCollapsed, isComplete = QGet_QuestLogTitle(QuestLogID);
                         Tooltip:AddLine(q);
@@ -568,6 +576,8 @@ function Questie_Tooltip_OnEnter()
                             Tooltip:AddLine(objectiveName,1,1,1);
                             Questie:AddPathToTooltip(Tooltip, objectivePath, 1);
                         end
+                    else
+                        Questie:RemoveQuestFromMap(data.questHash, true);
                     end
                 else
                     Tooltip:AddLine("["..QuestieHashMap[data.questHash].questLevel.."] "..Quest["name"].." |cFF33FF00(complete)|r");

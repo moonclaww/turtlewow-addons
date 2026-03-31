@@ -85,6 +85,70 @@ MetaMapNotes_PartyNoteSet = false;
 local MetaMapNotes_Mininote_UpdateRate = 0;
 local MetaMap_OrigWorldMapButton_OnClick;
 local MetaMap_OrigChatFrame_OnEvent;
+local MetaMap_MapRegistry = AceLibrary("MapRegistry-1.0");
+
+local function MetaMap_GetCanonicalNoteStore()
+	if(MetaMapNotes_Data.__canonical == nil) then
+		MetaMapNotes_Data.__canonical = {};
+	end
+	return MetaMapNotes_Data.__canonical;
+end
+
+local function MetaMap_GetCanonicalLineStore()
+	if(MetaMapNotes_Lines.__canonical == nil) then
+		MetaMapNotes_Lines.__canonical = {};
+	end
+	return MetaMapNotes_Lines.__canonical;
+end
+
+local function MetaMap_RebuildCanonicalZoneBuckets()
+	if(MetaMapNotes_Data.__canonical) then
+		for mapId, zoneData in MetaMapNotes_Data.__canonical do
+			local canonicalId = tonumber(mapId);
+			if(canonicalId) then
+				local continent, zone = MetaMap_MapRegistry:GetClientZone(canonicalId);
+				if(continent and zone and continent > 0 and zone > 0) then
+					MetaMapNotes_Data[continent][zone] = zoneData;
+				end
+			end
+		end
+	end
+
+	if(MetaMapNotes_Lines.__canonical) then
+		for mapId, lineData in MetaMapNotes_Lines.__canonical do
+			local canonicalId = tonumber(mapId);
+			if(canonicalId) then
+				local continent, zone = MetaMap_MapRegistry:GetClientZone(canonicalId);
+				if(continent and zone and continent > 0 and zone > 0) then
+					MetaMapNotes_Lines[continent][zone] = lineData;
+				end
+			end
+		end
+	end
+end
+
+local function MetaMap_EnsureCanonicalZone(continent, zone)
+	if(type(continent) == "string" or continent == nil or zone == nil or continent <= 0 or zone <= 0) then
+		return;
+	end
+
+	local mapId = MetaMap_MapRegistry:GetCanonicalMapID(continent, zone);
+	if(not mapId) or mapId < 0 then
+		return;
+	end
+
+	local noteStore = MetaMap_GetCanonicalNoteStore();
+	if(noteStore[mapId] == nil) then
+		noteStore[mapId] = MetaMapNotes_Data[continent][zone] or {};
+	end
+	MetaMapNotes_Data[continent][zone] = noteStore[mapId];
+
+	local lineStore = MetaMap_GetCanonicalLineStore();
+	if(lineStore[mapId] == nil) then
+		lineStore[mapId] = MetaMapNotes_Lines[continent][zone] or {};
+	end
+	MetaMapNotes_Lines[continent][zone] = lineStore[mapId];
+end
 
 METAMAPMENU_LIST = {
 	{name = METAMAP_OPTIONS_COORDS},
@@ -465,6 +529,7 @@ function MetaMap_LoadZones()
 			MetaMap_ZoneNames[continentKey][zoneKey] = zoneName;
 		end
 	end
+	MetaMap_RebuildCanonicalZoneBuckets();
 end
 
 function MetaMap_NameToZoneID(zoneText, mode)
@@ -1625,6 +1690,7 @@ function MetaMapNotes_AddNewNote(continent, zone, xPos, yPos, name, inf1, inf2, 
 	if(in1c == nil) then in1c = 0; end
 	if(in2c == nil) then in2c = 0; end
 	if(creator == nil) then creator = unitName("player"); end
+	MetaMap_EnsureCanonicalZone(continent, zone);
 	local id = 0;
 	local index = 0;
 	local checkNote;
@@ -2656,6 +2722,7 @@ function MetaMapNotes_DeleteLines(continent, zone, x, y)
 end
 
 function MetaMapNotes_ToggleLine(continent, zone, x1, y1, x2, y2)
+	MetaMap_EnsureCanonicalZone(continent, zone);
 	local zoneTable = MetaMapNotes_Lines[continent][zone]
 	local newline = true
 	local lineCount = MetaMapNotes_GetZoneTableSize(zoneTable)

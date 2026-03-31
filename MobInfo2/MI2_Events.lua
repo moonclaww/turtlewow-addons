@@ -16,6 +16,9 @@ MI2_Target = {}
 MI2_LastTargetIdx = nil
 MI2_CurContinent = 0
 MI2_CurZone = 0
+MI2_CurMapId = 0
+
+local MI2_MapRegistry = AceLibrary("MapRegistry-1.0")
 
 -- miscellaneous other event related global vairables 
 MI2_IsNonMobLoot = nil
@@ -319,6 +322,7 @@ local function MI2_EventZoneChanged()
 	if zone > 0 then
 		MI2_CurZone = zone
 	end
+	MI2_CurMapId = MI2_MapRegistry:GetCurrentMapID()
 
 	-- track globally unknown zones (ie. mainly instance names)
 	local zoneName = GetZoneText()

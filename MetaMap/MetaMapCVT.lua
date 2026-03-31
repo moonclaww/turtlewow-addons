@@ -17,6 +17,19 @@ local Import_UserNotes = false;
 local Import_BLT       = false;
 local Import_QST       = false;
 local Import_QSTH      = false;
+local MetaMapCVT_MapRegistry = AceLibrary("MapRegistry-1.0");
+
+local function MetaMapCVT_CountCanonicalNotes(noteStore)
+	local total = 0;
+	if(noteStore and noteStore.__canonical) then
+		for mapId, notes in noteStore.__canonical do
+			for index, note in notes do
+				total = total +1;
+			end
+		end
+	end
+	return total;
+end
 
 function MetaMapCVT_CheckData()
 	local found = false;
@@ -243,49 +256,62 @@ end
 
 function MetaMap_ImportUserWKB()
 	MetaMap_TempData[MetaKB_dbID] = {};
-	local dupe = false;
-	local unknown = false;
 	local totalCount = 0;
 	local importCount = 0;
 	local dupeCount = 0;
 	local unknownCount = 0;
 	for import, continentTable in MyKB_Data[MetaKB_dbID] do
-		for continent, zoneTable in continentTable do
-			for zone in zoneTable do
-				totalCount = totalCount +1;
-				for name in MetaKB_Data[MetaKB_dbID] do
-					if(name == import) then
-						dupeCount = dupeCount +1;
-						dupe = true;
-					end
-				end
-				if(not dupe) then
-					MetaMap_TempData[MetaKB_dbID][import] = {};
-					MetaMap_TempData[MetaKB_dbID][import][continent] = {};
-					MetaMap_TempData[MetaKB_dbID][import][continent][zone] = {};
-					local TempData = MetaMap_TempData[MetaKB_dbID][import][continent][zone];
-					local ImportData = MyKB_Data[MetaKB_dbID][import][continent][zone];
-					TempData["inf1"] = ImportData.inf1;
-					TempData["inf2"] = ImportData.inf2;
-					TempData["icon"] = ImportData.icon;
-					TempData[1] = ImportData[1];
-					TempData[2] = ImportData[2];
-					TempData[3] = ImportData[3];
-					TempData[4] = ImportData[4];
-					importCount = importCount +1;
-				end
-				dupe = false;
-			end
+		if(MetaKB_Data[MetaKB_dbID][import]) then
+			dupeCount = dupeCount +1;
+		else
+			MetaMap_TempData[MetaKB_dbID][import] = continentTable;
+			importCount = importCount +1;
 		end
+		totalCount = totalCount +1;
 	end
 	for index in MetaMap_TempData[MetaKB_dbID] do
 		MetaKB_Data[MetaKB_dbID][index] = MetaMap_TempData[MetaKB_dbID][index];
 	end
+	MetaMapWKB_VerifyData();
 	MetaMap_TempData = {};
 	MetaMap_OptionsInfo:SetText(format(METAKB_IMPORT_SUCCESSFUL, importCount, totalCount, unknownCount, dupeCount));
 end
 
 function MetaMap_ImportMetaNotes()
+	if(MyNotes_Data and MyNotes_Data.__canonical) then
+		local noteTotal = MetaMapCVT_CountCanonicalNotes(MyNotes_Data);
+		local noteImport = 0;
+		local noteDupe = 0;
+		local newCheck = false;
+		for mapId, noteTable in MyNotes_Data.__canonical do
+			local continent, zone = MetaMapCVT_MapRegistry:GetClientZone(tonumber(mapId));
+			local lineTable = nil;
+			if(MyLines_Data and MyLines_Data.__canonical) then
+				lineTable = MyLines_Data.__canonical[mapId];
+			end
+			if(continent and zone and continent > 0 and zone > 0) then
+				for i, value in noteTable do
+					local newNote = noteTable[i];
+					newCheck = MetaMapNotes_AddNewNote(continent, zone, newNote.xPos, newNote.yPos, newNote.name, newNote.inf1, newNote.inf2, newNote.creator, newNote.icon, newNote.ncol, newNote.in1c, newNote.in2c)
+					if(newCheck) then
+						noteImport = noteImport +1;
+						if(lineTable) then
+							for lineIndex, lineData in lineTable do
+								if(lineData.x1 == newNote.xPos and lineData.y1 == newNote.yPos) then
+									MetaMapNotes_ToggleLine(continent, zone, lineData.x1, lineData.y1, lineData.x2, lineData.y2)
+								end
+							end
+						end
+					else
+						noteDupe = noteDupe +1;
+					end
+				end
+			end
+		end
+			MetaMap_OptionsInfo:SetText("Imported "..noteImport.." MetaNotes notes out of "..noteTotal.." total; "..noteDupe.." duplicates were skipped.");
+		return;
+	end
+
 	local noteTotal = 0;
 	local noteImport = 0;
 	local noteDupe = 0;

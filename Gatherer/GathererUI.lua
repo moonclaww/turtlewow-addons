@@ -713,6 +713,12 @@ end
 -- Zone Rematch Section: Handle with care
 
 function GathererUI_ZoneRematch(sourceZoneMapping, destZoneMapping)
+	if (GatherItems and GatherItems.__canonical) then
+		Gatherer_ChatPrint("Zone rematch is no longer needed when canonical map IDs are present.");
+		NewGatherItems = GatherItems;
+		return;
+	end
+
 	local zone_swap=0;
 	local new_idx_z, gatherType;
 	NewGatherItems = {}

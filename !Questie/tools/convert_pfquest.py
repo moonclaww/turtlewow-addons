@@ -1213,6 +1213,75 @@ def flush_print(*args, **kwargs):
     sys.stdout.flush()
 
 
+def has_vanilla_entity_locations(entity_data: dict, entity_id: int) -> bool:
+    """Return True when an entity has at least one mapped canonical location."""
+    entry = entity_data.get(entity_id)
+    if not entry:
+        return False
+    return bool(convert_coords(entry.get("coords", [])))
+
+
+def item_has_vanilla_locations(item_id: int, items_data: dict, units_data: dict, objects_data: dict) -> bool:
+    """Return True when an item starter/source can be resolved to mapped locations."""
+    item_data = items_data.get(item_id)
+    if not item_data:
+        return False
+
+    for unit_id in item_data.get("U", {}).keys():
+        if has_vanilla_entity_locations(units_data, unit_id):
+            return True
+
+    for object_id in item_data.get("O", {}).keys():
+        if has_vanilla_entity_locations(objects_data, object_id):
+            return True
+
+    for vendor_id in item_data.get("V", {}).keys():
+        if has_vanilla_entity_locations(units_data, vendor_id):
+            return True
+
+    return False
+
+
+def validate_structured_quest_db(quests_data: dict, units_data: dict, objects_data: dict,
+                                 items_data: dict, quest_objective_coords: dict) -> None:
+    """Fail generation if structured quest references cannot resolve through ID-based data."""
+    issues = []
+
+    def add_issue(quest_id: int, message: str) -> None:
+        issues.append(f"quest {quest_id}: {message}")
+
+    for quest_id in sorted(quests_data.keys()):
+        quest = quests_data[quest_id]
+        start = quest.get("start", {})
+        end = quest.get("end", {})
+
+        if "U" in start and not has_vanilla_entity_locations(units_data, start["U"]):
+            add_issue(quest_id, f"startUnit {start['U']} has no mapped locations")
+        if "O" in start and not has_vanilla_entity_locations(objects_data, start["O"]):
+            add_issue(quest_id, f"startObject {start['O']} has no mapped locations")
+        if "I" in start and not item_has_vanilla_locations(start["I"], items_data, units_data, objects_data):
+            add_issue(quest_id, f"startItem {start['I']} has no mapped sources")
+
+        if "U" in end and not has_vanilla_entity_locations(units_data, end["U"]):
+            add_issue(quest_id, f"endUnit {end['U']} has no mapped locations")
+        if "O" in end and not has_vanilla_entity_locations(objects_data, end["O"]):
+            add_issue(quest_id, f"endObject {end['O']} has no mapped locations")
+
+    for quest_id in sorted(quest_objective_coords.keys()):
+        for obj_index, coords in quest_objective_coords[quest_id].items():
+            for coord in coords:
+                if len(coord) != 3:
+                    add_issue(quest_id, f"objectiveCoords[{obj_index}] emitted non-canonical tuple {coord!r}")
+
+    if issues:
+        print("\nERROR: Structured quest validation failed.")
+        for issue in issues[:50]:
+            print(f"  - {issue}")
+        if len(issues) > 50:
+            print(f"  - ... and {len(issues) - 50} more")
+        raise SystemExit(1)
+
+
 def main():
     flush_print("=" * 70)
     flush_print("pfQuest + CMaNGOS to Questie ID-Based Database Converter")
@@ -1378,6 +1447,8 @@ def main():
             quests_names_zhcn[quest_id] = quests_names_zhcn_pfquest[quest_id]
     
     print(f"  Merged Chinese: {len(units_names_zhcn)} units, {len(objects_names_zhcn)} objects, {len(items_names_zhcn)} items, {len(quests_names_zhcn)} quests")
+
+    validate_structured_quest_db(quests_data, units_data, objects_data, items_data, quest_objective_coords)
     
     print("\n[6/7] Generating output files...")
     

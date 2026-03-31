@@ -200,6 +200,42 @@ TURTLEWOW_ZONES = {
     5628: (2, 1),     # Stormwrought Ruins → Eastern Kingdoms (placeholder)
 }
 
+CANONICAL_TURTLE_MAPIDS = {
+    25: 1030,
+    408: 1019,
+    409: 1023,
+    616: 1029,
+    718: 1006,
+    721: 1028,
+    796: 1026,
+    876: 1021,
+    1337: 1021,
+    1581: 1024,
+    2100: 1014,
+    2557: 1005,
+    4012: 1027,
+    5024: 1004,
+    5077: 1033,
+    5086: 1035,
+    5087: 1036,
+    5097: 1037,
+    5103: 1034,
+    5121: 1012,
+    5130: 1031,
+    5135: 1026,
+    5136: 1026,
+    5153: 1026,
+    5163: 1026,
+    5179: 1020,
+    5208: 1032,
+    5225: 1025,
+    5536: 1016,
+    5561: 1022,
+    5581: 1018,
+    5602: 1017,
+    5601: 1038,
+}
+
 # Track unmapped zones for reporting
 unmapped_zones = set()
 
@@ -697,6 +733,9 @@ def generate_init_lua(units_data: dict, units_names: dict,
                 # Vanilla zone: use old format {mapID, x, y, 100.0}
                 map_id = AREATABLE_TO_MAPID[zone]
                 locations.append(('old', map_id, qx, qy))
+            elif zone in CANONICAL_TURTLE_MAPIDS:
+                map_id = CANONICAL_TURTLE_MAPIDS[zone]
+                locations.append(('old', map_id, qx, qy))
             elif zone in TURTLEWOW_ZONES:
                 # TurtleWoW zone: use new format {continent, turtleZone, x, y}
                 continent, turtle_zone = TURTLEWOW_ZONES[zone]
@@ -754,6 +793,9 @@ def generate_init_lua(units_data: dict, units_names: dict,
             if zone in AREATABLE_TO_MAPID:
                 # Vanilla zone: use old format {mapID, x, y, 100.0}
                 map_id = AREATABLE_TO_MAPID[zone]
+                locations.append(('old', map_id, qx, qy))
+            elif zone in CANONICAL_TURTLE_MAPIDS:
+                map_id = CANONICAL_TURTLE_MAPIDS[zone]
                 locations.append(('old', map_id, qx, qy))
             elif zone in TURTLEWOW_ZONES:
                 # TurtleWoW zone: use new format {continent, turtleZone, x, y}
@@ -1001,6 +1043,9 @@ def generate_turtle_units_data(units_data: dict) -> str:
             if zone in AREATABLE_TO_MAPID:
                 map_id = AREATABLE_TO_MAPID[zone]
                 locations.append(('old', map_id, qx, qy))
+            elif zone in CANONICAL_TURTLE_MAPIDS:
+                map_id = CANONICAL_TURTLE_MAPIDS[zone]
+                locations.append(('old', map_id, qx, qy))
             elif zone in TURTLEWOW_ZONES:
                 continent, turtle_zone = TURTLEWOW_ZONES[zone]
                 locations.append(('new', continent, turtle_zone, qx, qy))
@@ -1052,6 +1097,9 @@ def generate_turtle_objects_data(objects_data: dict) -> str:
             
             if zone in AREATABLE_TO_MAPID:
                 map_id = AREATABLE_TO_MAPID[zone]
+                locations.append(('old', map_id, qx, qy))
+            elif zone in CANONICAL_TURTLE_MAPIDS:
+                map_id = CANONICAL_TURTLE_MAPIDS[zone]
                 locations.append(('old', map_id, qx, qy))
             elif zone in TURTLEWOW_ZONES:
                 continent, turtle_zone = TURTLEWOW_ZONES[zone]
@@ -1233,6 +1281,106 @@ def merge_name_tables(base: dict, additional: dict, source_name: str) -> int:
     return added
 
 
+def turtle_zone_to_canonical_map_id(zone_id: int):
+    """Resolve a Turtle zone id to a canonical Questie map id when available."""
+    if zone_id in AREATABLE_TO_MAPID:
+        return AREATABLE_TO_MAPID[zone_id]
+    if zone_id in CANONICAL_TURTLE_MAPIDS:
+        return CANONICAL_TURTLE_MAPIDS[zone_id]
+    return None
+
+
+def turtle_zone_has_legacy_mapping(zone_id: int) -> bool:
+    """Return True when a zone can still be emitted in legacy continent/zone tuple form."""
+    return zone_id in TURTLEWOW_ZONES
+
+
+def has_turtle_entity_locations(entity_data: dict, entity_id: int) -> bool:
+    """Return True when an entity has at least one canonical or legacy Turtle location."""
+    entry = entity_data.get(entity_id)
+    if not entry:
+        return False
+
+    for _, _, zone_id in entry.get("coords", []):
+        if turtle_zone_to_canonical_map_id(zone_id) is not None or turtle_zone_has_legacy_mapping(zone_id):
+            return True
+
+    return False
+
+
+def item_has_turtle_locations(item_id: int, items_data: dict, units_data: dict, objects_data: dict) -> bool:
+    """Return True when an item starter/source can be resolved through canonical locations."""
+    item_data = items_data.get(item_id)
+    if not item_data:
+        return False
+
+    for unit_id in item_data.get("U", {}).keys():
+        if has_turtle_entity_locations(units_data, unit_id):
+            return True
+
+    for object_id in item_data.get("O", {}).keys():
+        if has_turtle_entity_locations(objects_data, object_id):
+            return True
+
+    for vendor_id in item_data.get("V", {}).keys():
+        if has_turtle_entity_locations(units_data, vendor_id):
+            return True
+
+    return False
+
+
+def collect_noncanonical_turtle_zones(*entity_tables: dict) -> set:
+    """Collect zone ids that would require legacy continent/zone tuple output."""
+    missing = set()
+
+    for entity_table in entity_tables:
+        for entry in entity_table.values():
+            for _, _, zone_id in entry.get("coords", []):
+                if turtle_zone_to_canonical_map_id(zone_id) is None and turtle_zone_has_legacy_mapping(zone_id):
+                    missing.add(zone_id)
+
+    return missing
+
+
+def validate_turtle_structured_quest_db(quest_data: dict, units_data: dict, objects_data: dict, items_data: dict) -> None:
+    """Report unresolved Turtle quest/entity links without aborting generation."""
+    issues = []
+
+    def add_issue(quest_id: int, message: str) -> None:
+        issues.append(f"quest {quest_id}: {message}")
+
+    noncanonical_zones = collect_noncanonical_turtle_zones(units_data, objects_data)
+    if noncanonical_zones:
+        print("\nWARNING: Turtle canonical map validation found legacy tuple zones.")
+        for zone_id in sorted(noncanonical_zones):
+            print(f"  - zone {zone_id} will remain in legacy continent/zone tuple form")
+
+    for quest_id in sorted(quest_data.keys()):
+        quest = quest_data[quest_id]
+        start = quest.get("start", {})
+        end = quest.get("end", {})
+
+        if "U" in start and not has_turtle_entity_locations(units_data, start["U"]):
+            add_issue(quest_id, f"startUnit {start['U']} has no canonical locations")
+        if "O" in start and not has_turtle_entity_locations(objects_data, start["O"]):
+            add_issue(quest_id, f"startObject {start['O']} has no canonical locations")
+        if "I" in start and not item_has_turtle_locations(start["I"], items_data, units_data, objects_data):
+            add_issue(quest_id, f"startItem {start['I']} has no canonical sources")
+
+        if "U" in end and not has_turtle_entity_locations(units_data, end["U"]):
+            add_issue(quest_id, f"endUnit {end['U']} has no canonical locations")
+        if "O" in end and not has_turtle_entity_locations(objects_data, end["O"]):
+            add_issue(quest_id, f"endObject {end['O']} has no canonical locations")
+
+    if issues:
+        print("\nWARNING: Turtle structured quest validation found unresolved links.")
+        for issue in issues[:50]:
+            print(f"  - {issue}")
+        if len(issues) > 50:
+            print(f"  - ... and {len(issues) - 50} more")
+        print("  Generation will continue; unresolved quests may lack starter/finisher markers.")
+
+
 def main():
     print("=" * 70)
     print("pfQuest-turtle to Questie Database Converter")
@@ -1360,6 +1508,8 @@ def main():
     vanilla_units_names_zh = parse_name_table(vanilla_units_zh_content, 'pfDB["units"]["zhCN"]')
     vanilla_objects_names_zh = parse_name_table(vanilla_objects_zh_content, 'pfDB["objects"]["zhCN"]')
     print(f"    Vanilla zhCN - Units: {len(vanilla_units_names_zh)}, Objects: {len(vanilla_objects_names_zh)}")
+
+    validate_turtle_structured_quest_db(quest_data, units_data, objects_data, items_data)
     
     # =========================================================================
     # PHASE 3: Generate ID-based output files (NEW FORMAT)

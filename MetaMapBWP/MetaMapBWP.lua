@@ -40,6 +40,7 @@ BWPDispm.__index = SNDisp;
 -- Query redirect
 BWPmeta.__index = BWPnode;
 local BWP_FirstLoad = true;
+local BWP_MapRegistry = AceLibrary("MapRegistry-1.0")
 local gdpx, gdpy, gddx, gddy, gddir, gdclx, gdcly;
 --Map Variables below
 local MAX_LOC_SAMPLES = 50;-- Circular arrays to store X,Y,time locations
@@ -753,10 +754,11 @@ end
 			
 function BWP_GetQuestList() -- Returns an Array of QuestNPC Data
 	local localquestlist = {}
+	local currentMapId = BWP_MapRegistry:GetCurrentMapID()
 	if(BWP_QuestList) then
 		for k,v in BWP_QuestList do
 			zone = GetCurrentMapZone()
-			if(v.Zone == zone) then
+			if((v.MapID and v.MapID == currentMapId) or (not v.MapID and v.Zone == zone)) then
 				table.insert(localquestlist,v)
 			end
 		end
@@ -774,6 +776,7 @@ function BWP_AddQuest(questname)--Adds a quest giver to waypoint menu
 			questitem["QuestGiver"] = UnitName("Target")
 			questitem["X"],questitem["Y"] = GetPlayerMapPosition("Player")
 			questitem["Zone"]= GetCurrentMapZone()
+			questitem["MapID"] = BWP_MapRegistry:GetCurrentMapID()
 			Questlist[1] = questitem
 			BWP_QuestList = Questlist
 		else
@@ -783,6 +786,7 @@ function BWP_AddQuest(questname)--Adds a quest giver to waypoint menu
 			questitem["QuestName"] = questname
 			questitem["QuestGiver"] = UnitName("Target")
 			questitem["Zone"]= GetCurrentMapZone()
+			questitem["MapID"] = BWP_MapRegistry:GetCurrentMapID()
 			questitem["X"],questitem["Y"] = GetPlayerMapPosition("Player")
 			for k,v in Questlist do 
 				index = index + 1
