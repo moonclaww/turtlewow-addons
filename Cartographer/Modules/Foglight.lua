@@ -50,6 +50,30 @@ local _G = getfenv(0)
 
 Cartographer_Foglight = Cartographer:NewModule("Foglight", "AceHook-2.1", "AceEvent-2.0")
 
+local function mergeErrata(dst, src, replace)
+	if not src then
+		return
+	end
+	for mapFile, overlays in pairs(src) do
+		local target = dst[mapFile]
+		if not target then
+			target = {}
+			dst[mapFile] = target
+		end
+		for textureName, packed in pairs(overlays) do
+			if replace or target[textureName] == nil then
+				target[textureName] = packed
+			end
+		end
+	end
+end
+
+local function cloneErrata(src)
+	local copy = {}
+	mergeErrata(copy, src)
+	return copy
+end
+
 function Cartographer_Foglight:OnInitialize()
 	ColorPickerFrame:SetFrameStrata("DIALOG")
 	self.name = L["Foglight"]
@@ -61,8 +85,7 @@ function Cartographer_Foglight:OnInitialize()
 		darkB = 1,
 		darkA = 1,
     })
-	Cartographer:RegisterDefaults("Foglight", "account", {
-		errata = {
+	local builtinErrata = {
 			["LochModan"] = {
 				["VALLEYOFKINGS"] = 397399025859,
 				["IRONBANDSEXCAVATIONSITE"] = 345176801625,
@@ -672,8 +695,9 @@ function Cartographer_Foglight:OnInitialize()
 				["CORRAHNSDAGGER"] = 408440570051,
 			},
 			['*'] = {}
-		}
-	})
+	}
+	mergeErrata(builtinErrata, Cartographer_Foglight_TurtleErrata, true)
+	self.builtinErrata = builtinErrata
 	
 	Cartographer.options.args.Foglight = {
 		name = L["Foglight"],
@@ -702,7 +726,9 @@ function Cartographer_Foglight:OnInitialize()
 end
 
 function Cartographer_Foglight:OnEnable()
-	self.overlayInfo = self.db.account.errata
+	-- Start from built-in/generated geometry, then let live client overlay
+	-- data override it in memory for the current session only.
+	self.overlayInfo = cloneErrata(self.builtinErrata)
 	self:Hook("GetNumMapOverlays", true)
 	self:Hook("WorldMapFrame_Update", true)
 	if WorldMapFrame:IsShown() then
@@ -747,6 +773,10 @@ function Cartographer_Foglight:WorldMapFrame_UpdateOverlays()
 	
 	local prefix = "Interface\\WorldMap\\"..mapFileName.."\\"
 	local zoneTable = self.overlayInfo[mapFileName]
+	if not zoneTable then
+		zoneTable = {}
+		self.overlayInfo[mapFileName] = zoneTable
+	end
 	
 	local numOverlays = self.hooks.GetNumMapOverlays()
 	local len = string.len(prefix)+1

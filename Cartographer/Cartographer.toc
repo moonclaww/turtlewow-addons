@@ -33,6 +33,7 @@ Cartographer.lua
 
 Modules\Battlegrounds.lua
 Modules\Coordinates.lua
+Generated\FoglightTurtleData.lua
 Modules\Foglight.lua
 Modules\GroupColors.lua
 Modules\InstanceMaps.lua
