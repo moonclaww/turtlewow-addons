@@ -103,3 +103,4 @@ AnchorsAway\AnchorsAway-1.0.lua
 AnchorsAway\AnchorsAway-1.0.zhcn.lua
 
 FAIAP.lua
+OptionsFrameCompat.lua

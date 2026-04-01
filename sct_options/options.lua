@@ -7,9 +7,9 @@ SCT.OptionFrames = { ["SCTOptionsFrame_Misc21"] = "SCTOptions_EventsFrame",
 										 ["SCTOptionsFrame_Misc10"] = "SCTOptions_SaveLoadFrame"};
 										 
 SCT.OptionFrameFrames = { ["SCTOptionsFrame_Misc14"] = {frame="SCTOptions_TextFrame", example="SCTaniExampleData1"},
-										 			["SCTOptionsFrame_Misc20"] = {frame="SCTOptions_TextFrame", example="SCTaniExampleData2"}, 
-										 			["SCTOptionsFrame_Misc15"] = {frame="SCTOptions_MessageFrame", example="SCTMsgExample1"}};
-
+			["SCTOptionsFrame_Misc20"] = {frame="SCTOptions_TextFrame", example="SCTaniExampleData2"}, 
+			["SCTOptionsFrame_Misc15"] = {frame="SCTOptions_MessageFrame", example="SCTMsgExample1"}};
+										 
 ------------------------------
 --Copy values from table that are nil in another. 
 --Taken from AceDB. Using till AceDB support character to character
