@@ -26,7 +26,93 @@ MI2_IsNonMobLoot = nil
 -- local table holding all event handler functions
 local MI2_EventHandlers = { }
 local MI2_GT_OnShow_Orig
+local MI2_GT_OnHide_Orig
 local MI2_Scan_SelfBuff
+local MI2_CursorTooltipActive
+
+MI2_SuppressTooltipHook = nil
+
+local MI2_CURSOR_TOOLTIP_OFFSET_X = 32
+local MI2_CURSOR_TOOLTIP_OFFSET_Y = 24
+local MI2_CURSOR_TOOLTIP_MARGIN = 12
+
+local function MI2_StopCursorTooltip()
+	MI2_CursorTooltipActive = nil
+	MI2_MobInfoFrame:SetScript("OnUpdate", nil)
+end
+
+local function MI2_ShouldHideCursorTooltip()
+	if not MI2_CursorTooltipActive then
+		return true
+	end
+
+	if MI2_CursorTooltipActive.kind == "mob" then
+		if not UnitExists("mouseover") or UnitIsPlayer("mouseover")
+				or UnitIsFriend("player", "mouseover") then
+			return true
+		end
+	elseif MI2_CursorTooltipActive.owner and not MouseIsOver(MI2_CursorTooltipActive.owner) then
+		return true
+	end
+
+	return false
+end
+
+local function MI2_PositionCursorTooltip()
+	if not MI2_CursorTooltipActive or not GameTooltip:IsShown()
+			or MobInfoConfig.CursorTooltip == 0 or MobInfoConfig.DisableMobInfo ~= 0 then
+		MI2_StopCursorTooltip()
+		return
+	end
+
+	if MI2_ShouldHideCursorTooltip() then
+		MI2_StopCursorTooltip()
+		GameTooltip:Hide()
+		return
+	end
+
+	local scale = UIParent:GetScale()
+	local x, y = GetCursorPosition()
+	x = x / scale
+	y = y / scale
+
+	local width = GameTooltip:GetWidth()
+	local height = GameTooltip:GetHeight()
+	local screenWidth = GetScreenWidth()
+	local screenHeight = GetScreenHeight()
+
+	local left = x + MI2_CURSOR_TOOLTIP_OFFSET_X
+	local bottom = y - MI2_CURSOR_TOOLTIP_OFFSET_Y - height
+
+	if left + width > screenWidth - MI2_CURSOR_TOOLTIP_MARGIN then
+		left = x - MI2_CURSOR_TOOLTIP_OFFSET_X - width
+	end
+	if left < MI2_CURSOR_TOOLTIP_MARGIN then
+		left = MI2_CURSOR_TOOLTIP_MARGIN
+	end
+
+	if bottom < MI2_CURSOR_TOOLTIP_MARGIN then
+		bottom = y + MI2_CURSOR_TOOLTIP_OFFSET_Y
+	end
+	if bottom + height > screenHeight - MI2_CURSOR_TOOLTIP_MARGIN then
+		bottom = screenHeight - height - MI2_CURSOR_TOOLTIP_MARGIN
+	end
+
+	GameTooltip:ClearAllPoints()
+	GameTooltip:SetPoint("BOTTOMLEFT", UIParent, "BOTTOMLEFT", left, bottom)
+end
+
+local function MI2_CursorTooltip_OnUpdate()
+	MI2_PositionCursorTooltip()
+end
+
+local function MI2_StartCursorTooltip(kind)
+	if MobInfoConfig.CursorTooltip == 0 then return end
+
+	MI2_CursorTooltipActive = { kind = kind, owner = GameTooltip.owner }
+	MI2_PositionCursorTooltip()
+	MI2_MobInfoFrame:SetScript("OnUpdate", MI2_CursorTooltip_OnUpdate)
+end
 
 
 -----------------------------------------------------------------------------
@@ -112,6 +198,8 @@ local function MI2_MobInfo_Initialize()
 	-- hook into OnShow for game tooltip
 	MI2_GT_OnShow_Orig = GameTooltip:GetScript("OnShow")
 	GameTooltip:SetScript( "OnShow", MI2_GameTooltip_OnShow )
+	MI2_GT_OnHide_Orig = GameTooltip:GetScript("OnHide")
+	GameTooltip:SetScript( "OnHide", MI2_GameTooltip_OnHide )
 
 	-- from this point onward process events
 	MI2_InitializeEventTable()
@@ -373,6 +461,20 @@ end -- MI2_Player_Login()
 
 
 -----------------------------------------------------------------------------
+-- MI2_GameTooltip_OnHide
+--
+-- OnHide event handler for the GameTooltip frame
+-----------------------------------------------------------------------------
+function MI2_GameTooltip_OnHide()
+	MI2_StopCursorTooltip()
+
+	if MI2_GT_OnHide_Orig then
+		MI2_GT_OnHide_Orig(event)
+	end
+end -- MI2_GameTooltip_OnHide()
+
+
+-----------------------------------------------------------------------------
 -- MI2_GameTooltip_OnShow
 --
 -- OnShow event handler for the GameTooltip frame
@@ -383,6 +485,16 @@ end -- MI2_Player_Login()
 -----------------------------------------------------------------------------
 function MI2_GameTooltip_OnShow( )
 	MI2_HealthLine, MI2_ManaLine = nil, nil
+	MI2_StopCursorTooltip()
+
+	if MI2_SuppressTooltipHook then
+		if MI2_GT_OnShow_Orig then
+			MI2_GT_OnShow_Orig(event)
+		end
+		return
+	end
+
+	local followCursor
 
 	-- check if mobinfo tooltip extensions are enabled and check for keypress mode
 	if MobInfoConfig.DisableMobInfo == 0 and (MobInfoConfig.KeypressMode == 0
@@ -393,10 +505,12 @@ function MI2_GameTooltip_OnShow( )
 			-- add mob data to mob tooltip (show abbreviated location)
 			MI2_BuildMobInfoTooltip( UnitName("mouseover"), UnitLevel("mouseover"), nil )
 			GameTooltip:Show()
+			followCursor = "mob"
 		elseif firstline and MobInfoConfig.ItemTooltip == 1 and UnitClass("mouseover") == nil then
 			-- add item loot info to item tooltip
 			if MI2_BuildItemDataTooltip( firstline:GetText() ) then
 				GameTooltip:Show()
+				followCursor = "item"
 			end
 		end
 	end
@@ -404,6 +518,10 @@ function MI2_GameTooltip_OnShow( )
 	-- call original WoW event for GameTooltip:OnShow()
 	if MI2_GT_OnShow_Orig then
 		MI2_GT_OnShow_Orig(event)
+	end
+
+	if followCursor and MobInfoConfig.CursorTooltip == 1 and GameTooltip:IsShown() then
+		MI2_StartCursorTooltip(followCursor)
 	end
 end -- MI2_GameTooltip_OnShow()
 

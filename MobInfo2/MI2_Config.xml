@@ -525,10 +525,17 @@
 									</Anchor>
 								</Anchors>
 							</CheckButton>
+							<CheckButton name="MI2_OptCursorTooltip" inherits="MI2_CheckboxTemplate">
+								<Anchors>
+									<Anchor	point="TOPLEFT" relativeTo="MI2_OptItemTooltip">
+										<Offset> <AbsDimension x="0" y="-20" />	</Offset>
+									</Anchor>
+								</Anchors>
+							</CheckButton>
 							<EditBox name="MI2_OptItemFilter" inherits="MI2_OptionsEditBox_Template">
 								<Size> <AbsDimension x="160" y="24"/> </Size>
 								<Anchors>
-									<Anchor	point="TOPLEFT"	relativeTo="MI2_OptItemTooltip" relativePoint="BOTTOMLEFT">
+									<Anchor	point="TOPLEFT"	relativeTo="MI2_OptCursorTooltip" relativePoint="BOTTOMLEFT">
 										<Offset> <AbsDimension x="5" y="-15"/> </Offset>
 									</Anchor>
 								</Anchors>

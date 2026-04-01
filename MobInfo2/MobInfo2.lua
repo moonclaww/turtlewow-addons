@@ -547,6 +547,7 @@ end -- chattext()
 	if  not MobInfoConfig.ItemsQuality	then  MobInfoConfig.ItemsQuality = 2	end
 	if  not MobInfoConfig.SaveBasicInfo	then  MobInfoConfig.SaveBasicInfo = 1	end
 	if  not MobInfoConfig.ItemTooltip	then  MobInfoConfig.ItemTooltip = 1		end
+	if  not MobInfoConfig.CursorTooltip	then  MobInfoConfig.CursorTooltip = 1	end
 	if  not MobInfoConfig.ItemFilter	then  MobInfoConfig.ItemFilter = ""		end
 	if  not MobInfoConfig.ShowLocation	then  MobInfoConfig.ShowLocation = 1	end
 	if  not MobInfoConfig.SaveLocation	then  MobInfoConfig.SaveLocation = 1	end

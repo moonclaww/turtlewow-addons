@@ -409,7 +409,9 @@ function MI2_ShowSearchResultTooltip()
 			GameTooltip:SetText( MI2_SearchResultList[selection].col..itemName )
 			MI2_BuildItemDataTooltip( itemName )
 		end
+		MI2_SuppressTooltipHook = 1
 		GameTooltip:Show()
+		MI2_SuppressTooltipHook = nil
 	end
 end  -- end of MI2_ShowSearchResultTooltip()
 

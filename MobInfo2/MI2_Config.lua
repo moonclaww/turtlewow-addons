@@ -85,7 +85,9 @@ function MI2_ShowOptionHelpTooltip()
 	if MI2_OPTIONS[this:GetName()].info then
 		GameTooltip:AddLine(mifontGold..MI2_OPTIONS[this:GetName()].info)
 	end
+	MI2_SuppressTooltipHook = 1
 	GameTooltip:Show()
+	MI2_SuppressTooltipHook = nil
 end -- of MI2_ShowOptionHelpTooltip()
 
 

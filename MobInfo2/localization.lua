@@ -129,6 +129,10 @@ MI2_OPTIONS["MI2_OptItemTooltip"] =
 { text = "List Mobs in Item Tooltip"; help = "Display names of Mobs dropping an item in item tooltip";
 info = "List the names of all Mobs that drop a hovered item\nin the item tooltip. For each item list the amount\ndropped by the Mob along with percentage." }
 
+MI2_OPTIONS["MI2_OptCursorTooltip"] =
+{ text = "Follow Cursor Tooltip"; help = "Move MobInfo mob and item tooltips to the cursor";
+info = "When enabled, MobInfo moves only its own hostile mob and item drop\ntooltips to follow the cursor. Search and options help tooltips stay put." }
+
 MI2_OPTIONS["MI2_OptCompactMode"] = 
 { text = "Compact Mob Tooltip"; help = "Enables a compact mob tooltip layout with 2 values per tooltip line";
 info = "Compact tooltip uses short abbreviated texts for the tooltip desriptions.\nTo disable a tolltip line both entries on that line must be disabled." }
