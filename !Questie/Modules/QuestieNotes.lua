@@ -442,7 +442,7 @@ function Questie:Tooltip(this, forceShow, bag, slot)
                                     ['data'] = line
                                 }
                                 lineIndex = lineIndex + 1
-                            }
+                            end
                             Questie_TooltipCache[cacheKey]['lineCount'] = lineIndex
                         end
                     end
