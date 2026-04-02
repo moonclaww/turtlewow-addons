@@ -1,5 +1,5 @@
 local MAJOR_VERSION = "MapRegistry-1.0"
-local MINOR_VERSION = 2
+local MINOR_VERSION = 3
 
 if not AceLibrary then error(MAJOR_VERSION .. " requires AceLibrary") end
 if not AceLibrary:IsNewVersion(MAJOR_VERSION, MINOR_VERSION) then return end
@@ -439,34 +439,53 @@ function MapRegistry:GetMapRecord(canonicalId)
     return result
 end
 
-function MapRegistry:ResolveLocationTuple(location)
+function MapRegistry:NormalizeLocationTuple(location, sourceType)
     if not location then
         return nil
     end
 
     local length = table.getn(location)
     if length == 3 then
-        local continent, zone = self:GetClientZone(location[1])
-        if continent and zone then
-            return { continent, zone, location[2], location[3] }
+        local canonicalId = tonumber(location[1])
+        if canonicalId then
+            return { canonicalId, location[2], location[3] }
         end
         return nil
     end
 
     if length >= 4 then
-        local canonicalId = self:GetCanonicalMapIDFromLegacyTurtle(location[1], location[2])
-        if not canonicalId then
+        local canonicalId = nil
+        if sourceType == "client" then
             canonicalId = self:GetCanonicalMapID(location[1], location[2])
-        end
-
-        if canonicalId then
-            local continent, zone = self:GetClientZone(canonicalId)
-            if continent and zone then
-                return { continent, zone, location[3], location[4] }
+        elseif sourceType == "legacyTurtle" then
+            canonicalId = self:GetCanonicalMapIDFromLegacyTurtle(location[1], location[2])
+        else
+            canonicalId = self:GetCanonicalMapIDFromVanilla(location[1], location[2])
+            if not canonicalId and sourceType ~= "vanilla" then
+                canonicalId = self:GetCanonicalMapID(location[1], location[2])
+            end
+            if not canonicalId and sourceType ~= "vanilla" then
+                canonicalId = self:GetCanonicalMapIDFromLegacyTurtle(location[1], location[2])
             end
         end
 
-        return { location[1], location[2], location[3], location[4] }
+        if canonicalId then
+            return { canonicalId, location[3], location[4] }
+        end
+    end
+
+    return nil
+end
+
+function MapRegistry:ResolveLocationTuple(location, sourceType)
+    local normalized = self:NormalizeLocationTuple(location, sourceType)
+    if not normalized then
+        return nil
+    end
+
+    local continent, zone = self:GetClientZone(normalized[1])
+    if continent and zone then
+        return { continent, zone, normalized[2], normalized[3] }
     end
 
     return nil

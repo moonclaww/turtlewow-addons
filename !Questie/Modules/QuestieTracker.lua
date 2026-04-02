@@ -420,7 +420,7 @@ end
 function QuestieTracker:SortTrackingFrame()
     local sortedByDistance = {};
     local distanceControlTable = {};
-    local C,Z,X,Y = Astrolabe:GetCurrentPlayerPosition(); -- continent, zone, x, y
+    local playerMapId, X, Y = Astrolabe:GetCurrentPlayerPosition();
     local distanceNotes = {};
     local objc = 0;
     QuestieTracker.GeneralInterval = QuestieTracker.GeneralInterval + 1;
@@ -435,17 +435,16 @@ function QuestieTracker:SortTrackingFrame()
                         if not objective.done then
                             local locations = Questie:RecursiveGetPathLocations(objective.path);
                             for i, location in pairs(locations) do
-                                local dist, xDelta, yDelta = Astrolabe:ComputeDistance( C, Z, X, Y, location[1], location[2], location[3], location[4]);
+                                local dist, xDelta, yDelta = Astrolabe:ComputeDistance(playerMapId, X, Y, location[1], location[2], location[3]);
                                 if dist and xDelta and yDelta then
                                     local info = {
                                         ["dist"] = dist,
                                         ["hash"] = hash,
                                         ["xDelta"] = xDelta,
                                         ["yDelta"] = yDelta,
-                                        ["c"] = location[1],
-                                        ["z"] = location[2],
-                                        ["x"] = location[3],
-                                        ["y"] = location[4],
+                                        ["mapId"] = location[1],
+                                        ["x"] = location[2],
+                                        ["y"] = location[3],
                                     };
                                     objectiveCount = objectiveCount + 1;
                                     table.insert(distanceNotes, info);
@@ -460,17 +459,16 @@ function QuestieTracker:SortTrackingFrame()
                     if quest ~= nil then
                         local locations = QuestieTracker:GetFinisherLocations(quest.questId) or {};
                         for i, location in pairs(locations) do
-                            local dist, xDelta, yDelta = Astrolabe:ComputeDistance( C, Z, X, Y, location[1], location[2], location[3], location[4]);
+                            local dist, xDelta, yDelta = Astrolabe:ComputeDistance(playerMapId, X, Y, location[1], location[2], location[3]);
                             if dist and xDelta and yDelta then
                                 local info = {
                                     ["dist"] = dist,
                                     ["hash"] = hash,
                                     ["xDelta"] = xDelta,
                                     ["yDelta"] = yDelta,
-                                    ["c"] = location[1],
-                                    ["z"] = location[2],
-                                    ["x"] = location[3],
-                                    ["y"] = location[4],
+                                    ["mapId"] = location[1],
+                                    ["x"] = location[2],
+                                    ["y"] = location[3],
                                 };
                                 table.insert(distanceNotes, info);
                             end

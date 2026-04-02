@@ -136,6 +136,7 @@
 			<OnLoad>
 				this:SetFrameLevel(this:GetParent():GetFrameLevel() + 1);
 				this:RegisterForClicks("RightButtonUp");
+				this.mapId = 0;
 				this.continent = 0;
 				this.zoneIndex = 0;
 				this.localIndex = 0;
@@ -156,7 +157,7 @@
 					if (bonusInfo) then
 						toolTipText = format("%s\n%s", toolTipText, bonusInfo);
 					end
-					toolTipText = format("%s\nc:%d z:%d l:%d", toolTipText, this.continent, this.zoneIndex, this.localIndex);
+					toolTipText = format("%s\nm:%d c:%d z:%d l:%d", toolTipText, this.mapId, this.continent, this.zoneIndex, this.localIndex);
 					WorldMapTooltip:SetText(toolTipText);
 				end
 				WorldMapTooltip:Show();
@@ -167,6 +168,7 @@
 			<OnClick>
 				if (arg1 and arg1 == "RightButton" and IsAltKeyDown()) then
 					if (not GatherMainMapItem ) then GatherMainMapItem = {}; end
+					GatherMainMapItem.mapId = this.mapId;
 					GatherMainMapItem.continent = this.continent;
 					GatherMainMapItem.zoneIndex = this.zoneIndex;
 					GatherMainMapItem.gatherName = this.gatherName;

@@ -344,9 +344,9 @@ function Questie:OnUpdate(elapsed)
         --runs.
         if (UnitIsDead("player") ~= 1) and (bgactive == false) then
             if DiedAtX and DiedAtY and DiedAtX ~= 0 and DiedAtY ~= 0 then --<--set globally by PLAYER_DEAD event
-                local ddist, xDelta, yDelta = Astrolabe:ComputeDistance(DiedInCont, DiedInZone, DiedAtX, DiedAtY, continent, zone, xNote, yNote)
+                local ddist, xDelta, yDelta = Astrolabe:ComputeDistance(DiedInMapId, DiedAtX, DiedAtY, GetCurrentMapID(), xNote, yNote)
                 local dtitle = "My Dead Corpse"
-                local dpoint = {c = DiedInCont, z = DiedInZone, x = DiedAtX, y = DiedAtY}
+                local dpoint = {mapId = DiedInMapId, x = DiedAtX, y = DiedAtY}
                 SetCrazyArrow(dpoint, ddist, dtitle) --<--sets corpseArrow
                 if (not WorldMapFrame:IsVisible() == nil) then
                     return
@@ -437,10 +437,10 @@ function Questie:OnEvent(this, event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, 
         end
     -------------------------------------------------
     elseif (event == "PLAYER_DEAD") then
-        --Records players continent, zone and coordinates upon death to be used later. This is more
+        --Records players map ID and coordinates upon death to be used later. This is more
         --accurate than "posX, posY = GetCorpseMapPosition()" Blizzards API only records X and Y
         --coordinates.
-        DiedInCont, DiedInZone, DiedAtX, DiedAtY = Astrolabe:GetCurrentPlayerPosition();
+        DiedInMapId, DiedAtX, DiedAtY = Astrolabe:GetCurrentPlayerPosition();
     -------------------------------------------------
     elseif ( event == "PLAYER_ENTERING_WORLD" or event == "ZONE_CHANGED_NEW_AREA" ) then
         if not WorldMapFrame:IsVisible() then SetMapToCurrentZone() end

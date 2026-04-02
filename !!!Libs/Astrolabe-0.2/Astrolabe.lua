@@ -36,10 +36,14 @@ local LIBRARY_VERSION_MAJOR = "Astrolabe-0.2"
 local LIBRARY_VERSION_MINOR = "$Revision: 19 $"
 if not AceLibrary then error(LIBRARY_VERSION_MAJOR .. " requires AceLibrary.") end
 if not AceLibrary:IsNewVersion(LIBRARY_VERSION_MAJOR, LIBRARY_VERSION_MINOR) then return end
+local MapRegistry = AceLibrary("MapRegistry-1.0")
 
 Astrolabe = {};
 WorldMapSize, MinimapSize = {}, {}
 local initSizes
+local WORLD_MAP_ID = 1337
+local EASTERN_KINGDOMS_MAP_ID = 1001
+local KALIMDOR_MAP_ID = 1002
 --------------------------------------------------------------------------------------------------------------
 -- Working Tables and Config Constants
 --------------------------------------------------------------------------------------------------------------
@@ -50,6 +54,38 @@ Astrolabe.UpdateTimer = 0.2;
 Astrolabe.ForceNextUpdate = false;
 Astrolabe.minimapOutside = false;
 local twoPi = math.pi * 2;
+
+local function getClientMapLocation(mapId)
+    if mapId == nil then
+        return nil, nil
+    end
+
+    local continent, zone = MapRegistry:GetClientZone(mapId)
+    if continent == nil then
+        return nil, nil
+    end
+
+    return continent, zone or 0
+end
+
+local function getDisplayedMapId()
+    local continent = GetCurrentMapContinent()
+    local zone = GetCurrentMapZone() or 0
+    if continent == 0 then
+        return WORLD_MAP_ID
+    end
+
+    local mapId = MapRegistry:GetCanonicalMapID(continent, zone)
+    if mapId then
+        return mapId
+    end
+
+    return MapRegistry:GetCurrentMapID()
+end
+
+local function isAggregateMap(mapId)
+    return mapId == WORLD_MAP_ID or mapId == EASTERN_KINGDOMS_MAP_ID or mapId == KALIMDOR_MAP_ID
+end
 --------------------------------------------------------------------------------------------------------------
 -- General Uility Functions
 --------------------------------------------------------------------------------------------------------------
@@ -69,9 +105,12 @@ local function getContPosition( zoneData, z, x, y )
     return x, y;
 end
 
-function Astrolabe:ComputeDistance( c1, z1, x1, y1, c2, z2, x2, y2 )
-    z1 = z1 or 0;
-    z2 = z2 or 0;
+function Astrolabe:ComputeDistance(mapId1, x1, y1, mapId2, x2, y2)
+    local c1, z1 = getClientMapLocation(mapId1)
+    local c2, z2 = getClientMapLocation(mapId2)
+    if not c1 or not c2 then
+        return
+    end
 
     local dist, xDelta, yDelta;
     if ( c1 == c2 and z1 == z2 ) then
@@ -122,18 +161,14 @@ function Astrolabe:ComputeDistance( c1, z1, x1, y1, c2, z2, x2, y2 )
     return dist, xDelta, yDelta;
 end
 
-function Astrolabe:TranslateWorldMapPosition( C, Z, xPos, yPos, nC, nZ )
-    Z = Z or 0;
-    nZ = nZ or 0;
-    if ( nC < 0 ) then
+function Astrolabe:TranslateWorldMapPosition(mapId, xPos, yPos, targetMapId)
+    local C, Z = getClientMapLocation(mapId)
+    local nC, nZ = getClientMapLocation(targetMapId)
+    if not C or not nC then
         return;
     end
-    --Fixes nil error.
-    if(C < 0) then
-        C=2;
-    end
-    if(nC < 0) then
-        nC = 2;
+    if ( C < 0 or nC < 0 ) then
+        return;
     end
     local zoneData;
     if ( C == nC and Z == nZ ) then
@@ -177,8 +212,7 @@ end
 
 Astrolabe_LastX = 0;
 Astrolabe_LastY = 0;
-Astrolabe_LastZ = 0;
-Astrolabe_LastC = 0;
+Astrolabe_LastMapId = 0;
 function Astrolabe:GetCurrentPlayerPosition()
     local x, y = GetPlayerMapPosition("player")
     if (x <= 0 and y <= 0) then
@@ -193,29 +227,32 @@ function Astrolabe:GetCurrentPlayerPosition()
                 end
             end
         else
-            return Astrolabe_LastC, Astrolabe_LastZ, Astrolabe_LastX, Astrolabe_LastY
+            return Astrolabe_LastMapId, Astrolabe_LastX, Astrolabe_LastY
         end
     end
-    local C, Z = GetCurrentMapContinent(), GetCurrentMapZone()
-    local playerCont, playerZone = C, Z
-    if (playerZone == 0) then
-        playerZone = Astrolabe_LastZ
+    local displayedMapId = getDisplayedMapId()
+    local playerMapId = displayedMapId
+    if isAggregateMap(playerMapId) and Astrolabe_LastMapId and Astrolabe_LastMapId ~= 0 then
+        playerMapId = Astrolabe_LastMapId
     end
-    if (playerCont == 0) then
-        playerCont = Astrolabe_LastC
+
+    local playerCont, playerZone = getClientMapLocation(playerMapId)
+    if not playerCont then
+        return
     end
     if (not WorldMapSize[playerCont]) then
-        playerCont, playerZone = 0, 0
+        playerMapId = WORLD_MAP_ID
+        playerCont, playerZone = getClientMapLocation(playerMapId)
     end
-    if (playerCont > 0 and not WorldMapSize[playerCont][playerZone]) then
-        playerZone = 0
+    if (playerCont > 0 and playerZone > 0 and not WorldMapSize[playerCont][playerZone]) then
+        playerMapId = MapRegistry:GetCanonicalMapID(playerCont, 0) or playerMapId
     end
-    local nX, nY = self:TranslateWorldMapPosition(C, Z, x, y, playerCont, playerZone)
+
+    local nX, nY = self:TranslateWorldMapPosition(displayedMapId, x, y, playerMapId)
     Astrolabe_LastX = nX
     Astrolabe_LastY = nY
-    Astrolabe_LastC = playerCont
-    Astrolabe_LastZ = playerZone
-    return Astrolabe_LastC, Astrolabe_LastZ, Astrolabe_LastX, Astrolabe_LastY;
+    Astrolabe_LastMapId = playerMapId
+    return Astrolabe_LastMapId, Astrolabe_LastX, Astrolabe_LastY;
 end
 --------------------------------------------------------------------------------------------------------------
 -- Working Table Cache System
@@ -235,22 +272,21 @@ end
 --------------------------------------------------------------------------------------------------------------
 -- Minimap Icon Placement
 --------------------------------------------------------------------------------------------------------------
-function Astrolabe:PlaceIconOnMinimap( icon, continent, zone, xPos, yPos )
+function Astrolabe:PlaceIconOnMinimap(icon, mapId, xPos, yPos)
     -- check argument types
     self:argCheck(icon, 2, "table");
     self:assert(icon.SetPoint and icon.ClearAllPoints, "Usage Message");
-    self:argCheck(continent, 3, "number");
-    self:argCheck(zone, 4, "number", "nil");
-    self:argCheck(xPos, 5, "number");
-    self:argCheck(yPos, 6, "number");
+    self:argCheck(mapId, 3, "number");
+    self:argCheck(xPos, 4, "number");
+    self:argCheck(yPos, 5, "number");
     local lastPosition = self.LastPlayerPosition;
-    local lC, lZ, lx, ly = lastPosition[1], lastPosition[2], lastPosition[3], lastPosition[4];
-    if (not lC) or (not lZ) or (not lx) or (not ly) then
-        lastPosition[1], lastPosition[2], lastPosition[3], lastPosition[4] = nil, nil, nil, nil;
-        lastPosition[1], lastPosition[2], lastPosition[3], lastPosition[4] = Astrolabe:GetCurrentPlayerPosition();
-        lC, lZ, lx, ly = lastPosition[1], lastPosition[2], lastPosition[3], lastPosition[4];
+    local lMapId, lx, ly = lastPosition[1], lastPosition[2], lastPosition[3];
+    if (not lMapId) or (not lx) or (not ly) then
+        lastPosition[1], lastPosition[2], lastPosition[3] = nil, nil, nil;
+        lastPosition[1], lastPosition[2], lastPosition[3] = Astrolabe:GetCurrentPlayerPosition();
+        lMapId, lx, ly = lastPosition[1], lastPosition[2], lastPosition[3];
     end
-    local dist, xDist, yDist = self:ComputeDistance(lC, lZ, lx, ly, continent, zone, xPos, yPos);
+    local dist, xDist, yDist = self:ComputeDistance(lMapId, lx, ly, mapId, xPos, yPos);
     if not ( dist ) then
         --icon's position has no meaningful position relative to the player's current location
         return -1;
@@ -260,8 +296,7 @@ function Astrolabe:PlaceIconOnMinimap( icon, continent, zone, xPos, yPos )
         iconData = GetWorkingTable(icon);
         self.MinimapIcons[icon] = iconData;
     end
-    iconData.continent = continent;
-    iconData.zone = zone;
+    iconData.mapId = mapId;
     iconData.xPos = xPos;
     iconData.yPos = yPos;
     iconData.dist = dist;
@@ -347,20 +382,20 @@ end
 
 local lastZoom;
 function Astrolabe:UpdateMinimapIconPositions()
-    local C, Z, x, y = self:GetCurrentPlayerPosition();
-    if not ( C and Z and x and y ) then
+    local mapId, x, y = self:GetCurrentPlayerPosition();
+    if not ( mapId and x and y ) then
         self.processingFrame:Hide();
     end
     local Minimap = Minimap;
     local lastPosition = self.LastPlayerPosition;
-    local lC, lZ, lx, ly = lastPosition[1], lastPosition[2], lastPosition[3], lastPosition[4];
+    local lMapId, lx, ly = lastPosition[1], lastPosition[2], lastPosition[3];
     local currentZoom = Minimap:GetZoom();
     local zoomChanged = lastZoom ~= Minimap:GetZoom()
     lastZoom = currentZoom;
     if zoomChanged then
         Astrolabe.MinimapUpdateTime = (6 - Minimap:GetZoom()) * 0.05
     end
-    if ( (lC == C and lZ == Z and lx == x and ly == y)) then
+    if ( (lMapId == mapId and lx == x and ly == y)) then
         -- player has not moved since the last update
         if (zoomChanged or self.ForceNextUpdate ) then
             local mapWidth = Minimap:GetWidth();
@@ -371,7 +406,7 @@ function Astrolabe:UpdateMinimapIconPositions()
             self.ForceNextUpdate = false;
         end
     else
-        local dist, xDelta, yDelta = self:ComputeDistance(lC, lZ, lx, ly, C, Z, x, y);
+        local dist, xDelta, yDelta = self:ComputeDistance(lMapId, lx, ly, mapId, x, y);
         if not dist or not xDelta or not yDelta then return; end
         local mapWidth = Minimap:GetWidth();
         local mapHeight = Minimap:GetHeight();
@@ -384,16 +419,15 @@ function Astrolabe:UpdateMinimapIconPositions()
             data.xDist = xDist;
             data.yDist = yDist;
         end
-        lastPosition[1] = C;
-        lastPosition[2] = Z;
-        lastPosition[3] = x;
-        lastPosition[4] = y;
+        lastPosition[1] = mapId;
+        lastPosition[2] = x;
+        lastPosition[3] = y;
     end
 end
 
 function Astrolabe:CalculateMinimapIconPositions()
-    local C, Z, x, y = self:GetCurrentPlayerPosition();
-    if not ( C and Z and x and y ) then
+    local mapId, x, y = self:GetCurrentPlayerPosition();
+    if not ( mapId and x and y ) then
         self.processingFrame:Hide();
     end
     local currentZoom = Minimap:GetZoom();
@@ -402,17 +436,16 @@ function Astrolabe:CalculateMinimapIconPositions()
     local mapWidth = Minimap:GetWidth();
     local mapHeight = Minimap:GetHeight();
     for icon, data in pairs(self.MinimapIcons) do
-        local dist, xDist, yDist = self:ComputeDistance(C, Z, x, y, data.continent, data.zone, data.xPos, data.yPos);
+        local dist, xDist, yDist = self:ComputeDistance(mapId, x, y, data.mapId, data.xPos, data.yPos);
         placeIconOnMinimap(Minimap, currentZoom, mapWidth, mapHeight, icon, dist, xDist, yDist);
         data.dist = dist;
         data.xDist = xDist;
         data.yDist = yDist;
     end
     local lastPosition = self.LastPlayerPosition;
-    lastPosition[1] = C;
-    lastPosition[2] = Z;
-    lastPosition[3] = x;
-    lastPosition[4] = y;
+    lastPosition[1] = mapId;
+    lastPosition[2] = x;
+    lastPosition[3] = y;
 end
 
 function Astrolabe:GetDistanceToIcon( icon )
@@ -436,18 +469,17 @@ end
 --------------------------------------------------------------------------------------------------------------
 -- World Map Icon Placement
 --------------------------------------------------------------------------------------------------------------
-function Astrolabe:PlaceIconOnWorldMap( worldMapFrame, icon, continent, zone, xPos, yPos )
+function Astrolabe:PlaceIconOnWorldMap(worldMapFrame, icon, mapId, xPos, yPos)
     -- check argument types
     self:argCheck(worldMapFrame, 2, "table");
     self:assert(worldMapFrame.GetWidth and worldMapFrame.GetHeight, "Usage Message");
     self:argCheck(icon, 3, "table");
     self:assert(icon.SetPoint and icon.ClearAllPoints, "Usage Message");
-    self:argCheck(continent, 4, "number");
-    self:argCheck(zone, 5, "number", "nil");
-    self:argCheck(xPos, 6, "number");
-    self:argCheck(yPos, 7, "number");
-    local C, Z = GetCurrentMapContinent(), GetCurrentMapZone();
-    local nX, nY = self:TranslateWorldMapPosition(continent, zone, xPos, yPos, C, Z);
+    self:argCheck(mapId, 4, "number");
+    self:argCheck(xPos, 5, "number");
+    self:argCheck(yPos, 6, "number");
+    local currentMapId = getDisplayedMapId();
+    local nX, nY = self:TranslateWorldMapPosition(mapId, xPos, yPos, currentMapId);
     if ( nX and nY and (0 < nX and nX <= 1) and (0 < nY and nY <= 1) ) then
         icon:ClearAllPoints();
         icon:SetPoint("CENTER", worldMapFrame, "TOPLEFT", nX * worldMapFrame:GetWidth(), -nY * worldMapFrame:GetHeight());
@@ -1091,20 +1123,29 @@ function initSizes()
             },
         },
     }
-    
+
+    MapRegistry:ApplyAstrolabeOverrides(WorldMapSize)
     local zeroData = { xOffset = 0, height = 0, yOffset = 0, width = 0 };
     for continent, zones in pairs(Astrolabe.ContinentList) do
         local mapData = WorldMapSize[continent];
         for index, zData in pairs(zones) do
-            if not ( mapData.zoneData[zData.mapFile] ) then
+            local zoneKey = zData.mapFile
+            local canonicalId = MapRegistry:GetCanonicalMapID(continent, index)
+            if canonicalId then
+                local record = MapRegistry:GetMapRecord(canonicalId)
+                if record then
+                    zoneKey = record.astrolabeKey or record.mapFile or zoneKey
+                end
+            end
+            if not ( mapData.zoneData[zoneKey] ) then
             --WE HAVE A PROBLEM!!!
             -- Disabled because TBC zones were removed
             --ChatFrame1:AddMessage("Astrolabe is missing data for "..select(index, GetMapZones(continent))..".");
-                mapData.zoneData[zData.mapFile] = zeroData;
+                mapData.zoneData[zoneKey] = zeroData;
             end
-            mapData[index] = mapData.zoneData[zData.mapFile];
+            mapData[index] = mapData.zoneData[zoneKey];
             mapData[index].mapName = zData.mapName
-            mapData.zoneData[zData.mapFile] = nil;
+            mapData.zoneData[zoneKey] = nil;
         end
     end
 end

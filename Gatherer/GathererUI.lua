@@ -713,60 +713,9 @@ end
 -- Zone Rematch Section: Handle with care
 
 function GathererUI_ZoneRematch(sourceZoneMapping, destZoneMapping)
-	if (GatherItems and GatherItems.__canonical) then
-		Gatherer_ChatPrint("Zone rematch is no longer needed when canonical map IDs are present.");
-		NewGatherItems = GatherItems;
-		return;
-	end
-
-	local zone_swap=0;
-	local new_idx_z, gatherType;
-	NewGatherItems = {}
-	fixedItemCount = 0;
-
-	Gatherer_ChatPrint(GATHERER_TEXT_APPLY_REMATCH.." "..sourceZoneMapping.." -> "..destZoneMapping);
-
-	for idx_c, rec_continent in GatherItems do
-		if (idx_c ~= 0) then NewGatherItems[idx_c]= {}; end
-		for idx_z, rec_zone in rec_continent do
-			if ( idx_c ~= 0 and idx_z ~= 0) then
-				new_idx_z= GathererUI_ZoneMatchTable[sourceZoneMapping][destZoneMapping][idx_c][idx_z];
-				if ( idx_z ~= new_idx_z ) then zone_swap = zone_swap + 1; end;
-
-				NewGatherItems[idx_c][new_idx_z] = {};
-				for myItems, rec_gatheritem in rec_zone do
-					local fixedItemName;
-					if (gathererFixItems == 1) then 
-						fixedItemName = GathererUI_FixItemName(myItems); 
-					else
-						fixedItemName= myItems;
-					end
-					NewGatherItems[idx_c][new_idx_z][fixedItemName] = {};
-					for idx_item, myGather in rec_gatheritem do
-						local myGatherType, myIcon;
-						if ( type(myGather.gtype) == "number" ) then
-							myGatherType = myGather.gtype;
-						else
-							myGatherType = Gather_DB_TypeIndex[myGather.gtype];
-						end
-						if ( type(myGather.icon) == "number" ) then
-							myIcon= myGather.icon;
-						else
-							myIcon= Gatherer_GetDB_IconIndex(myGather.icon, myGatherType);
-						end
-						-- convertion of rich thorium veins to new format
-						if ( myGatherType == 2 and myIcon == 8 ) then
-							myIcon = Gatherer_GetDB_IconIndex(Gatherer_FindOreType(fixedItemName), myGatherType);
-						end
-						
-						NewGatherItems[idx_c][new_idx_z][fixedItemName][idx_item] = { x=myGather.x, y=myGather.y, gtype=myGatherType, icon=myIcon, count=myGather.count };
-						fixedItemCount = fixedItemCount + 1;
-					end
-				end
-			end
-		end
-	end
-	Gatherer_ChatPrint("Zone swapping completed ("..zone_swap.." done, "..fixedItemCount.." items accounted for).")
+	Gatherer_ChatPrint("Zone rematch is no longer needed when Gatherer stores canonical map IDs.");
+	NewGatherItems = GatherItems;
+	return;
 end
 
 -- *******************************************************************

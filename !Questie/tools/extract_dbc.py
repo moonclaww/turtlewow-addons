@@ -10,7 +10,6 @@ Usage:
     "D:\\Program Files\\Python311\\python.exe" extract_dbc.py
 
 Outputs:
-    worldmaparea_bounds.py                        - Raw DBC data as Python dict
     astrolabe_zone_data.lua                       - Reference Astrolabe data dump
     ..\..\!!!Libs\Astrolabe-0.2\GeneratedZoneData.lua - Runtime override loaded by addon
 """
@@ -80,7 +79,7 @@ def extract_from_mpq(mpq_path: Path, file_path: str):
     """Extract a file from an MPQ archive."""
     import mpyq
     try:
-        archive = mpyq.MPQArchive(str(mpq_path))
+        archive = mpyq.MPQArchive(str(mpq_path), listfile=False)
         data = archive.read_file(file_path)
         return data
     except Exception:
@@ -90,11 +89,11 @@ def extract_from_mpq(mpq_path: Path, file_path: str):
 def find_and_extract_dbc(filename: str):
     """Search for a DBC file across all MPQ archives in priority order."""
     mpq_files = [
+        "patch-9.mpq", "patch-8.mpq", "patch-7.mpq",
+        "patch-6.mpq", "patch-5.mpq", "patch-4.mpq",
+        "patch-3.mpq", "patch-2.MPQ", "patch.MPQ",
+        "patch-Z.mpq", "Patch-Z.mpq",
         "dbc.MPQ",
-        "patch.MPQ", "patch-2.MPQ", "patch-3.mpq",
-        "patch-4.mpq", "patch-5.mpq", "patch-6.mpq",
-        "patch-7.mpq", "patch-8.mpq", "patch-9.mpq",
-        "Patch-Z.mpq",
     ]
 
     for mpq_name in mpq_files:
@@ -164,27 +163,6 @@ def parse_worldmaparea_dbc(data: bytes) -> list:
         })
 
     return results
-
-
-# ---------------------------------------------------------------------------
-# Output: Python bounds file
-# ---------------------------------------------------------------------------
-def write_bounds_py(areas: list, output_path: Path):
-    """Write worldmaparea_bounds.py with raw DBC data."""
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write("# WorldMapArea.dbc bounds extracted from WoW client\n")
-        f.write("# Format: mapAreaId: (locLeft, locRight, locTop, locBottom)\n")
-        f.write("# locLeft/locRight = Y-axis boundaries (positive = north)\n")
-        f.write("# locTop/locBottom = X-axis boundaries (positive = west)\n")
-        f.write("# Conversion: mapX = (worldY - locLeft) / (locRight - locLeft)\n")
-        f.write("#             mapY = (worldX - locTop) / (locBottom - locTop)\n\n")
-        f.write("WORLDMAPAREA_BOUNDS = {\n")
-        for area in areas:
-            if area['locLeft'] != 0 or area['locRight'] != 0:
-                f.write(f"    {area['id']}: ({area['locLeft']:.6f}, {area['locRight']:.6f}, "
-                        f"{area['locTop']:.6f}, {area['locBottom']:.6f}),  # {area['areaName']}\n")
-        f.write("}\n")
-    print(f"  Wrote: {output_path}")
 
 
 # ---------------------------------------------------------------------------
@@ -423,13 +401,12 @@ def main():
 
     # Write outputs
     print("\nGenerating outputs ...")
-    write_bounds_py(areas, SCRIPT_DIR / "worldmaparea_bounds.py")
     write_astrolabe_lua(areas, SCRIPT_DIR / "astrolabe_zone_data.lua")
     write_runtime_override_lua(areas, RUNTIME_LUA_OUTPUT)
 
     if args.turtle_version:
         print(f"\nGenerating versioned Turtle MapRegistry dataset for {args.turtle_version} ...")
-        version_output = generate_versioned_mapregistry(args.turtle_version, args.replace)
+        version_output = generate_versioned_mapregistry(args.turtle_version, args.replace, areas)
         print(f"  Wrote: {version_output}")
 
     # Summary

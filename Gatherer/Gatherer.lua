@@ -50,62 +50,161 @@ Gatherer_WorldMapPlayerFrameLevel = 0;
 
 Gather_Player = UnitName("player");
 
-local function Gatherer_GetCanonicalStore()
-	if (not GatherItems) then
-		GatherItems = {};
+local function Gatherer_IsCanonicalZoneBucket(bucket)
+	if (type(bucket) ~= "table") then
+		return false;
 	end
-	if (not GatherItems.__canonical) then
-		GatherItems.__canonical = {};
+
+	for key, value in bucket do
+		if (type(key) == "string" and type(value) == "table") then
+			return true;
+		end
 	end
-	return GatherItems.__canonical;
+
+	return false;
 end
 
-local function Gatherer_RebuildLegacyBucketsFromCanonical()
-	if (not GatherItems) or (not GatherItems.__canonical) then
+local function Gatherer_CopyNode(node, mapId)
+	local copy = {};
+	for key, value in node do
+		copy[key] = value;
+	end
+	copy.mapId = mapId;
+	return copy;
+end
+
+local function Gatherer_FindMatchingNodeIndex(nodes, node)
+	if (not nodes) or (not node) then
+		return nil;
+	end
+
+	for index, existing in nodes do
+		if (existing and math.abs((node.x or 0) - (existing.x or 0)) < 0.05 and math.abs((node.y or 0) - (existing.y or 0)) < 0.05) then
+			return index;
+		end
+	end
+
+	return nil;
+end
+
+local function Gatherer_NextFreeNodeIndex(nodes, preferredIndex)
+	local index = preferredIndex or 1;
+	while (nodes[index] ~= nil) do
+		index = index + 1;
+	end
+	return index;
+end
+
+local function Gatherer_CopyZoneDataIntoStore(store, mapId, zoneData)
+	if (not mapId) or (mapId < 0) or (type(zoneData) ~= "table") then
 		return;
 	end
 
-	local canonical = GatherItems.__canonical;
-	local rebuilt = { __canonical = canonical };
+	if (not store[mapId]) then
+		store[mapId] = {};
+	end
 
-	for mapId, zoneData in canonical do
-		local canonicalId = tonumber(mapId);
-		if (canonicalId) then
-			local continent, zone = Gatherer_MapRegistry:GetClientZone(canonicalId);
-			if (continent and zone and continent > 0 and zone > 0) then
-				if (not rebuilt[continent]) then
-					rebuilt[continent] = {};
+	for gatherName, nodes in zoneData do
+		if (type(gatherName) == "string" and type(nodes) == "table") then
+			if (not store[mapId][gatherName]) then
+				store[mapId][gatherName] = {};
+			end
+
+			local targetNodes = store[mapId][gatherName];
+			for nodeIndex, node in nodes do
+				if (type(nodeIndex) == "number" and type(node) == "table") then
+					local targetIndex = Gatherer_FindMatchingNodeIndex(targetNodes, node);
+					if (not targetIndex) then
+						targetIndex = Gatherer_NextFreeNodeIndex(targetNodes, nodeIndex);
+					end
+					targetNodes[targetIndex] = Gatherer_CopyNode(node, mapId);
 				end
-				rebuilt[continent][zone] = zoneData;
+			end
+		end
+	end
+end
+
+local function Gatherer_NormalizeStore(store)
+	local normalized = {};
+	if (type(store) ~= "table") then
+		return normalized;
+	end
+
+	if (type(store.__canonical) == "table") then
+		for mapId, zoneData in store.__canonical do
+			Gatherer_CopyZoneDataIntoStore(normalized, tonumber(mapId), zoneData);
+		end
+	end
+
+	for topKey, bucket in store do
+		if (topKey ~= "__canonical" and type(bucket) == "table") then
+			local numericKey = tonumber(topKey);
+			if (numericKey and Gatherer_IsCanonicalZoneBucket(bucket)) then
+				Gatherer_CopyZoneDataIntoStore(normalized, numericKey, bucket);
+			elseif (Gatherer_IsNumericKey(topKey)) then
+				for zone, zoneData in bucket do
+					if (Gatherer_IsNumericKey(zone)) then
+						local mapId = Gatherer_MapRegistry:GetCanonicalMapID(topKey, zone);
+						Gatherer_CopyZoneDataIntoStore(normalized, mapId, zoneData);
+					end
+				end
 			end
 		end
 	end
 
-	GatherItems = rebuilt;
+	return normalized;
 end
 
-local function Gatherer_GetCanonicalZoneData(continent, zone)
-	local canonicalId = Gatherer_MapRegistry:GetCanonicalMapID(continent, zone);
-	if (not canonicalId) or (canonicalId < 0) then
-		return nil, nil;
+local function Gatherer_MergeCanonicalStores(baseStore, overlayStore)
+	local merged = Gatherer_NormalizeStore(baseStore);
+	local overlay = Gatherer_NormalizeStore(overlayStore);
+
+	for mapId, zoneData in overlay do
+		Gatherer_CopyZoneDataIntoStore(merged, tonumber(mapId), zoneData);
 	end
 
-	local canonical = Gatherer_GetCanonicalStore();
-	local zoneData = canonical[canonicalId];
+	return merged;
+end
 
-	if (not zoneData) then
-		if (GatherItems[continent] and GatherItems[continent][zone]) then
-			zoneData = GatherItems[continent][zone];
-		else
-			zoneData = {};
-		end
-		canonical[canonicalId] = zoneData;
+function Gatherer_NormalizeStorage()
+	GatherItems = Gatherer_NormalizeStore(GatherItems);
+end
+
+function Gatherer_UsesCanonicalStorage()
+	return true;
+end
+
+function Gatherer_GetZoneDataByMapId(mapId, create)
+	if (not mapId) or (mapId < 0) then
+		return nil;
 	end
 
-	if (not GatherItems[continent]) then GatherItems[continent] = {}; end
-	GatherItems[continent][zone] = zoneData;
+	if (not GatherItems) then
+		GatherItems = {};
+	end
 
-	return canonicalId, zoneData;
+	local zoneData = GatherItems[mapId];
+	if (not zoneData and create) then
+		zoneData = {};
+		GatherItems[mapId] = zoneData;
+	end
+
+	return zoneData;
+end
+
+function Gatherer_GetNodeBucketByMapId(mapId, gatherName, create)
+	local zoneData = Gatherer_GetZoneDataByMapId(mapId, create);
+	if (not zoneData) or (not gatherName) then
+		return nil;
+	end
+
+	local nodes = zoneData[gatherName];
+	if (not nodes and create) then
+		nodes = {};
+		zoneData[gatherName] = nodes;
+	end
+
+	return nodes;
 end
 
 StaticPopupDialogs["GATHERER_VERSION_DIALOG"] = {
@@ -612,33 +711,10 @@ function Gatherer_OnEvent(event)
 			-- backed up point. (This utility will appear in a later version of
 			-- Gatherer as a Java applet)
 			if (GatherItemBase ~= nil) then
-				for c, cd in GatherItems do
-					if (Gatherer_IsNumericKey(c)) then
-						for z, zd in cd do
-							for n,nd in zd do
-								for i,id in nd do
-									local matched = 0;
-									local max = 0;
-									for j,jd in GatherItemBase[c][z][n] do
-										if (math.abs(id.x- jd.y) < 0.05) then
-											matched = j;
-										end
-										max = j;
-									end
-									if (matched > 0) then
-										GatherItemBase[c][z][n][matched] = id;
-									else
-										GatherItemBase[c][z][n][max+1] = id;
-									end
-								end
-							end
-						end
-					end
-				end
-				GatherItems = GatherItemBase;
+				GatherItems = Gatherer_MergeCanonicalStores(GatherItemBase, GatherItems);
+			else
+				Gatherer_NormalizeStorage();
 			end
-
-			Gatherer_RebuildLegacyBucketsFromCanonical();
 		end
 	elseif ( event == "PLAYER_LOGIN" ) then
 		if ( GatherConfig ) then
@@ -868,7 +944,10 @@ function Gatherer_OnUpdate(timeDelta, force)
 					-- Place icon via Astrolabe (handles all coordinate conversion and minimap projection)
 					local gX = closestGather.item.x / 100;
 					local gY = closestGather.item.y / 100;
-					Gatherer_AstrolabePlaceOnMinimap(gatherNote, continent, zone, gX, gY);
+					local gatherMapId = closestGather.item.mapId;
+					if gatherMapId then
+						Gatherer_AstrolabePlaceOnMinimap(gatherNote, gatherMapId, gX, gY);
+					end
 
 					-- Distance in yards from Gatherer_FindClosest
 					local gDist = closestGather.dist;
@@ -1015,8 +1094,10 @@ function GatherMain_Draw()
 	if ((Gatherer_MapOpen) and (GatherConfig.useMainmap)) then
 		local mapContinent = GetCurrentMapContinent();
 		local mapZone = GetCurrentMapZone();
-		if ((mapContinent > 0) and (mapZone > 0) and (GatherItems[mapContinent]) and (GatherItems[mapContinent][mapZone])) then
-			for gatherName, gatherData in GatherItems[mapContinent][mapZone] do
+		local currentMapId = Gatherer_MapRegistry:GetCanonicalMapID(mapContinent, mapZone);
+		local currentZoneData = currentMapId and GatherItems[currentMapId];
+		if ((mapContinent > 0) and (mapZone > 0) and currentMapId and currentZoneData) then
+			for gatherName, gatherData in currentZoneData do
 				local gatherType = "Default";
 				local specificType = "";
 				local allowed = true; 
@@ -1113,7 +1194,11 @@ function GatherMain_Draw()
 							end
 
 							-- Place via Astrolabe for correct coordinate translation
-							local nX, nY = Gatherer_AstrolabePlaceOnWorldMap(GathererMapOverlayFrame, mainNote, mapContinent, mapZone, gatherInfo.x / 100, gatherInfo.y / 100);
+							local gatherMapId = gatherInfo.mapId;
+							local nX, nY = nil, nil;
+							if gatherMapId then
+								nX, nY = Gatherer_AstrolabePlaceOnWorldMap(GathererMapOverlayFrame, mainNote, gatherMapId, gatherInfo.x / 100, gatherInfo.y / 100);
+							end
 							if (not nX or not nY) then
 								-- Fallback: direct placement (same zone)
 								local mnX = gatherInfo.x / 100 * Gatherer_WorldMapDetailFrameWidth;
@@ -1167,6 +1252,7 @@ function GatherMain_Draw()
 								numGatherIcon = gatherInfo.icon;
 							end
 
+							mainNote.mapId = gatherMapId;
 							mainNote.continent = mapContinent;
 							mainNote.zoneIndex = mapZone;
 							mainNote.gatherName = gatherName;
@@ -1218,7 +1304,8 @@ function Gatherer_FindClosest(num, interested)
 	local px,py = Gatherer_PlayerPos();
 	if ((px == 0) and (py == 0)) then return gatherLocal; end
 
-	gatherLocal = { playerC=continent, playerZ=zone, playerX=0, playerY=0, px=px, py=py, items={}, count=0 };
+	local playerMapId = Gatherer_MapRegistry:GetCanonicalMapID(continent, zone);
+	gatherLocal = { playerC=continent, playerZ=zone, playerMapId=playerMapId, playerX=0, playerY=0, px=px, py=py, items={}, count=0 };
 
 	local gatherCount = 0;
 	-- maxDist is in yards (converted from old normalized units on first load)
@@ -1227,13 +1314,13 @@ function Gatherer_FindClosest(num, interested)
 		maxAllowable = GatherConfig.maxDist;
 	end
 	
-	if (not GatherItems[continent] or (GatherItems[continent] and not GatherItems[continent][zone])) then return gatherLocal; end
+	if (not playerMapId) or (playerMapId < 0) then return gatherLocal; end
+
+	local zoneData = GatherItems[playerMapId];
+	if (not zoneData) then return gatherLocal; end
 	
---	local gatherZone, gathersInZone;
---	for gatherZone, gathersInZone in GatherItems[continent] do
-		local gatherName, gatherData;
-		for gatherName, gatherData in GatherItems[continent][zone] do
---		for gatherName, gatherData in gathersInZone do
+	local gatherName, gatherData;
+	for gatherName, gatherData in zoneData do
 			local gatherType = "Default";
 			local specificType = "";
 			local allowed = true;
@@ -1315,7 +1402,8 @@ function Gatherer_FindClosest(num, interested)
 					if ((gX ~= 0) and (gY ~= 0)) then
 						local maxLocalPos = 0;
 						local replCandidate = 0;
-						local dist, deltaX, deltaY = Gatherer_AstrolabeDistance(continent, zone, px, py, continent, zone, gX, gY);
+						local gatherMapId = gatherInfo.mapId;
+						local dist, deltaX, deltaY = Gatherer_AstrolabeDistance(playerMapId, px, py, gatherMapId, gX, gY);
 
 						if ((maxAllowable == 0) or (dist < maxAllowable)) then
 							local localPos, localInfo;
@@ -1365,7 +1453,6 @@ function Gatherer_FindClosest(num, interested)
 					end
 				end
 			end
---		end
 	end
 
 	gatherLocal.count = gatherCount;
@@ -1520,19 +1607,19 @@ function Gatherer_AddGatherHere(gather, gatherType, gatherIcon, gatherEventType)
 	end
 
 	local function Gatherer_AddGatherToBase(gather, gatherType, gatherC, gatherZ, gatherX, gatherY, gatherIcon, gatherEventType)
-		local canonicalMapId, canonicalZoneData = Gatherer_GetCanonicalZoneData(gatherC, gatherZ);
+		local canonicalMapId = Gatherer_MapRegistry:GetCanonicalMapID(gatherC, gatherZ);
+		if (not canonicalMapId) or (canonicalMapId < 0) then return; end
+		local canonicalZoneData = Gatherer_GetZoneDataByMapId(canonicalMapId, true);
 		if (not canonicalZoneData) then return; end
 		local hPos, gatherData;
-		if (not GatherItems[gatherC]) then GatherItems[gatherC] = { }; end
-		GatherItems[gatherC][gatherZ] = canonicalZoneData;
-		if (not GatherItems[gatherC][gatherZ][gather]) then GatherItems[gatherC][gatherZ][gather] = { }; end
+		if (not canonicalZoneData[gather]) then canonicalZoneData[gather] = { }; end
 	
 		local found = 0;
 		local lastGather = 0;
 		local first_hole = 0;
 		local count = 0;
 		local closest = 0;
-		for hPos, gatherData in GatherItems[gatherC][gatherZ][gather] do
+		for hPos, gatherData in canonicalZoneData[gather] do
 			count = count + 1;
 			if ( first_hole == 0 and hPos ~= count ) then
 				first_hole = count;
@@ -1561,17 +1648,17 @@ function Gatherer_AddGatherHere(gather, gatherType, gatherIcon, gatherEventType)
 		local gatherCount = 1;
 		if ( gatherEventType and gatherEventType == 1 ) 
 		then
-			if (GatherItems[gatherC][gatherZ][gather][found] == nil) then
-				GatherItems[gatherC][gatherZ][gather][found] = { };
+			if (canonicalZoneData[gather][found] == nil) then
+				canonicalZoneData[gather][found] = { };
 				gatherCount = 0;
 			else
-				gatherCount = GatherItems[gatherC][gatherZ][gather][found].count;
+				gatherCount = canonicalZoneData[gather][found].count;
 			end
 		else
-			if (GatherItems[gatherC][gatherZ][gather][found] == nil) then
-				GatherItems[gatherC][gatherZ][gather][found] = { };
+			if (canonicalZoneData[gather][found] == nil) then
+				canonicalZoneData[gather][found] = { };
 			else
-				gatherCount = GatherItems[gatherC][gatherZ][gather][found].count + 1;
+				gatherCount = canonicalZoneData[gather][found].count + 1;
 			end
 		end
 
@@ -1579,12 +1666,12 @@ function Gatherer_AddGatherHere(gather, gatherType, gatherIcon, gatherEventType)
 		gatherX = math.floor(gatherX * 100)/100;
 		gatherY = math.floor(gatherY * 100)/100;
 	
-		GatherItems[gatherC][gatherZ][gather][found].x = gatherX;
-		GatherItems[gatherC][gatherZ][gather][found].y = gatherY;
-		GatherItems[gatherC][gatherZ][gather][found].gtype = gatherType;
-		GatherItems[gatherC][gatherZ][gather][found].count = gatherCount;
-		GatherItems[gatherC][gatherZ][gather][found].icon = Gatherer_GetDB_IconIndex(gatherIcon, gatherType);
-		GatherItems[gatherC][gatherZ][gather][found].mapId = canonicalMapId;
+		canonicalZoneData[gather][found].x = gatherX;
+		canonicalZoneData[gather][found].y = gatherY;
+		canonicalZoneData[gather][found].gtype = gatherType;
+		canonicalZoneData[gather][found].count = gatherCount;
+		canonicalZoneData[gather][found].icon = Gatherer_GetDB_IconIndex(gatherIcon, gatherType);
+		canonicalZoneData[gather][found].mapId = canonicalMapId;
 	end
 
 	Gatherer_AddGatherToBase(gather, gatherType, gatherC, gatherZ, gatherX, gatherY, gatherIcon, gatherEventType);
@@ -1597,7 +1684,7 @@ end
 -- Miscellaneous functions (clearing DB, dumping DB content)
 function Gatherer_Clear()
 	Gatherer_Print("Clearing your gather data");
-	GatherItems = { __canonical = {} };
+	GatherItems = { };
 	ClosestList = { };
 	ClosestSearchGather = "";
 	Gatherer_OnUpdate(0,true);
@@ -1605,15 +1692,14 @@ function Gatherer_Clear()
 end
  
 function Gatherer_Show()
-	local gatherCont, gatherZone, gatherName, contData, zoneData, nameData, gatherPos, gatherItem;
+	local gatherMapId, gatherName, zoneData, nameData, gatherPos, gatherItem;
 	
-	for gatherCont, contData in GatherItems do
-		if (Gatherer_IsNumericKey(gatherCont)) then
-			for gatherZone, zoneData in contData do
-				for gatherName, nameData in zoneData do
-					for gatherPos, gatherItem in nameData do
-						Gatherer_Print(Gather_DB_TypeIndex[gatherItem.gtype].." "..gatherName.." was found in zone "..gatherCont..":"..gatherZone.." at "..gatherItem.x..","..gatherItem.y.."  ("..gatherItem.count.." times)");
-					end
+	for gatherMapId, zoneData in GatherItems do
+		local continent, zone = Gatherer_MapRegistry:GetClientZone(tonumber(gatherMapId));
+		if (continent and zone and continent > 0 and zone > 0) then
+			for gatherName, nameData in zoneData do
+				for gatherPos, gatherItem in nameData do
+					Gatherer_Print(Gather_DB_TypeIndex[gatherItem.gtype].." "..gatherName.." was found in zone "..continent..":"..zone.." at "..gatherItem.x..","..gatherItem.y.."  ("..gatherItem.count.." times)");
 				end
 			end
 		end
@@ -1767,76 +1853,97 @@ end
 -- *************************************************************************
 -- Special Item handling functions: Database manipulation from world map.
 -- following 2 functions have to take scope into account.
+local function Gatherer_CountTableEntries(data)
+	local count = 0;
+	if (not data) then
+		return count;
+	end
+
+	for _ in data do
+		count = count + 1;
+	end
+
+	return count;
+end
+
+local function Gatherer_GetEditedZoneData()
+	if (not GatherMainMapItem.mapId) then
+		return nil;
+	end
+
+	return GatherItems[GatherMainMapItem.mapId];
+end
+
+local function Gatherer_PruneMapZone(mapId, gatherName)
+	local zoneData = GatherItems[mapId];
+	if (not zoneData) then
+		return;
+	end
+
+	if (gatherName and zoneData[gatherName] and Gatherer_CountTableEntries(zoneData[gatherName]) == 0) then
+		zoneData[gatherName] = nil;
+	end
+
+	if (Gatherer_CountTableEntries(zoneData) == 0) then
+		GatherItems[mapId] = nil;
+	end
+end
+
+local function Gatherer_MapIdInContinent(mapId, continent)
+	local currentContinent = Gatherer_MapRegistry:GetClientZone(mapId);
+	return currentContinent == continent;
+end
+
+local function Gatherer_ForEachScopedMap(scope, callback)
+	if (scope == "Node" or scope == "Zone") then
+		if (GatherMainMapItem.mapId and GatherItems[GatherMainMapItem.mapId]) then
+			callback(GatherMainMapItem.mapId, GatherItems[GatherMainMapItem.mapId]);
+		end
+	elseif (scope == "Continent") then
+		for mapId, zoneData in GatherItems do
+			local numericMapId = tonumber(mapId);
+			if (numericMapId and Gatherer_MapIdInContinent(numericMapId, GatherMainMapItem.continent)) then
+				callback(numericMapId, zoneData);
+			end
+		end
+	elseif (scope == "World") then
+		for mapId, zoneData in GatherItems do
+			local numericMapId = tonumber(mapId);
+			if (numericMapId) then
+				callback(numericMapId, zoneData);
+			end
+		end
+	end
+end
+
 function Gatherer_DeleteItem()
-	local gathIdx = 0;
-	local zoneIdx = 0;
-	local cntIdx = 0;
-
 	if ( GatherMainMapItem.scope == "Node" ) then
-		GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex] = nil;
+		local zoneData = Gatherer_GetEditedZoneData();
+		if (zoneData and zoneData[GatherMainMapItem.gatherName]) then
+			zoneData[GatherMainMapItem.gatherName][GatherMainMapItem.localIndex] = nil;
+			Gatherer_PruneMapZone(GatherMainMapItem.mapId, GatherMainMapItem.gatherName);
+		end
 	elseif ( GatherMainMapItem.scope == "Zone" ) then
-		GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName] = nil;
-	elseif ( GatherMainMapItem.scope == "Continent" ) then
-		local search_index;
-		for search_index in GatherItems[GatherMainMapItem.continent] do
-			if ( GatherItems[GatherMainMapItem.continent][search_index][GatherMainMapItem.gatherName] ) then
-				GatherItems[GatherMainMapItem.continent][search_index][GatherMainMapItem.gatherName] = nil;
-			end
+		local zoneData = Gatherer_GetEditedZoneData();
+		if (zoneData and zoneData[GatherMainMapItem.gatherName]) then
+			zoneData[GatherMainMapItem.gatherName] = nil;
+			Gatherer_PruneMapZone(GatherMainMapItem.mapId);
 		end
-	elseif ( GatherMainMapItem.scope == "World" ) then
-		local search_index;
-		-- continent 1
-		if ( GatherItems[1] ) then
-			for search_index in GatherItems[1] do
-				if ( GatherItems[1][search_index][GatherMainMapItem.gatherName] ) then
-					GatherItems[1][search_index][GatherMainMapItem.gatherName] = nil;
-				end
+	else
+		Gatherer_ForEachScopedMap(GatherMainMapItem.scope, function(mapId, zoneData)
+			if (zoneData[GatherMainMapItem.gatherName]) then
+				zoneData[GatherMainMapItem.gatherName] = nil;
+				Gatherer_PruneMapZone(mapId);
 			end
-		end
-		-- continent 2
-		if ( GatherItems[2] ) then
-			for search_index in GatherItems[2] do
-				if ( GatherItems[2][search_index][GatherMainMapItem.gatherName] ) then
-					GatherItems[2][search_index][GatherMainMapItem.gatherName] = nil;
-				end
-			end
-		end	
-	end
-	GatherMain_Draw();	
-	
-	-- clean up for empty zones/continent
-	for locIdx in GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName] do
-		gathIdx = gathIdx + 1;
+		end);
 	end
 
-	if ( gathIdx == 0 ) then
-		GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName] = nil;
-		for locIdx in GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex] do
-			zoneIdx = zoneIdx + 1;
-		end
-
-		if ( zoneIdx == 0 ) then
-			GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex] = nil;
-
-			--DEFAULT_CHAT_FRAME:AddMessage("Removed zone no data left")
-			for locIdx in GatherItems[GatherMainMapItem.continent] do
-				cntIdx = cntIdx + 1;
-			end
-
-			if ( cntIdx == 0 ) then 
-				--DEFAULT_CHAT_FRAME:AddMessage("Removed continents no data left")
-				GatherItems[GatherMainMapItem.continent] = nil; 
-			end
-		end
-	end
-	GatherMain_Draw();			
+	GatherMain_Draw();
 end
 
 -- Modify Gather Name and/or icon
 function Gatherer_ModifyItem()
 	local newIcon, newGatherName, newType;
-	local mod_continent = GatherMainMapItem.continent;
-	local mod_zone = GatherMainMapItem.zoneIndex;
 	local mod_name = GatherMainMapItem.gatherName;
 
 	-- setting new names (NB: icons on world map are deduced from gather name)	
@@ -1857,133 +1964,59 @@ function Gatherer_ModifyItem()
 	else
 		newGatherName = mod_name;
 	end
+
 	if ( GatherMainMapItem.scope == "Node" ) then
-		-- remove old entries if gather name different
-		if ( GatherMainMapItem.newGatherName and mod_name ~= GatherMainMapItem.newGatherName ) then
-			if ( not GatherItems[mod_continent][mod_zone][newGatherName] ) then
-				GatherItems[mod_continent][mod_zone][newGatherName] = {};
-				GatherItems[mod_continent][mod_zone][newGatherName][GatherMainMapItem.localIndex] = GatherItems[mod_continent][mod_zone][mod_name][GatherMainMapItem.localIndex];
-				GatherItems[mod_continent][mod_zone][mod_name][GatherMainMapItem.localIndex] = nil;
+		local zoneData = Gatherer_GetEditedZoneData();
+		if (zoneData and zoneData[mod_name] and zoneData[mod_name][GatherMainMapItem.localIndex]) then
+			local sourceNodes = zoneData[mod_name];
+			local targetIndex = GatherMainMapItem.localIndex;
+			if (mod_name ~= newGatherName) then
+				if (not zoneData[newGatherName]) then
+					zoneData[newGatherName] = {};
+				end
+				targetIndex = Gatherer_NextFreeNodeIndex(zoneData[newGatherName], GatherMainMapItem.localIndex);
+				zoneData[newGatherName][targetIndex] = sourceNodes[GatherMainMapItem.localIndex];
+				sourceNodes[GatherMainMapItem.localIndex] = nil;
+				Gatherer_PruneMapZone(GatherMainMapItem.mapId, mod_name);
 			end
+
+			zoneData[newGatherName][targetIndex].icon = newIcon;
+			zoneData[newGatherName][targetIndex].gtype = newType;
+			GatherMainMapItem.localIndex = targetIndex;
 		end
-
-		-- replace icons if different
-		GatherItems[mod_continent][mod_zone][newGatherName][GatherMainMapItem.localIndex].icon = newIcon;
-		GatherItems[mod_continent][mod_zone][newGatherName][GatherMainMapItem.localIndex].gtype = newType;
-
-	elseif ( GatherMainMapItem.scope == "Zone" ) then
-		-- remove old entries if gather name different
-		if ( GatherMainMapItem.newGatherName and mod_name ~= GatherMainMapItem.newGatherName ) then
-			GatherItems[mod_continent][mod_zone][newGatherName] = {};
-			GatherItems[mod_continent][mod_zone][newGatherName] = GatherItems[mod_continent][mod_zone][mod_name];
-			GatherItems[mod_continent][mod_zone][mod_name] = nil;
-		end
-
-		-- replace icons if different
-		if ( newIcon ~= GatherMainMapItem.gatherIcon ) then
-			local index;
-			for index in GatherItems[mod_continent][mod_zone][newGatherName] do
-				GatherItems[mod_continent][mod_zone][newGatherName][index].icon = newIcon;
-			end
-		end
-
-		-- replace type if different
-		if ( newType ~= GatherMainMapItem.gatherType ) then
-			local index;
-			for index in GatherItems[mod_continent][mod_zone][newGatherName] do
-				GatherItems[mod_continent][mod_zone][newGatherName][index].gtype = newType;
-			end
-		end
-
-	elseif ( GatherMainMapItem.scope == "Continent" ) then
-		local search_index;
-		for search_index in GatherItems[mod_continent] do
-			if ( GatherItems[mod_continent][search_index][mod_name] ) then
-				-- remove old entries if gather name different
-				if ( GatherMainMapItem.newGatherName and mod_name ~= GatherMainMapItem.newGatherName ) then
-					GatherItems[mod_continent][search_index][newGatherName] = {};
-					GatherItems[mod_continent][search_index][newGatherName] = GatherItems[mod_continent][search_index][mod_name];
-					GatherItems[mod_continent][search_index][mod_name] = nil;
+	else
+		Gatherer_ForEachScopedMap(GatherMainMapItem.scope, function(mapId, zoneData)
+			local nodes = zoneData[mod_name];
+			if (nodes) then
+				if (mod_name ~= newGatherName) then
+					if (not zoneData[newGatherName]) then
+						zoneData[newGatherName] = {};
+					end
+					for index, node in nodes do
+						local targetIndex = Gatherer_NextFreeNodeIndex(zoneData[newGatherName], index);
+						zoneData[newGatherName][targetIndex] = node;
+					end
+					zoneData[mod_name] = nil;
+					nodes = zoneData[newGatherName];
 				end
 
-				-- replace icons if different
 				if ( newIcon ~= GatherMainMapItem.gatherIcon ) then
 					local index;
-					for index in GatherItems[mod_continent][search_index][newGatherName] do
-						GatherItems[mod_continent][search_index][newGatherName][index].icon = newIcon;
+					for index in nodes do
+						nodes[index].icon = newIcon;
 					end
 				end
 
-				-- replace type if different
 				if ( newType ~= GatherMainMapItem.gatherType ) then
 					local index;
-					for index in GatherItems[mod_continent][search_index][newGatherName] do
-						GatherItems[mod_continent][search_index][newGatherName][index].gtype = newType;
+					for index in nodes do
+						nodes[index].gtype = newType;
 					end
 				end
+
+				Gatherer_PruneMapZone(mapId, mod_name);
 			end
-		end
-
-	elseif ( GatherMainMapItem.scope == "World" ) then
-		local search_index;
-		-- continent 1
-		if ( GatherItems[1] ) then
-			for search_index in GatherItems[1] do
-				if ( GatherItems[1][search_index][mod_name] ) then
-					-- remove old entries if gather name different
-					if ( GatherMainMapItem.newGatherName and mod_name ~= GatherMainMapItem.newGatherName ) then
-						GatherItems[1][search_index][newGatherName] = {};
-						GatherItems[1][search_index][newGatherName] = GatherItems[1][search_index][mod_name];
-						GatherItems[1][search_index][mod_name] = nil;
-					end
-
-					-- replace icons if different
-					if ( newIcon ~= GatherMainMapItem.gatherIcon ) then
-						local index;
-						for index in GatherItems[1][search_index][newGatherName] do
-							GatherItems[1][search_index][newGatherName][index].icon = newIcon;
-						end
-					end
-
-					-- replace type if different
-					if ( newType ~= GatherMainMapItem.gatherType ) then
-						local index;
-						for index in GatherItems[1][search_index][newGatherName] do
-							GatherItems[1][search_index][newGatherName][index].gtype = newType;
-						end
-					end
-				end
-			end
-		end
-		-- continent 2
-		if ( GatherItems[2] ) then
-			for search_index in GatherItems[2] do
-				if ( GatherItems[2][search_index][mod_name] ) then
-					-- remove old entries if gather name different
-					if ( GatherMainMapItem.newGatherName and mod_name ~= GatherMainMapItem.newGatherName ) then
-						GatherItems[2][search_index][newGatherName] = {};
-						GatherItems[2][search_index][newGatherName] = GatherItems[2][search_index][mod_name];
-						GatherItems[2][search_index][mod_name] = nil;
-					end
-
-					-- replace icons if different
-					if ( newIcon ~= GatherMainMapItem.gatherIcon ) then
-						local index;
-						for index in GatherItems[2][search_index][newGatherName] do
-							GatherItems[2][search_index][newGatherName][index].icon = newIcon;
-						end
-					end
-
-					-- replace type if different
-					if ( newType ~= GatherMainMapItem.gatherType ) then
-						local index;
-						for index in GatherItems[2][search_index][newGatherName] do
-							GatherItems[2][search_index][newGatherName][index].gtype = newType;
-						end
-					end
-				end
-			end
-		end	
+		end);
 	end
 	
 	GatherMain_Draw();	
@@ -2092,21 +2125,27 @@ end
 -- this one always ignore scope, only done on origin item.
 function Gatherer_ToggleBuggedItem()
 Gatherer_ChatPrint("Toggling node to bugged state");
-	local gtype = GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].gtype;
-	local icon = GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].icon;
+	local zoneData = Gatherer_GetEditedZoneData();
+	if (not zoneData) or (not zoneData[GatherMainMapItem.gatherName]) or (not zoneData[GatherMainMapItem.gatherName][GatherMainMapItem.localIndex]) then
+		return;
+	end
+
+	local node = zoneData[GatherMainMapItem.gatherName][GatherMainMapItem.localIndex];
+	local gtype = node.gtype;
+	local icon = node.icon;
 	
-	if ( GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].icon ~= "default" ) then
-		GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].oldicon = icon;
-		GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].oldgtype = gtype;
+	if ( node.icon ~= "default" ) then
+		node.oldicon = icon;
+		node.oldgtype = gtype;
 
-		GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].icon = "default";
-		GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].gtype = "Default";
+		node.icon = "default";
+		node.gtype = "Default";
 	else
-		GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].icon = GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].oldicon;
-		GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].gtype = GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].oldgtype;
+		node.icon = node.oldicon;
+		node.gtype = node.oldgtype;
 
-		GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].oldicon = nil;
-		GatherItems[GatherMainMapItem.continent][GatherMainMapItem.zoneIndex][GatherMainMapItem.gatherName][GatherMainMapItem.localIndex].oldgtype = nil;
+		node.oldicon = nil;
+		node.oldgtype = nil;
 	end
 
 	GatherMain_Draw();

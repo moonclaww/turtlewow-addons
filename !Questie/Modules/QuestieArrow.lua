@@ -104,8 +104,7 @@ end
 ---------------------------------------------------------------------------------------------------
 function SetArrowFromIcon(icon)
     local targetPoint = {
-        ["c"] = icon.data.continent,
-        ["z"] = icon.data.zoneid,
+        ["mapId"] = icon.data.mapId,
         ["x"] = icon.averageX,
         ["y"] = icon.averageY
     }
@@ -416,8 +415,8 @@ end)
 -- to be accessible to everyone
 function GetDirectionToIcon( point )
     if not point then return end
-    local C,Z,X,Y = Astrolabe:GetCurrentPlayerPosition() -- continent, zone, x, y
-    local dist, xDelta, yDelta = Astrolabe:ComputeDistance( C, Z, X, Y, point.c, point.z, point.x, point.y )
+    local mapId, X, Y = Astrolabe:GetCurrentPlayerPosition()
+    local dist, xDelta, yDelta = Astrolabe:ComputeDistance(mapId, X, Y, point.mapId, point.x, point.y)
     if not xDelta or not yDelta then return end
     local dir = atan2(xDelta, -(yDelta))
     if ( dir > 0 ) then
@@ -428,7 +427,7 @@ function GetDirectionToIcon( point )
 end
 ---------------------------------------------------------------------------------------------------
 function GetDistanceToIcon( point )
-    local C,Z,X,Y = Astrolabe:GetCurrentPlayerPosition() -- continent, zone, x, y
-    local dist, xDelta, yDelta = Astrolabe:ComputeDistance( C, Z, X, Y, point.c, point.z, point.x, point.y )
+    local mapId, X, Y = Astrolabe:GetCurrentPlayerPosition()
+    local dist, xDelta, yDelta = Astrolabe:ComputeDistance(mapId, X, Y, point.mapId, point.x, point.y)
     return dist, xDelta, yDelta
 end

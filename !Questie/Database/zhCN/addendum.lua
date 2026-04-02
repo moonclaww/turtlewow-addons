@@ -55569,6 +55569,14 @@ QuestieAdditionalStartFinishLookup = { -- {C,Z,X,Y}
 function GetEntityLocations(entity)
     local locations = {}
     local mapIds = {}
+    local function mergeMapIds(ids)
+        if not ids then
+            return
+        end
+        for mapId in pairs(ids) do
+            mapIds[mapId] = true
+        end
+    end
     for sourceType, sources in pairs(entity) do
         if sourceType == "drop" then
             for sourceName, b in pairs(sources) do
@@ -55576,7 +55584,7 @@ function GetEntityLocations(entity)
                 if next(locationMeta) then
                     if locations[sourceType] == nil then locations[sourceType] = {} end
                     locations[sourceType][sourceName] = locationMeta
-                    for c, zs in pairs(ids) do if mapIds[c] == nil then mapIds[c] = {} end for z, b in pairs(zs) do mapIds[c][z] = true end end
+                    mergeMapIds(ids)
                 end
             end
         end
@@ -55586,7 +55594,7 @@ function GetEntityLocations(entity)
                 if next(locationMeta) then
                     if locations[sourceType] == nil then locations[sourceType] = {} end
                     locations[sourceType][sourceName] = locationMeta
-                    for c, zs in pairs(ids) do if mapIds[c] == nil then mapIds[c] = {} end for z, b in pairs(zs) do mapIds[c][z] = true end end
+                    mergeMapIds(ids)
                 end
             end
         end
@@ -55596,7 +55604,7 @@ function GetEntityLocations(entity)
                 if next(locationMeta) then
                     if locations[sourceType] == nil then locations[sourceType] = {} end
                     locations[sourceType][sourceName] = locationMeta
-                    for c, zs in pairs(ids) do if mapIds[c] == nil then mapIds[c] = {} end for z, b in pairs(zs) do mapIds[c][z] = true end end
+                    mergeMapIds(ids)
                 end
             end
         end
@@ -55608,7 +55616,7 @@ function GetEntityLocations(entity)
                     local sourceName = locationMeta.name
                     locationMeta.name = nil
                     locations[sourceType][sourceName] = locationMeta
-                    for c, zs in pairs(ids) do if mapIds[c] == nil then mapIds[c] = {} end for z, b in pairs(zs) do mapIds[c][z] = true end end
+                    mergeMapIds(ids)
                 end
             end
         end
@@ -55618,7 +55626,7 @@ function GetEntityLocations(entity)
                 if next(locationMeta) then
                     if locations[sourceType] == nil then locations[sourceType] = {} end
                     locations[sourceType][sourceName] = locationMeta
-                    for c, zs in pairs(ids) do if mapIds[c] == nil then mapIds[c] = {} end for z, b in pairs(zs) do mapIds[c][z] = true end end
+                    mergeMapIds(ids)
                 end
             end
         end
@@ -55628,7 +55636,7 @@ function GetEntityLocations(entity)
                 if next(locationMeta) then
                     if locations[sourceType] == nil then locations[sourceType] = {} end
                     locations[sourceType][sourceName] = locationMeta
-                    for c, zs in pairs(ids) do if mapIds[c] == nil then mapIds[c] = {} end for z, b in pairs(zs) do mapIds[c][z] = true end end
+                    mergeMapIds(ids)
                 end
             end
         end
@@ -55638,7 +55646,7 @@ function GetEntityLocations(entity)
                 if next(locationMeta) then
                     if locations[sourceType] == nil then locations[sourceType] = {} end
                     locations[sourceType][sourceName] = locationMeta
-                    for c, zs in pairs(ids) do if mapIds[c] == nil then mapIds[c] = {} end for z, b in pairs(zs) do mapIds[c][z] = true end end
+                    mergeMapIds(ids)
                 end
             end
         end
@@ -55648,7 +55656,7 @@ function GetEntityLocations(entity)
                 if next(locationMeta) then
                     if locations[sourceType] == nil then locations[sourceType] = {} end
                     locations[sourceType][sourceName] = locationMeta
-                    for c, zs in pairs(ids) do if mapIds[c] == nil then mapIds[c] = {} end for z, b in pairs(zs) do mapIds[c][z] = true end end
+                    mergeMapIds(ids)
                 end
             end
         end
@@ -55668,15 +55676,13 @@ function GetEntityLocations(entity)
             local race = UnitRace("Player")
             for i, location in pairs(sources) do
                 if (not entity['locations_rr']) or (not entity['locations_rr'][i]) or QuestieCheckRequirements(class, race, nil, entity['locations_rr'][i]) then
-                    local reformattedLocation = MapRegistry:ResolveLocationTuple(location)
+                    local reformattedLocation = MapRegistry:NormalizeLocationTuple(location, "vanilla")
 
                     if reformattedLocation then
                         if locations[sourceType] == nil then locations[sourceType] = {} end
                         table.insert(locations[sourceType], reformattedLocation)
                         if added == false then
-                            local c, z = reformattedLocation[1], reformattedLocation[2]
-                            if mapIds[c] == nil then mapIds[c] = {} end
-                            mapIds[c][z] = true
+                            mapIds[reformattedLocation[1]] = true
                             added = true
                         end
                     else
@@ -55769,23 +55775,20 @@ end
 QuestieZoneLevelMap = {
 }
 
-function addQuestToZoneLevelMap(c, z, questHash, questInfo, locationMeta, questId)
+function addQuestToZoneLevelMap(mapId, questHash, questInfo, locationMeta, questId)
     local level = questInfo['level']
     local variantLocationMeta = locationMeta
     variantLocationMeta['questName'] = questInfo['name']
-    if QuestieZoneLevelMap[c] == nil then
-        QuestieZoneLevelMap[c] = {};
+    if QuestieZoneLevelMap[mapId] == nil then
+        QuestieZoneLevelMap[mapId] = {};
     end
-    if QuestieZoneLevelMap[c][z] == nil then
-        QuestieZoneLevelMap[c][z] = {};
+    if QuestieZoneLevelMap[mapId][level] == nil then
+        QuestieZoneLevelMap[mapId][level] = {};
     end
-    if QuestieZoneLevelMap[c][z][level] == nil then
-        QuestieZoneLevelMap[c][z][level] = {};
+    if QuestieZoneLevelMap[mapId][level][questHash] == nil then
+        QuestieZoneLevelMap[mapId][level][questHash] = { ["variants"] = {} }
     end
-    if QuestieZoneLevelMap[c][z][level][questHash] == nil then
-        QuestieZoneLevelMap[c][z][level][questHash] = { ["variants"] = {} }
-    end
-    QuestieZoneLevelMap[c][z][level][questHash]["variants"][questId or questInfo.questId or 0] = variantLocationMeta
+    QuestieZoneLevelMap[mapId][level][questHash]["variants"][questId or questInfo.questId or 0] = variantLocationMeta
 end
 
 -- ============================================================================
@@ -56150,12 +56153,10 @@ function QuestieGetUnitLocationsById(unitId)
     local mapIds = {}
     
     for i, loc in ipairs(unitData.locations) do
-        local reformattedLocation = MapRegistry:ResolveLocationTuple(loc)
+        local reformattedLocation = MapRegistry:NormalizeLocationTuple(loc, "vanilla")
         if reformattedLocation then
             table.insert(locations["locations"], reformattedLocation)
-            local c, z = reformattedLocation[1], reformattedLocation[2]
-            if not mapIds[c] then mapIds[c] = {} end
-            mapIds[c][z] = true
+            mapIds[reformattedLocation[1]] = true
         end
     end
     
@@ -56173,12 +56174,10 @@ function QuestieGetObjectLocationsById(objectId)
     local mapIds = {}
     
     for i, loc in ipairs(objectData.locations) do
-        local reformattedLocation = MapRegistry:ResolveLocationTuple(loc)
+        local reformattedLocation = MapRegistry:NormalizeLocationTuple(loc, "vanilla")
         if reformattedLocation then
             table.insert(locations["locations"], reformattedLocation)
-            local c, z = reformattedLocation[1], reformattedLocation[2]
-            if not mapIds[c] then mapIds[c] = {} end
-            mapIds[c][z] = true
+            mapIds[reformattedLocation[1]] = true
         end
     end
     
@@ -56193,13 +56192,8 @@ local function QuestieMergeLocationResults(allLocations, allMapIds, locations, m
     end
 
     if mapIds then
-        for c, zs in pairs(mapIds) do
-            if not allMapIds[c] then
-                allMapIds[c] = {}
-            end
-            for z in pairs(zs) do
-                allMapIds[c][z] = true
-            end
+        for mapId in pairs(mapIds) do
+            allMapIds[mapId] = true
         end
     end
 end
@@ -56289,15 +56283,10 @@ function QuestieGetQuestObjectiveCoords(questId, objIndex)
     local mapIds = {}
 
     for _, coord in ipairs(coords) do
-        local reformattedLocation = MapRegistry:ResolveLocationTuple(coord)
+        local reformattedLocation = MapRegistry:NormalizeLocationTuple(coord, "vanilla")
         if reformattedLocation then
             table.insert(locations, reformattedLocation)
-
-            local c, z = reformattedLocation[1], reformattedLocation[2]
-            if not mapIds[c] then
-                mapIds[c] = {}
-            end
-            mapIds[c][z] = true
+            mapIds[reformattedLocation[1]] = true
         end
     end
 
@@ -56576,10 +56565,8 @@ local function QuestieBuildStructuredQuestTables()
         if questInfo then
             for _, questId in ipairs(group["questIds"]) do
                 local locationMeta, mapIds = QuestieGetQuestStartLocationsById(questId)
-                for c, zs in pairs(mapIds) do
-                    for z in pairs(zs) do
-                        addQuestToZoneLevelMap(c, z, questHash, questInfo, locationMeta, questId)
-                    end
+                for mapId in pairs(mapIds) do
+                    addQuestToZoneLevelMap(mapId, questHash, questInfo, locationMeta, questId)
                 end
             end
         end

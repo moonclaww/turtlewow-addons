@@ -1,246 +1,265 @@
 MapRegistryTurtleVersions = MapRegistryTurtleVersions or {}
 
+local function copyAstrolabeOverrides(source)
+    local result = {}
+    if not source then
+        return result
+    end
+    for mapKey, mapData in pairs(source) do
+        local mapCopy = {}
+        for key, value in pairs(mapData) do
+            if key == "zoneData" and type(value) == "table" then
+                local zoneDataCopy = {}
+                for zoneKey, zoneValues in pairs(value) do
+                    local zoneCopy = {}
+                    for zoneField, zoneValue in pairs(zoneValues) do
+                        zoneCopy[zoneField] = zoneValue
+                    end
+                    zoneDataCopy[zoneKey] = zoneCopy
+                end
+                mapCopy.zoneData = zoneDataCopy
+            else
+                mapCopy[key] = value
+            end
+        end
+        result[mapKey] = mapCopy
+    end
+    return result
+end
+
+local inheritedAstrolabeOverrides = nil
+
 MapRegistryTurtleVersions["1.18.1"] = {
     extractedVersion = "1.18.1",
-    extractedAt = "2026-03-30",
-    source = "bootstrap",
+    extractedAt = "2026-04-02 22:58:04",
+    source = "WorldMapArea.dbc",
     records = {
-        [1004] = { mapFile = "Frostpoint", astrolabeKey = "Icepoint", clientWorldMapAreaId = 511, clientMapId = 1, areaTableId = 5024 },
-        [1005] = { mapFile = "DireMaul", clientWorldMapAreaId = 621, clientMapId = 429, areaTableId = 2557 },
-        [1006] = { mapFile = "WailingCaverns", clientWorldMapAreaId = 631, clientMapId = 43, areaTableId = 718 },
-        [1008] = { mapFile = "CavernsOfTime", clientWorldMapAreaId = 523, clientMapId = 1, areaTableId = 1941 },
-        [1012] = { mapFile = "Telabim", astrolabeKey = "TelAbim", clientWorldMapAreaId = 507, clientMapId = 1, areaTableId = 5121 },
-        [1013] = { mapFile = "MountHyjal", clientWorldMapAreaId = 501, clientMapId = 1, areaTableId = 616 },
-        [1014] = { mapFile = "Maraudon", clientWorldMapAreaId = 633, clientMapId = 349, areaTableId = 2100 },
-        [1016] = { mapFile = "BlackrockIsle", astrolabeKey = "BlackstoneIsland", clientWorldMapAreaId = 512, clientMapId = 1, areaTableId = 5536 },
-        [1017] = { mapFile = "ColdCoast", astrolabeKey = "GrimReaches", clientWorldMapAreaId = 684, clientMapId = 0, areaTableId = 5602 },
-        [1018] = { mapFile = "NorthwindCleft", astrolabeKey = "Northwind", clientWorldMapAreaId = 686, clientMapId = 0, areaTableId = 5581 },
-        [1019] = { mapFile = "GillijimsIsle", astrolabeKey = "GillijimsIsle", clientWorldMapAreaId = 505, clientMapId = 0, areaTableId = 408 },
-        [1020] = { mapFile = "Gilneas", astrolabeKey = "Gilneas", clientWorldMapAreaId = 510, clientMapId = 0, areaTableId = 5179 },
-        [1022] = { mapFile = "Balo", astrolabeKey = "Balor", clientWorldMapAreaId = 685, clientMapId = 0, areaTableId = 5561 },
-        [1023] = { mapFile = "LapidisIsle", astrolabeKey = "LapidisIsle", clientWorldMapAreaId = 504, clientMapId = 0, areaTableId = 409 },
-        [1024] = { mapFile = "Deadmines", clientWorldMapAreaId = 514, clientMapId = 0, areaTableId = 1581 },
-        [1025] = { mapFile = "SalasHighlands", astrolabeKey = "ThalassianHighlands", clientWorldMapAreaId = 513, clientMapId = 0, areaTableId = 5225 },
-        [1026] = { mapFile = "ScarletMonastery", clientWorldMapAreaId = 643, clientMapId = 189, areaTableId = 5136 },
-        [1027] = { mapFile = "ScarletEnclave", astrolabeKey = "ScarletEnclave", clientWorldMapAreaId = 502, clientMapId = 0, areaTableId = 4012 },
-        [1028] = { mapFile = "Gnomeregan", clientWorldMapAreaId = 613, clientMapId = 90, areaTableId = 721 },
-        [1029] = { mapFile = "Alsarath", astrolabeKey = "Alsarath", clientWorldMapAreaId = 509, clientMapId = 0, areaTableId = 2040 },
-        [1030] = { mapFile = "BlackrockMountain", clientWorldMapAreaId = 519, clientMapId = 0, areaTableId = 25 },
-        [1031] = { mapFile = "WinterVeilVale", clientWorldMapAreaId = 0, clientMapId = 0, areaTableId = 0 },
-        [1032] = { mapFile = "GilneasCity", clientWorldMapAreaId = 665, clientMapId = 815, areaTableId = 5208 },
-        [1033] = { mapFile = "CrescentGrove", clientWorldMapAreaId = 670, clientMapId = 802, areaTableId = 5077 },
-        [1034] = { mapFile = "HateforgeQuarry", clientWorldMapAreaId = 672, clientMapId = 808, areaTableId = 5103 },
-        [1035] = { mapFile = "KarazhanCrypt", clientWorldMapAreaId = 674, clientMapId = 800, areaTableId = 5086 },
-        [1036] = { mapFile = "StormwindVault", clientWorldMapAreaId = 676, clientMapId = 35, areaTableId = 5087 },
-        [1037] = { mapFile = "EmeraldSanctum", clientWorldMapAreaId = 678, clientMapId = 807, areaTableId = 5097 },
-        [1038] = { mapFile = "DragonmawRetreat", clientWorldMapAreaId = 691, clientMapId = 816, areaTableId = 5601 },
-    },
-    astrolabeOverrides = {
-        [1] = {
-            zoneData = {
-                GMIsland = {
-                    height = 1608.0,
-                    width = 1075.0,
-                    xOffset = 23330.0,
-                    yOffset = 2797.0,
-                },
-                Icepoint = {
-                    height = 1608.0,
-                    width = 1075.0,
-                    xOffset = 25063.299805,
-                    yOffset = 12530.210938,
-                },
-                    TelAbim = {
-                        height = 3227.0,
-                        width = 2187.0,
-                        xOffset = 3566.0,
-                        yOffset = 11861.2,
-                    },
-                    BlackstoneIsland = {
-                        height = 2472.0,
-                        width = 1665.0,
-                        xOffset = 10867.3,
-                        yOffset = 11479.2,
-                    },
-                },
-            },
-            [2] = {
-                zoneData = {
-                    Gilneas = {
-                        height = 3666.0,
-                        width = 2442.0,
-                        xOffset = 13824.0,
-                        yOffset = 3053.6,
-                    },
-                    ScarletEnclave = {
-                        height = 3159.0,
-                        width = 2108.0,
-                        xOffset = 17604.0,
-                        yOffset = 3524.0,
-                    },
-                    ThalassianHighlands = {
-                        height = 3082.0,
-                        width = 2061.0,
-                        xOffset = 19516.0,
-                        yOffset = 6646.0,
-                    },
-                    Balor = {
-                        height = 3098.0,
-                        width = 2068.0,
-                        xOffset = 6980.0,
-                        yOffset = 5363.1,
-                    },
-                    Northwind = {
-                        height = 3241.0,
-                        width = 2157.0,
-                        xOffset = 8141.0,
-                        yOffset = 8750.2,
-                    },
-                    GrimReaches = {
-                        height = 5387.0,
-                        width = 3584.0,
-                        xOffset = 10137.0,
-                        yOffset = 12274.2,
-                    },
-                    LapidisIsle = {
-                        height = 2000.0,
-                        width = 1333.0,
-                        xOffset = 12500.0,
-                        yOffset = 8000.0,
-                    },
-                    GillijimsIsle = {
-                        height = 2000.0,
-                        width = 1333.0,
-                        xOffset = 11500.0,
-                        yOffset = 7500.0,
-                    },
-                    Alsarath = {
-                        height = 2000.0,
-                        width = 1333.0,
-                        xOffset = 18000.0,
-                        yOffset = 6000.0,
-                    },
-                },
-            },
-        [3] = {
-            parentContinent = 0,
-            height = 1432.0,
-            width = 977.0,
-            xOffset = 0,
-            yOffset = 0,
-            zoneData = {
-                WinterVeilVale = {
-                    height = 1432.0,
-                    width = 977.0,
-                    xOffset = 0,
-                    yOffset = 0,
-                },
-            },
+        [1004] = {
+            areaTableId = 5024,
+            astrolabeKey = "Icepoint",
+            clientMapId = 1,
+            clientWorldMapAreaId = 511,
+            mapFile = "Frostpoint",
         },
-        [32] = {
-            parentContinent = 0,
-            height = 1250.18,
-            width = 837.44,
-            xOffset = 0,
-            yOffset = 0,
-            zoneData = {
-                GilneasCity = {
-                    height = 1250.18,
-                    width = 837.44,
-                    xOffset = 0,
-                    yOffset = 0,
-                },
-            },
+        [1012] = {
+            areaTableId = 5121,
+            astrolabeKey = "TelAbim",
+            clientMapId = 1,
+            clientWorldMapAreaId = 507,
+            mapFile = "Telabim",
         },
-        [34] = {
-            parentContinent = 0,
-            height = 2643.209961,
-            width = 1751.159973,
-            xOffset = 0,
-            yOffset = 0,
-            zoneData = {
-                CrescentGrove = {
-                    height = 2643.209961,
-                    width = 1751.159973,
-                    xOffset = 0,
-                    yOffset = 0,
-                },
-            },
+        [1016] = {
+            areaTableId = 5536,
+            astrolabeKey = "BlackstoneIsland",
+            clientMapId = 1,
+            clientWorldMapAreaId = 512,
+            mapFile = "BlackrockIsle",
         },
-        [35] = {
-            parentContinent = 0,
-            height = 752.119873,
-            width = 510.330566,
-            xOffset = 0,
-            yOffset = 0,
-            zoneData = {
-                HateforgeQuarry = {
-                    height = 752.119873,
-                    width = 510.330566,
-                    xOffset = 0,
-                    yOffset = 0,
-                },
-            },
+        [1017] = {
+            areaTableId = 5602,
+            astrolabeKey = "GrimReaches",
+            clientMapId = 0,
+            clientWorldMapAreaId = 684,
+            mapFile = "ColdCoast",
         },
-        [36] = {
-            parentContinent = 0,
-            height = 546.75,
-            width = 391.969727,
-            xOffset = 0,
-            yOffset = 0,
-            zoneData = {
-                KarazhanCrypt = {
-                    height = 546.75,
-                    width = 391.969727,
-                    xOffset = 0,
-                    yOffset = 0,
-                },
-            },
+        [1018] = {
+            areaTableId = 5581,
+            astrolabeKey = "Northwind",
+            clientMapId = 0,
+            clientWorldMapAreaId = 686,
+            mapFile = "NorthwindCleft",
         },
-        [37] = {
-            parentContinent = 0,
-            height = 354.5,
-            width = 234.740005,
-            xOffset = 0,
-            yOffset = 0,
-            zoneData = {
-                StormwindVault = {
-                    height = 354.5,
-                    width = 234.740005,
-                    xOffset = 0,
-                    yOffset = 0,
-                },
-            },
+        [1019] = {
+            areaTableId = 408,
+            astrolabeKey = "GillijimsIsle",
+            clientMapId = 0,
+            clientWorldMapAreaId = 505,
+            mapFile = "GillijimsIsle",
         },
-        [38] = {
-            parentContinent = 0,
-            height = 1273.100098,
-            width = 853.719971,
-            xOffset = 0,
-            yOffset = 0,
-            zoneData = {
-                EmeraldSanctum = {
-                    height = 1273.100098,
-                    width = 853.719971,
-                    xOffset = 0,
-                    yOffset = 0,
-                },
-            },
+        [1020] = {
+            areaTableId = 5179,
+            astrolabeKey = "Gilneas",
+            clientMapId = 0,
+            clientWorldMapAreaId = 510,
+            mapFile = "Gilneas",
         },
-        [41] = {
-            parentContinent = 0,
-            height = 1634.0,
-            width = 1073.0,
-            xOffset = 0,
-            yOffset = 0,
-            zoneData = {
-                DragonmawRetreat = {
-                    height = 1634.0,
-                    width = 1073.0,
-                    xOffset = 0,
-                    yOffset = 0,
-                },
-            },
+        [1022] = {
+            areaTableId = 5561,
+            astrolabeKey = "Balor",
+            clientMapId = 0,
+            clientWorldMapAreaId = 685,
+            mapFile = "Balo",
+        },
+        [1023] = {
+            areaTableId = 409,
+            astrolabeKey = "LapidisIsle",
+            clientMapId = 0,
+            clientWorldMapAreaId = 504,
+            mapFile = "LapidisIsle",
+        },
+        [1025] = {
+            areaTableId = 5225,
+            astrolabeKey = "ThalassianHighlands",
+            clientMapId = 0,
+            clientWorldMapAreaId = 513,
+            mapFile = "SalasHighlands",
+        },
+        [1026] = {
+            areaTableId = 5136,
+            clientMapId = 189,
+            clientWorldMapAreaId = 643,
+            mapFile = "ScarletMonastery",
+        },
+        [1027] = {
+            areaTableId = 4012,
+            astrolabeKey = "ScarletEnclave",
+            clientMapId = 0,
+            clientWorldMapAreaId = 502,
+            mapFile = "ScarletEnclave",
+        },
+        [1029] = {
+            areaTableId = 2040,
+            astrolabeKey = "Alsarath",
+            clientMapId = 0,
+            clientWorldMapAreaId = 509,
+            mapFile = "Alsarath",
+        },
+        [1031] = {
+            areaTableId = 0,
+            astrolabeKey = "WinterVeilVale",
+            clientMapId = 0,
+            clientWorldMapAreaId = 0,
+            mapFile = "WinterVeilVale",
+        },
+        [1032] = {
+            areaTableId = 5208,
+            astrolabeKey = "GilneasCity",
+            clientMapId = 815,
+            clientWorldMapAreaId = 665,
+            mapFile = "GilneasCity",
+        },
+        [1033] = {
+            areaTableId = 5077,
+            astrolabeKey = "CrescentGrove",
+            clientMapId = 802,
+            clientWorldMapAreaId = 670,
+            mapFile = "CrescentGrove",
+        },
+        [1034] = {
+            areaTableId = 5103,
+            astrolabeKey = "HateforgeQuarry",
+            clientMapId = 808,
+            clientWorldMapAreaId = 672,
+            mapFile = "HateforgeQuarry",
+        },
+        [1035] = {
+            areaTableId = 5086,
+            astrolabeKey = "KarazhanCrypt",
+            clientMapId = 800,
+            clientWorldMapAreaId = 674,
+            mapFile = "KarazhanCrypt",
+        },
+        [1036] = {
+            areaTableId = 5087,
+            astrolabeKey = "StormwindVault",
+            clientMapId = 35,
+            clientWorldMapAreaId = 676,
+            mapFile = "StormwindVault",
+        },
+        [1037] = {
+            areaTableId = 5097,
+            astrolabeKey = "EmeraldSanctum",
+            clientMapId = 807,
+            clientWorldMapAreaId = 678,
+            mapFile = "EmeraldSanctum",
+        },
+        [1038] = {
+            areaTableId = 5601,
+            astrolabeKey = "DragonmawRetreat",
+            clientMapId = 816,
+            clientWorldMapAreaId = 691,
+            mapFile = "DragonmawRetreat",
         },
     },
+    astrolabeOverrides = copyAstrolabeOverrides(inheritedAstrolabeOverrides),
 }
+
+do
+    local astrolabeOverrides = MapRegistryTurtleVersions["1.18.1"].astrolabeOverrides
+    astrolabeOverrides[1] = astrolabeOverrides[1] or {}
+    astrolabeOverrides[1].zoneData = astrolabeOverrides[1].zoneData or {}
+    astrolabeOverrides[1].zoneData["BlackstoneIsland"] = {
+        height = 1665.0,
+        width = 2472.0,
+        xOffset = 23340.599609,
+        yOffset = 12000.900391,
+    }
+    astrolabeOverrides[1].zoneData["Icepoint"] = {
+        height = 1075.0,
+        width = 1608.0,
+        xOffset = 22661.599609,
+        yOffset = -1605.099609,
+    }
+    astrolabeOverrides[1].zoneData["TelAbim"] = {
+        height = 2187.0,
+        width = 3227.0,
+        xOffset = 22245.599609,
+        yOffset = 19983.900391,
+    }
+    astrolabeOverrides[2] = astrolabeOverrides[2] or {}
+    astrolabeOverrides[2].zoneData = astrolabeOverrides[2].zoneData or {}
+    astrolabeOverrides[2].zoneData["Alsarath"] = {
+        height = 976.0,
+        width = 1468.0,
+        xOffset = 18169.0,
+        yOffset = 2559.600098,
+    }
+    astrolabeOverrides[2].zoneData["Balor"] = {
+        height = 2068.0,
+        width = 3098.0,
+        xOffset = 11272.0,
+        yOffset = 15043.600098,
+    }
+    astrolabeOverrides[2].zoneData["GillijimsIsle"] = {
+        height = 2047.009766,
+        width = 3092.10022,
+        xOffset = 11563.779785,
+        yOffset = 19995.310059,
+    }
+    astrolabeOverrides[2].zoneData["Gilneas"] = {
+        height = 2442.0,
+        width = 3666.0,
+        xOffset = 12747.0,
+        yOffset = 7825.600098,
+    }
+    astrolabeOverrides[2].zoneData["GrimReaches"] = {
+        height = 3584.0,
+        width = 5387.0,
+        xOffset = 18072.0,
+        yOffset = 10370.600098,
+    }
+    astrolabeOverrides[2].zoneData["LapidisIsle"] = {
+        height = 1915.939453,
+        width = 2901.450073,
+        xOffset = 11066.669922,
+        yOffset = 18510.080566,
+    }
+    astrolabeOverrides[2].zoneData["Northwind"] = {
+        height = 2157.0,
+        width = 3241.0,
+        xOffset = 13742.0,
+        yOffset = 13793.600098,
+    }
+    astrolabeOverrides[2].zoneData["ScarletEnclave"] = {
+        height = 2108.0,
+        width = 3159.0,
+        xOffset = 20050.0,
+        yOffset = 4379.600098,
+    }
+    astrolabeOverrides[2].zoneData["ThalassianHighlands"] = {
+        height = 2061.0,
+        width = 3082.0,
+        xOffset = 17005.0,
+        yOffset = 2514.600098,
+    }
+end

@@ -1306,18 +1306,13 @@ function checkRequirements(class, race, dbClass, dbRace)
 end
 ---------------------------------------------------------------------------------------------------
 function Questie:GetAvailableQuestHashes(mapFileName, levelFrom, levelTo)
-    local mapid =  -1;
-    if(QuestieZones[mapFileName]) then
-        local cIdx, zIdx = QuestieGetZoneIndices();
-        c = QuestieZones[mapFileName][cIdx];
-        z = QuestieZones[mapFileName][zIdx];
-    end
+    local mapid = GetCurrentMapID();
     local class = UnitClass("Player");
     local race = UnitRace("Player");
     local hashes = {};
     for l = 0,100 do
-        if QuestieZoneLevelMap[c] and QuestieZoneLevelMap[c][z] then
-            local content = QuestieZoneLevelMap[c][z][l];
+        if QuestieZoneLevelMap[mapid] then
+            local content = QuestieZoneLevelMap[mapid][l];
             if content then
                 for v, locationMeta in pairs(content) do
                     local selectedQuestId, selectedLocationMeta = nil, locationMeta;

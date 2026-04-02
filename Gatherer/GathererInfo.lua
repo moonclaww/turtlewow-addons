@@ -21,8 +21,55 @@ GathererInfoZones = {};
 numGathererInfo = 0;
 GI_totalCount = 0;
 
+local GathererInfo_MapRegistry = AceLibrary("MapRegistry-1.0")
+
 local function GathererInfo_IsNumericKey(key)
 	return type(key) == "number";
+end
+
+local function GathererInfo_ForEachZone(continentFilter, callback)
+	if (not GatherItems) then
+		return;
+	end
+
+	for mapId, zoneData in GatherItems do
+		local numericMapId = tonumber(mapId);
+		if (numericMapId and type(zoneData) == "table") then
+			local continent, zone = GathererInfo_MapRegistry:GetClientZone(numericMapId);
+			if (continent and zone and continent > 0 and zone > 0 and (not continentFilter or continentFilter == continent)) then
+				callback(numericMapId, continent, zone, zoneData);
+			end
+		end
+	end
+end
+
+local function GathererInfo_GetZoneData(continent, zone)
+	local mapId = GathererInfo_MapRegistry:GetCanonicalMapID(continent, zone);
+	if (not mapId) or (mapId < 0) then
+		return nil, nil;
+	end
+
+	if (not GatherItems) then
+		return nil, mapId;
+	end
+
+	return GatherItems[mapId], mapId;
+end
+
+local function GathererInfo_UpdateZoneTotals(zoneData)
+	GI_totalCount = 0;
+	numGathererInfo = 0;
+
+	if (not zoneData) then
+		return;
+	end
+
+	for node_idx in zoneData do
+		for index in zoneData[node_idx] do
+			GI_totalCount = GI_totalCount + zoneData[node_idx][index].count;
+			numGathererInfo = numGathererInfo + 1;
+		end
+	end
 end
 
 
@@ -63,11 +110,15 @@ end
 function GathererInfo_LocContinentDropDown_Initialize()
 	local index;
 	local info = {};
-	
-	for index in GatherItems do
-		if (GathererInfo_IsNumericKey(index)) then
-			-- grab zone text from table initiated by Gatherer Main
-			info.text = GathererInfoContinents[index];
+
+	local continentsWithData = {};
+	GathererInfo_ForEachZone(nil, function(mapId, continent)
+		continentsWithData[continent] = true;
+	end);
+
+	for index, value in GathererInfoContinents do
+		if (GathererInfo_IsNumericKey(index) and continentsWithData[index] and value) then
+			info.text = value;
 			info.checked = nil;
 			info.func = GathererInfo_LocContinentDropDown_OnClick;
 			UIDropDownMenu_AddButton(info);
@@ -101,11 +152,14 @@ function GathererInfo_LocZoneDropDown_Initialize()
 	gi_t_cont = UIDropDownMenu_GetText(GathererInfo_LocContinentDropDown);
 	if ( gi_t_cont and gi_t_cont ~= nil and gi_t_cont ~= "") then
 		gi_cont = GathererInfoContinents[gi_t_cont];
+		local zonesWithData = {};
+		GathererInfo_ForEachZone(gi_cont, function(mapId, continent, zone)
+			zonesWithData[zone] = true;
+		end);
 
-		for index in GatherItems[gi_cont] do
-			if (GathererInfo_IsNumericKey(index)) then
-				-- grab zone text from table initiated by Gatherer Main
-				info.text = GathererInfoZones[gi_cont][index].zone;
+		for index, value in GathererInfoZones[gi_cont] do
+			if (GathererInfo_IsNumericKey(index) and zonesWithData[index]) then
+				info.text = value.zone;
 				info.checked = nil;
 				info.func = GathererInfo_LocZoneDropDown_OnClick;
 				UIDropDownMenu_AddButton(info);
@@ -116,7 +170,6 @@ end
 
 function GathererInfo_LocZoneDropDown_OnClick()
 	local gi_cont, gi_zone;
-	local l_zone, node_idx, index;
 	
 	UIDropDownMenu_SetSelectedID(GathererInfo_LocZoneDropDown, this:GetID());
 	
@@ -125,17 +178,8 @@ function GathererInfo_LocZoneDropDown_OnClick()
 	gi_cont = GathererInfoContinents[UIDropDownMenu_GetText(GathererInfo_LocContinentDropDown)];
 	gi_zone = GathererInfoZones[gi_cont][UIDropDownMenu_GetText(GathererInfo_LocZoneDropDown)].zone;
 
-	for l_zone in GatherItems[gi_cont] do
-		GI_totalCount = 0;
-		numGathererInfo=0;
-								
-		for node_idx in GatherItems[gi_cont][gi_zone] do
-			for index in  GatherItems[gi_cont][gi_zone][node_idx] do
-				GI_totalCount = GI_totalCount + GatherItems[gi_cont][gi_zone][node_idx][index].count;
-				numGathererInfo = numGathererInfo + 1;
-			end
-		end
-	end
+	local zoneData = GathererInfo_GetZoneData(gi_cont, gi_zone);
+	GathererInfo_UpdateZoneTotals(zoneData);
 		
 	GathererInfo_Update();
 end
@@ -147,8 +191,6 @@ function GathererInfo_SetDefaultLocation()
 	local gi_t_zone = GetRealZoneText();
 	local gi_cont = GetCurrentMapContinent();
 	local gi_zone = nil;
-	local l_cnt, l_zone;
-	local node_idx, index;
 	local found = 0;
 
 	if ( GetRealZoneText() and GathererInfoZones[gi_cont] and GathererInfoZones[gi_cont][GetRealZoneText()] ) then
@@ -157,31 +199,16 @@ function GathererInfo_SetDefaultLocation()
 		gi_zone = "unknown";
 	end
 
-	for l_cnt in GatherItems do
-		if( GathererInfo_IsNumericKey(l_cnt) and l_cnt == gi_cont ) then
-			UIDropDownMenu_SetSelectedName(GathererInfo_LocContinentDropDown, gi_t_cont);
-			UIDropDownMenu_SetText(gi_t_cont, GathererInfo_LocContinentDropDown);
-			
-			for l_zone in GatherItems[gi_cont] do
-				if ( l_zone == gi_zone and GathererInfo_AutoRegion == true) then
-					UIDropDownMenu_SetSelectedName(GathererInfo_LocZoneDropDown, gi_t_zone);
-					UIDropDownMenu_SetText(gi_t_zone, GathererInfo_LocZoneDropDown);
-					
-					GI_totalCount = 0;
-					numGathererInfo=0;
-					found = 1;
-								
-					for node_idx in GatherItems[gi_cont][gi_zone] do
-						for index in  GatherItems[gi_cont][gi_zone][node_idx] do
-							GI_totalCount = GI_totalCount + GatherItems[gi_cont][gi_zone][node_idx][index].count;
-							numGathererInfo = numGathererInfo + 1;
-						end
-					end
-					
-					GathererInfo_Update();
-				end
-			end
-		end
+	local zoneData = GathererInfo_GetZoneData(gi_cont, gi_zone);
+	if (zoneData and GathererInfo_AutoRegion == true) then
+		UIDropDownMenu_SetSelectedName(GathererInfo_LocContinentDropDown, gi_t_cont);
+		UIDropDownMenu_SetText(gi_t_cont, GathererInfo_LocContinentDropDown);
+		UIDropDownMenu_SetSelectedName(GathererInfo_LocZoneDropDown, gi_t_zone);
+		UIDropDownMenu_SetText(gi_t_zone, GathererInfo_LocZoneDropDown);
+
+		GathererInfo_UpdateZoneTotals(zoneData);
+		found = 1;
+		GathererInfo_Update();
 	end
 end
 
@@ -189,10 +216,7 @@ end
 function GathererInfo_Update()
 	local node_idx, index;
 	local gatherInfoOffset = FauxScrollFrame_GetOffset(GathererInfo_ListScrollFrame);
-	local gi_cont, gi_zone, gi_loc;
-	local gatherInfoIndex;
-	local showScrollBar = nil;
-	local button;
+	local gi_cont, gi_zone;
 	local i = 1;
 	GITT = {};
 
@@ -216,97 +240,97 @@ function GathererInfo_Update()
 			gi_zone = nil;
 		end
 	end
-	-- if loc exists in stored base
-	if ( GatherItems and gi_cont and gi_zone and GatherItems[gi_cont] and 
-		 GatherItems[gi_cont][gi_zone] ) 
-	then
-		if ( GatherItems and GatherItems[gi_cont] and GatherItems[gi_cont][gi_zone] )
-		then
-			local typeNodeCount = {};
-			typeNodeCount[0]=0;
-			typeNodeCount[1]=0;
-			typeNodeCount[2]=0;
-			typeNodeCount[3]=0;
+	local zoneData = nil;
+	if (gi_cont and gi_zone) then
+		zoneData = GathererInfo_GetZoneData(gi_cont, gi_zone);
+	end
 
-			for node_idx in GatherItems[gi_cont][gi_zone] do
-				for index in GatherItems[gi_cont][gi_zone][node_idx] do
-					local gtype;
-					if ( type(GatherItems[gi_cont][gi_zone][node_idx][index].gtype) =="number" )
-					then
-						gtype = GatherItems[gi_cont][gi_zone][node_idx][index].gtype;
-					else
-						gtype = Gather_DB_TypeIndex[GatherItems[gi_cont][gi_zone][node_idx][index].gtype]
-					end
+	if ( zoneData ) then
+		local typeNodeCount = {};
+		typeNodeCount[0]=0;
+		typeNodeCount[1]=0;
+		typeNodeCount[2]=0;
+		typeNodeCount[3]=0;
 
-					typeNodeCount[gtype] = typeNodeCount[gtype] + GatherItems[gi_cont][gi_zone][node_idx][index].count;
+		for node_idx in zoneData do
+			for index in zoneData[node_idx] do
+				local gtype;
+				if ( type(zoneData[node_idx][index].gtype) =="number" )
+				then
+					gtype = zoneData[node_idx][index].gtype;
+				else
+					gtype = Gather_DB_TypeIndex[zoneData[node_idx][index].gtype]
 				end
+
+				typeNodeCount[gtype] = typeNodeCount[gtype] + zoneData[node_idx][index].count;
 			end
+		end
 
-			-- assign values
-			for node_idx in GatherItems[gi_cont][gi_zone] do
-				local nodeCount;
-				for index in GatherItems[gi_cont][gi_zone][node_idx] do
-					local amount = GatherItems[gi_cont][gi_zone][node_idx][index].count;
-					local gtype;
-					if ( type(GatherItems[gi_cont][gi_zone][node_idx][index].gtype) == "number" )
-					then
-						gtype = GatherItems[gi_cont][gi_zone][node_idx][index].gtype;
+		-- assign values
+		for node_idx in zoneData do
+			local nodeCount;
+			for index in zoneData[node_idx] do
+				local amount = zoneData[node_idx][index].count;
+				local gtype;
+				if ( type(zoneData[node_idx][index].gtype) == "number" )
+				then
+					gtype = zoneData[node_idx][index].gtype;
+				else
+					gtype = Gather_DB_TypeIndex[zoneData[node_idx][index].gtype]
+				end
+
+				nodeCount = typeNodeCount[gtype];				
+			
+				local found=0;
+				local findex;
+				for findex in GITT do
+					if ( GITT[findex].name == node_idx ) then
+						found = findex;
+					end
+				end
+			
+				if ( found == 0 ) then
+					GITT[i] = {};
+					GITT[i].name     = node_idx;
+
+					if ( type(zoneData[node_idx][index].gtype) == "number" ) then
+						GITT[i].gatherType = Gather_DB_TypeIndex[zoneData[node_idx][index].gtype];
 					else
-						gtype = Gather_DB_TypeIndex[GatherItems[gi_cont][gi_zone][node_idx][index].gtype]
+						GITT[i].gatherType = zoneData[node_idx][index].gtype;
 					end
 
-					nodeCount = typeNodeCount[gtype];				
-				
-					local found=0;
-					local findex;
-					for findex in GITT do
-						if ( GITT[findex].name == node_idx ) then
-							found = findex;
-						end
-					end
-				
-					if ( found == 0 ) then
-						GITT[i] = {};
-						GITT[i].name     = node_idx;
+					GITT[i].typePercent  = tonumber(format("%.1f",( amount / nodeCount ) * 100));
+					GITT[i].densityPercent  = tonumber(format("%.1f",( amount / GI_totalCount ) * 100));
 
-						if ( type(GatherItems[gi_cont][gi_zone][node_idx][index].gtype) == "number" ) then
-							GITT[i].gatherType = Gather_DB_TypeIndex[GatherItems[gi_cont][gi_zone][node_idx][index].gtype];
-						else
-							GITT[i].gatherType = GatherItems[gi_cont][gi_zone][node_idx][index].gtype;
-						end
+					-- divide by zero check
+					if ( GITT[i].typePercent == nil ) then GITT[i].typePercent = 0; end
+					if ( GITT[i].densityPercent == nil ) then GITT[i].densityPercent = 0; end
 
-						GITT[i].typePercent  = tonumber(format("%.1f",( amount / nodeCount ) * 100));
-						GITT[i].densityPercent  = tonumber(format("%.1f",( amount / GI_totalCount ) * 100));
+					GITT[i].amount   = tonumber(amount);
 
-						-- divide by zero check
-						if ( GITT[i].typePercent == nil ) then GITT[i].typePercent = 0; end
-						if ( GITT[i].densityPercent == nil ) then GITT[i].densityPercent = 0; end
-
-						GITT[i].amount   = tonumber(amount);
-
-						if ( type(GatherItems[gi_cont][gi_zone][node_idx][index].icon) == "number" ) then
-							GITT[i].texture  = Gather_IconSet["iconic"][GITT[i].gatherType][Gatherer_GetDB_IconIndex(GatherItems[gi_cont][gi_zone][node_idx][index].icon, GITT[i].gatherType)];
-						else
-							GITT[i].texture  = Gather_IconSet["iconic"][GITT[i].gatherType][GatherItems[gi_cont][gi_zone][node_idx][index].icon];
-						end
-
-						GITT[i].nodeCount = nodeCount;
-						GITT[i].gi = gatherInfoOffset + i;
-
-						i = i + 1;
+					if ( type(zoneData[node_idx][index].icon) == "number" ) then
+						GITT[i].texture  = Gather_IconSet["iconic"][GITT[i].gatherType][Gatherer_GetDB_IconIndex(zoneData[node_idx][index].icon, GITT[i].gatherType)];
 					else
-						GITT[found].amount = GITT[found].amount + tonumber(amount);
-						GITT[found].typePercent = tonumber(format("%.1f",( GITT[found].amount / GITT[found].nodeCount ) * 100));
-						GITT[found].densityPercent = tonumber(format("%.1f",( GITT[found].amount / GI_totalCount ) * 100));
-
-						-- divide by zero check
-						if ( GITT[found].typePercent == nil ) then GITT[found].typePercent = 0; end
-						if ( GITT[found].densityPercent == nil ) then GITT[found].densityPercent = 0; end
-						found = 0;
+						GITT[i].texture  = Gather_IconSet["iconic"][GITT[i].gatherType][zoneData[node_idx][index].icon];
 					end
+
+					GITT[i].nodeCount = nodeCount;
+					GITT[i].gi = gatherInfoOffset + i;
+
+					i = i + 1;
+				else
+					GITT[found].amount = GITT[found].amount + tonumber(amount);
+					GITT[found].typePercent = tonumber(format("%.1f",( GITT[found].amount / GITT[found].nodeCount ) * 100));
+					GITT[found].densityPercent = tonumber(format("%.1f",( GITT[found].amount / GI_totalCount ) * 100));
+
+					-- divide by zero check
+					if ( GITT[found].typePercent == nil ) then GITT[found].typePercent = 0; end
+					if ( GITT[found].densityPercent == nil ) then GITT[found].densityPercent = 0; end
+					found = 0;
 				end
 			end
 		end
+
 		SortGathererInfo(GathererInfo_LastSortType, false);
 		GathererInfo_totalcount:SetText(string.gsub(string.gsub(GATHERER_REPORT_SUMMARY, "#", GI_totalCount), "&", numGathererInfo));
 	end
@@ -505,7 +529,7 @@ end
 
 function GathererInfo_GatherItem_OnClick()
 	local item_to_search, search_item;
-	local gi_cont, gi_zone, gi_node, gi_index;
+	local gi_node, gi_index;
 
 	UIDropDownMenu_SetSelectedID(GathererInfo_GatherItemDropDown, this:GetID());
 
@@ -513,42 +537,36 @@ function GathererInfo_GatherItem_OnClick()
 	_, _, search_item = string.find(item_to_search, "^([^ ]+)");
 	GI_totalCount = 0;
 
-	for gi_cont in GatherItems do
-		if (GathererInfo_IsNumericKey(gi_cont)) then
-			for gi_zone in GatherItems[gi_cont] do
-				if (GathererInfo_IsNumericKey(gi_zone)) then
-					for gi_node in GatherItems[gi_cont][gi_zone] do
-						if ( string.find(gi_node, search_item, 1, true) ) then
-							local skip_node=-1;
-							for gi_index in GatherItems[gi_cont][gi_zone][gi_node] do
-								if ( skip_node == -1 ) then
-									local locIcon, locGtype;
+	GathererInfo_ForEachZone(nil, function(mapId, gi_cont, gi_zone, zoneData)
+		for gi_node in zoneData do
+			if ( string.find(gi_node, search_item, 1, true) ) then
+				local skip_node=-1;
+				for gi_index in zoneData[gi_node] do
+					if ( skip_node == -1 ) then
+						local locIcon, locGtype;
 
-									-- check gather type
-									locGtype = GatherItems[gi_cont][gi_zone][gi_node][gi_index].gtype;
-									if ( locGtype and type(locGtype) == "string" ) then
-										locGtype = Gather_DB_TypeIndex[locGtype];
-									end
-									locIcon = GatherItems[gi_cont][gi_zone][gi_node][gi_index].icon;
-									if ( (type(locIcon) == "string" and locIcon == search_item) or
-										 (type(locIcon) == "number" and locIcon == Gather_DB_IconIndex[locGtype][item_to_search] )) then
-										skip_node=0
-										GI_totalCount = GI_totalCount +1;
-									else
-										skip_node=1
-									end
-								elseif ( skip_node == 0 ) then
-									GI_totalCount = GI_totalCount +1;
-								else
-									break;
-								end
-							end
+						-- check gather type
+						locGtype = zoneData[gi_node][gi_index].gtype;
+						if ( locGtype and type(locGtype) == "string" ) then
+							locGtype = Gather_DB_TypeIndex[locGtype];
 						end
+						locIcon = zoneData[gi_node][gi_index].icon;
+						if ( (type(locIcon) == "string" and locIcon == search_item) or
+							 (type(locIcon) == "number" and locIcon == Gather_DB_IconIndex[locGtype][item_to_search] )) then
+							skip_node=0
+							GI_totalCount = GI_totalCount +1;
+						else
+							skip_node=1
+						end
+					elseif ( skip_node == 0 ) then
+						GI_totalCount = GI_totalCount +1;
+					else
+						break;
 					end
 				end
 			end
 		end
-	end
+	end);
 
 	GathererInfo_SearchUpdate();
 end
@@ -558,106 +576,88 @@ function GathererInfo_SearchUpdate()
 	local gatherInfoOffset = FauxScrollFrame_GetOffset(GathererInfo_SearchListScrollFrame);
 	local item_to_search = UIDropDownMenu_GetText(GathererInfo_GatherItemDropDown);
 	local search_item;
-	local gi_cont, gi_zone, gi_loc;
-	local gatherInfoIndex;
-	local showScrollBar = nil;
-	local button;
 	local i = 1;
 	GITT = {};
 
 	-- if database exists
 	if ( GatherItems and item_to_search ) then
 		_, _, search_item = string.find(item_to_search, "([^ ]+)");
-		for gi_cont in GatherItems do
-			if (not GathererInfo_IsNumericKey(gi_cont)) then
-				-- Canonical metadata buckets are not region buckets.
-			elseif ( gi_cont == 0 or not GathererInfoZones[gi_cont] ) then
-				Gatherer_ChatPrint("Gatherer: Warning invalid continent index ("..gi_cont..") found in data.");
-			else 
-				for gi_zone in GatherItems[gi_cont] do
-					if (not GathererInfo_IsNumericKey(gi_zone)) then
-						-- Canonical metadata buckets are not zone buckets.
-					elseif ( gi_zone == 0 or not GathererInfoZones[gi_cont][gi_zone] ) then
-						Gatherer_ChatPrint("Gatherer: Warning invalid zone index ("..gi_zone..") found in "..gi_cont.." continent data.");
-					else
-						local nodeCount = 0;
-						for node_idx in GatherItems[gi_cont][gi_zone] do
-							for index in GatherItems[gi_cont][gi_zone][node_idx] do
-								nodeCount = nodeCount + 1;
+		GathererInfo_ForEachZone(nil, function(mapId, gi_cont, gi_zone, zoneData)
+			local nodeCount = 0;
+			for node_idx in zoneData do
+				for index in zoneData[node_idx] do
+					nodeCount = nodeCount + 1;
+				end
+			end
+			-- assign values
+			for node_idx in zoneData do
+				local skip_node = -1;
+				if ( string.find(node_idx, search_item, 1, true) ) then
+					local amount = 0;
+					for index in zoneData[node_idx] do
+						if ( skip_node == -1 ) then
+							local locIcon, locGtype;
+
+							-- check gather type
+							locGtype = zoneData[node_idx][index].gtype;
+							if ( type(locGtype) == "string" ) then
+								locGtype = Gather_DB_TypeIndex[locGtype];
+							end
+							locIcon = zoneData[node_idx][index].icon;
+							if ( (type(locIcon) == "string" and locIcon == search_item) or
+								 (type(locIcon) == "number" and locIcon == Gather_DB_IconIndex[locGtype][item_to_search] )) then
+								skip_node=0
+								amount = amount + 1;
+							else
+								skip_node=1
+							end
+						elseif ( skip_node == 0 ) then
+							amount = amount + 1;
+						else
+							break;
+						end
+					end
+
+					if ( skip_node ~= 1 ) then
+						local found=0;
+						local findex;
+						for findex in GITT do
+							if ( GITT[findex].zoneName and GathererInfoZones[gi_cont][gi_zone].zone and
+								 GITT[findex].zoneName == GathererInfoZones[gi_cont][gi_zone].zone ) then
+								found = findex;
 							end
 						end
-						-- assign values
-						for node_idx in GatherItems[gi_cont][gi_zone] do
-							local skip_node = -1;
-							if ( string.find(node_idx, search_item, 1, true) ) then
-								local amount = 0;
-								for index in GatherItems[gi_cont][gi_zone][node_idx] do
-									if ( skip_node == -1 ) then
-										local locIcon, locGtype;
+									
+						if ( found == 0 ) then
+							GITT[i] = {};
+							GITT[i].contName = GathererInfoContinents[gi_cont];
+							GITT[i].zoneName = GathererInfoZones[gi_cont][gi_zone].zone;
+							GITT[i].typePercent  = tonumber(format("%.1f",( amount / nodeCount ) * 100));
+							GITT[i].densityPercent  = tonumber(format("%.1f",( amount / GI_totalCount ) * 100));
 
-										-- check gather type
-										locGtype = GatherItems[gi_cont][gi_zone][node_idx][index].gtype;
-										if ( type(locGtype) == "string" ) then
-											locGtype = Gather_DB_TypeIndex[locGtype];
-										end
-										locIcon = GatherItems[gi_cont][gi_zone][node_idx][index].icon;
-										if ( (type(locIcon) == "string" and locIcon == search_item) or
-											 (type(locIcon) == "number" and locIcon == Gather_DB_IconIndex[locGtype][item_to_search] )) then
-											skip_node=0
-											amount = amount + 1;
-										else
-											skip_node=1
-										end
-									elseif ( skip_node == 0 ) then
-										amount = amount + 1;
-									else
-										break;
-									end
-								end
+							-- divide by zero check
+							if ( GITT[i].typePercent == nil ) then GITT[i].typePercent = 0; end
+							if ( GITT[i].densityPercent == nil ) then GITT[i].densityPercent = 0; end
 
-								if ( skip_node ~= 1 ) then
-									local found=0;
-									local findex;
-									for findex in GITT do
-										if ( GITT[findex].zoneName and GathererInfoZones[gi_cont][gi_zone].zone and
-											 GITT[findex].zoneName == GathererInfoZones[gi_cont][gi_zone].zone ) then
-											found = findex;
-										end
-									end
-												
-									if ( found == 0 ) then
-										GITT[i] = {};
-										GITT[i].contName = GathererInfoContinents[gi_cont];
-										GITT[i].zoneName = GathererInfoZones[gi_cont][gi_zone].zone;
-										GITT[i].typePercent  = tonumber(format("%.1f",( amount / nodeCount ) * 100));
-										GITT[i].densityPercent  = tonumber(format("%.1f",( amount / GI_totalCount ) * 100));
+							GITT[i].amount   = tonumber(amount);
+							GITT[i].nodeCount = nodeCount;
+							GITT[i].gi = gatherInfoOffset + i;
+							i = i + 1;
+						else
+							GITT[found].amount = GITT[found].amount + tonumber(amount);
+							GITT[found].typePercent = tonumber(format("%.1f",( GITT[found].amount / GITT[found].nodeCount ) * 100));
+							GITT[found].densityPercent = tonumber(format("%.1f",( GITT[found].amount / GI_totalCount ) * 100));
 
-										-- divide by zero check
-										if ( GITT[i].typePercent == nil ) then GITT[i].typePercent = 0; end
-										if ( GITT[i].densityPercent == nil ) then GITT[i].densityPercent = 0; end
+							-- divide by zero check
+							if ( GITT[found].typePercent == nil ) then GITT[found].typePercent = 0; end
+							if ( GITT[found].densityPercent == nil ) then GITT[found].densityPercent = 0; end
 
-										GITT[i].amount   = tonumber(amount);
-										GITT[i].nodeCount = nodeCount;
-										GITT[i].gi = gatherInfoOffset + i;
-										i = i + 1;
-									else
-										GITT[found].amount = GITT[found].amount + tonumber(amount);
-										GITT[found].typePercent = tonumber(format("%.1f",( GITT[found].amount / GITT[found].nodeCount ) * 100));
-										GITT[found].densityPercent = tonumber(format("%.1f",( GITT[found].amount / GI_totalCount ) * 100));
-
-										-- divide by zero check
-										if ( GITT[found].typePercent == nil ) then GITT[found].typePercent = 0; end
-										if ( GITT[found].densityPercent == nil ) then GITT[found].densityPercent = 0; end
-
-										found = 0;
-									end
-								end
-							end
+							found = 0;
 						end
 					end
 				end
 			end
-		end
+		end);
 		local lastGITTindex = i - 1;
 		SortGathererInfo(GathererInfo_LastSearchSortType, false, "Search");
 		GathererInfo_Searchtotalcount:SetText(string.gsub(string.gsub(GATHERER_SEARCH_SUMMARY, "#", GI_totalCount), "&", lastGITTindex));
