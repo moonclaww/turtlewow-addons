@@ -2,13 +2,14 @@
 """
 pfQuest-turtle to Questie Database Converter
 
-Fetches TurtleWoW quest data from pfQuest-turtle repository and populates
-the existing Questie turtle database placeholder files.
+Generates TurtleWoW overlay data from pfQuest-turtle and writes the
+ID-based overlay files consumed by Questie at runtime.
 
 Now includes:
 - Monster/NPC locations
-- Object locations  
-- Quest data (QuestieLevLookup, QuestieHashMap)
+- Object locations
+- Item sources including drops, containers, and vendors
+- Quest data including starters, finishers, objectives, prerequisites, and skill requirements
 
 References infrastructure from: questie_zhcn_turtlewow_support_d56142ec.plan.md
 
@@ -16,16 +17,17 @@ Usage:
     python convert_pfquest_turtle.py
 
 Output:
-    Populates existing files:
-    - Database/turtle/init.lua      (enUS TurtleWoW data)
-    - Database/turtle_zhCN/init.lua (zhCN TurtleWoW data)
+    Writes:
+    - Database/turtle/data/units.lua
+    - Database/turtle/data/objects.lua
+    - Database/turtle/data/items.lua
+    - Database/turtle/data/quests.lua
+    - Database/turtle/locale/enUS/names.lua
+    - Database/turtle/locale/zhCN/names.lua
 """
 
-import os
 import re
 import sys
-import urllib.request
-import urllib.error
 from pathlib import Path
 from datetime import datetime
 
@@ -34,11 +36,9 @@ SCRIPT_DIR = Path(__file__).parent
 QUESTIE_DIR = SCRIPT_DIR.parent
 DATABASE_DIR = QUESTIE_DIR / "Database"
 TURTLE_DIR = DATABASE_DIR / "turtle"
-TURTLE_ZHCN_DIR = DATABASE_DIR / "turtle_zhCN"
 
 # Local data directories
 PFQUEST_TURTLE_DIR = SCRIPT_DIR / "pfQuest-turtle" / "db"
-PFQUEST_VANILLA_DIR = SCRIPT_DIR / "pfQuest" / "db"
 
 # AreaTable ID (pfQuest) → mapID (Questie) conversion table
 # pfQuest uses WoW's AreaTable zone IDs in coordinates, but Questie uses its own mapID system
@@ -240,23 +240,6 @@ CANONICAL_TURTLE_MAPIDS = {
 unmapped_zones = set()
 
 
-def fetch_url(url: str) -> str:
-    """Fetch content from URL, return empty string on failure."""
-    print(f"  Fetching: {url}")
-    try:
-        with urllib.request.urlopen(url, timeout=60) as response:
-            return response.read().decode('utf-8')
-    except urllib.error.HTTPError as e:
-        print(f"    HTTP Error {e.code}")
-        return ""
-    except urllib.error.URLError as e:
-        print(f"    URL Error: {e.reason}")
-        return ""
-    except Exception as e:
-        print(f"    Error: {e}")
-        return ""
-
-
 def adler32_hash(text: str) -> int:
     """Compute Adler-32 hash (same algorithm as Questie:HashString)."""
     a, b = 1, 0
@@ -375,12 +358,34 @@ def parse_name_table(content: str, table_pattern: str) -> dict:
         name = match.group(2)
         if name and name != "*" and name != "_":
             result[id_val] = name
-    
+
     return result
 
 
+def extract_named_table(entry_content: str, key: str) -> str | None:
+    """Extract the raw contents of a keyed Lua table using balanced braces."""
+    key_match = re.search(rf'\["{re.escape(key)}"\]\s*=\s*\{{', entry_content)
+    if not key_match:
+        return None
+
+    brace_start = key_match.end() - 1
+    depth = 1
+    pos = brace_start + 1
+    while pos < len(entry_content) and depth > 0:
+        if entry_content[pos] == '{':
+            depth += 1
+        elif entry_content[pos] == '}':
+            depth -= 1
+        pos += 1
+
+    if depth != 0:
+        return None
+
+    return entry_content[brace_start + 1:pos - 1]
+
+
 def parse_items_data_table(content: str) -> dict:
-    """Parse pfQuest items data table. Format: [item_id] = { ["U"] = {unit_id=rate}, ["O"] = {obj_id=rate} }"""
+    """Parse pfQuest items data table."""
     result = {}
     
     table_pattern = 'pfDB["items"]["data-turtle"]'
@@ -450,7 +455,17 @@ def parse_items_data_table(content: str) -> dict:
                 objects[obj_id] = rate
             if objects:
                 entry["O"] = objects
-        
+
+        # Parse ["V"] = { [vendor_id] = price, ... } (vendors that sell item)
+        v_match = re.search(r'\["V"\]\s*=\s*\{([^}]*)\}', entry_content)
+        if v_match:
+            vendors = {}
+            for vendor_match in re.finditer(r'\[(\d+)\]\s*=\s*([\d.]+)', v_match.group(1)):
+                vendor_id = int(vendor_match.group(1))
+                vendors[vendor_id] = 1
+            if vendors:
+                entry["V"] = vendors
+
         if entry:
             result[item_id] = entry
     
@@ -527,11 +542,15 @@ def parse_quest_data(content: str) -> dict:
         class_match = re.search(r'\["class"\]\s*=\s*(\d+)', entry_content)
         if class_match:
             quest["class"] = int(class_match.group(1))
+
+        # Parse profession / skill requirement
+        skill_match = re.search(r'\["skill"\]\s*=\s*(\d+)', entry_content)
+        if skill_match:
+            quest["skill"] = int(skill_match.group(1))
         
         # Parse start (quest giver)
-        start_match = re.search(r'\["start"\]\s*=\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}', entry_content)
-        if start_match:
-            start_content = start_match.group(1)
+        start_content = extract_named_table(entry_content, "start")
+        if start_content:
             quest["start"] = {}
             # Unit starter
             u_match = re.search(r'\["U"\]\s*=\s*\{\s*(\d+)', start_content)
@@ -547,9 +566,8 @@ def parse_quest_data(content: str) -> dict:
                 quest["start"]["O"] = int(o_match.group(1))
         
         # Parse end (quest turn-in)
-        end_match = re.search(r'\["end"\]\s*=\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}', entry_content)
-        if end_match:
-            end_content = end_match.group(1)
+        end_content = extract_named_table(entry_content, "end")
+        if end_content:
             quest["end"] = {}
             u_match = re.search(r'\["U"\]\s*=\s*\{\s*(\d+)', end_content)
             if u_match:
@@ -557,7 +575,36 @@ def parse_quest_data(content: str) -> dict:
             o_match = re.search(r'\["O"\]\s*=\s*\{\s*(\d+)', end_content)
             if o_match:
                 quest["end"]["O"] = int(o_match.group(1))
-        
+
+        # Parse objectives
+        obj_content = extract_named_table(entry_content, "obj")
+        if obj_content:
+            quest["obj"] = {}
+            u_match = re.search(r'\["U"\]\s*=\s*\{([^}]*)\}', obj_content)
+            if u_match:
+                units = [int(x) for x in re.findall(r'(\d+)', u_match.group(1))]
+                if units:
+                    quest["obj"]["U"] = units
+            i_match = re.search(r'\["I"\]\s*=\s*\{([^}]*)\}', obj_content)
+            if i_match:
+                items = [int(x) for x in re.findall(r'(\d+)', i_match.group(1))]
+                if items:
+                    quest["obj"]["I"] = items
+            o_match = re.search(r'\["O"\]\s*=\s*\{([^}]*)\}', obj_content)
+            if o_match:
+                objects = [int(x) for x in re.findall(r'(\d+)', o_match.group(1))]
+                if objects:
+                    quest["obj"]["O"] = objects
+            if not quest["obj"]:
+                del quest["obj"]
+
+        # Parse prerequisites
+        pre_match = re.search(r'\["pre"\]\s*=\s*\{([^}]*)\}', entry_content)
+        if pre_match:
+            pre_quests = [int(x) for x in re.findall(r'(\d+)', pre_match.group(1))]
+            if pre_quests:
+                quest["pre"] = pre_quests
+
         if quest:
             result[quest_id] = quest
         
@@ -662,351 +709,6 @@ def race_to_questie_faction(race_bitmask: int) -> int:
     return 0
 
 
-def generate_init_lua(units_data: dict, units_names: dict, 
-                      items_data: dict, items_names: dict,
-                      objects_data: dict, objects_names: dict,
-                      quest_data: dict, quest_locale: dict,
-                      locale: str,
-                      vanilla_units_names: dict = None,
-                      vanilla_objects_names: dict = None) -> str:
-    """Generate the full init.lua content for TurtleWoW database.
-    
-    vanilla_units_names/vanilla_objects_names: Fallback names from vanilla pfQuest
-    for monsters/objects that don't have TurtleWoW coordinates but are referenced
-    by TurtleWoW items. Uses vanilla names to match base Questie database.
-    """
-    vanilla_units_names = vanilla_units_names or {}
-    vanilla_objects_names = vanilla_objects_names or {}
-    
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    
-    if locale == "enUS":
-        lines = [
-            '---------------------------------------------------------------------------------------------------',
-            '-- TurtleWoW Custom Content for Questie (English)',
-            f'-- Auto-generated by convert_pfquest_turtle.py on {timestamp}',
-            '-- Source: https://github.com/shagu/pfQuest-turtle',
-            '---------------------------------------------------------------------------------------------------',
-            '-- Guard: Only load on TurtleWoW servers with English locale',
-            'if not QuestieIsTurtleWoW then return end',
-            'if GetLocale() ~= "enUS" then return end',
-            '',
-        ]
-    else:
-        lines = [
-            '---------------------------------------------------------------------------------------------------',
-            '-- TurtleWoW Custom Content for Questie (Simplified Chinese)',
-            '-- 乌龟服自定义内容 - 简体中文',
-            f'-- Auto-generated by convert_pfquest_turtle.py on {timestamp}',
-            '-- Source: https://github.com/shagu/pfQuest-turtle',
-            '---------------------------------------------------------------------------------------------------',
-            '-- Guard: Only load on TurtleWoW servers with Chinese locale',
-            'if not QuestieIsTurtleWoW then return end',
-            'if GetLocale() ~= "zhCN" then return end',
-            '',
-        ]
-    
-    # Generate monsters section
-    monster_count = 0
-    lines.append('---------------------------------------------------------------------------------------------------')
-    lines.append('-- TurtleWoW Monster/NPC Data')
-    lines.append('---------------------------------------------------------------------------------------------------')
-    
-    for unit_id, unit_data in sorted(units_data.items()):
-        name = units_names.get(unit_id)
-        if not name:
-            continue
-        
-        coords = unit_data.get("coords", [])
-        if not coords:
-            continue
-        
-        faction = convert_faction(unit_data.get("fac", ""))
-        
-        locations = []
-        for x, y, zone in coords:
-            qx = x / 100.0
-            qy = y / 100.0
-            
-            # Convert AreaTable ID to Questie format
-            if zone in AREATABLE_TO_MAPID:
-                # Vanilla zone: use old format {mapID, x, y, 100.0}
-                map_id = AREATABLE_TO_MAPID[zone]
-                locations.append(('old', map_id, qx, qy))
-            elif zone in CANONICAL_TURTLE_MAPIDS:
-                map_id = CANONICAL_TURTLE_MAPIDS[zone]
-                locations.append(('old', map_id, qx, qy))
-            elif zone in TURTLEWOW_ZONES:
-                # TurtleWoW zone: use new format {continent, turtleZone, x, y}
-                continent, turtle_zone = TURTLEWOW_ZONES[zone]
-                locations.append(('new', continent, turtle_zone, qx, qy))
-            else:
-                # Unknown zone - track for warning, skip this location
-                unmapped_zones.add(zone)
-                continue
-        
-        if locations:
-            monster_count += 1
-            escaped_name = name.replace('\\', '\\\\').replace('"', '\\"')
-            lines.append(f'if not QuestieMonsters["{escaped_name}"] then')
-            lines.append(f'  QuestieMonsters["{escaped_name}"] = {{')
-            lines.append('    ["locations"] = {')
-            for i, loc in enumerate(locations[:50], 1):
-                if loc[0] == 'old':
-                    # Old format: {mapID, x, y, 100.0}
-                    _, map_id, x, y = loc
-                    lines.append(f'      [{i}] = {{{map_id}, {x:.4f}, {y:.4f}, 100.0}},')
-                else:
-                    # New format: {continent, turtleZone, x, y}
-                    _, continent, turtle_zone, x, y = loc
-                    lines.append(f'      [{i}] = {{{continent}, {turtle_zone}, {x:.4f}, {y:.4f}}},')
-            lines.append('    },')
-            lines.append(f'    ["locationCount"] = {min(len(locations), 50)},')
-            if faction:
-                lines.append(f'    ["faction"] = {faction},')
-            lines.append('  }')
-            lines.append('end')
-    
-    lines.append('')
-    
-    # Generate objects section
-    object_count = 0
-    lines.append('---------------------------------------------------------------------------------------------------')
-    lines.append('-- TurtleWoW World Object Data')
-    lines.append('---------------------------------------------------------------------------------------------------')
-    
-    for obj_id, obj_data in sorted(objects_data.items()):
-        name = objects_names.get(obj_id)
-        if not name:
-            continue
-        
-        coords = obj_data.get("coords", [])
-        if not coords:
-            continue
-        
-        locations = []
-        for x, y, zone in coords:
-            qx = x / 100.0
-            qy = y / 100.0
-            
-            # Convert AreaTable ID to Questie format
-            if zone in AREATABLE_TO_MAPID:
-                # Vanilla zone: use old format {mapID, x, y, 100.0}
-                map_id = AREATABLE_TO_MAPID[zone]
-                locations.append(('old', map_id, qx, qy))
-            elif zone in CANONICAL_TURTLE_MAPIDS:
-                map_id = CANONICAL_TURTLE_MAPIDS[zone]
-                locations.append(('old', map_id, qx, qy))
-            elif zone in TURTLEWOW_ZONES:
-                # TurtleWoW zone: use new format {continent, turtleZone, x, y}
-                continent, turtle_zone = TURTLEWOW_ZONES[zone]
-                locations.append(('new', continent, turtle_zone, qx, qy))
-            else:
-                # Unknown zone - track for warning, skip this location
-                unmapped_zones.add(zone)
-                continue
-        
-        if locations:
-            object_count += 1
-            escaped_name = name.replace('\\', '\\\\').replace('"', '\\"')
-            lines.append(f'if not QuestieObjects["{escaped_name}"] then')
-            lines.append(f'  QuestieObjects["{escaped_name}"] = {{')
-            lines.append('    locations = {')
-            for i, loc in enumerate(locations[:50], 1):
-                if loc[0] == 'old':
-                    # Old format: {mapID, x, y, 100.0}
-                    _, map_id, x, y = loc
-                    lines.append(f'      [{i}] = {{{map_id}, {x:.4f}, {y:.4f}, 100.0}},')
-                else:
-                    # New format: {continent, turtleZone, x, y}
-                    _, continent, turtle_zone, x, y = loc
-                    lines.append(f'      [{i}] = {{{continent}, {turtle_zone}, {x:.4f}, {y:.4f}}},')
-            lines.append('    },')
-            lines.append(f'    locationCount = {min(len(locations), 50)},')
-            lines.append('  }')
-            lines.append('end')
-    
-    lines.append('')
-    
-    # Generate items section (QuestieItems)
-    item_count = 0
-    lines.append('---------------------------------------------------------------------------------------------------')
-    lines.append('-- TurtleWoW Item Data')
-    lines.append('---------------------------------------------------------------------------------------------------')
-    lines.append('-- Initialize table if not already defined')
-    lines.append('QuestieItems = QuestieItems or {}')
-    lines.append('')
-    
-    for item_id, item_data in sorted(items_data.items()):
-        item_name = items_names.get(item_id)
-        if not item_name:
-            continue
-        
-        # Build the item entry with drop/contained sources
-        has_sources = False
-        drop_sources = {}
-        contained_sources = {}
-        
-        # Process units that drop this item -> drop = { ["monster_name"] = rate }
-        # For vanilla monsters (no TurtleWoW coords), use vanilla pfQuest names to match base Questie
-        if "U" in item_data:
-            for unit_id, rate in item_data["U"].items():
-                # If unit has TurtleWoW coords, use TurtleWoW name (we generate QuestieMonsters for it)
-                # Otherwise, use vanilla pfQuest name (to match base Questie QuestieMonsters)
-                if unit_id in units_data:
-                    unit_name = units_names.get(unit_id)
-                else:
-                    unit_name = vanilla_units_names.get(unit_id)
-                if unit_name:
-                    drop_sources[unit_name] = int(rate) if rate == int(rate) else rate
-                    has_sources = True
-        
-        # Process objects that contain this item -> contained = { ["object_name"] = rate }
-        # Same logic: use vanilla names for vanilla objects
-        if "O" in item_data:
-            for obj_id, rate in item_data["O"].items():
-                if obj_id in objects_data:
-                    obj_name = objects_names.get(obj_id)
-                else:
-                    obj_name = vanilla_objects_names.get(obj_id)
-                if obj_name:
-                    contained_sources[obj_name] = int(rate) if rate == int(rate) else rate
-                    has_sources = True
-        
-        if has_sources:
-            item_count += 1
-            escaped_name = item_name.replace('\\', '\\\\').replace('"', '\\"')
-            lines.append(f'if not QuestieItems["{escaped_name}"] then')
-            lines.append(f'  QuestieItems["{escaped_name}"] = {{')
-            
-            if drop_sources:
-                lines.append('    drop = {')
-                for source_name, rate in sorted(drop_sources.items()):
-                    escaped_source = source_name.replace('\\', '\\\\').replace('"', '\\"')
-                    lines.append(f'      ["{escaped_source}"] = {rate},')
-                lines.append('    },')
-            
-            if contained_sources:
-                lines.append('    contained = {')
-                for source_name, rate in sorted(contained_sources.items()):
-                    escaped_source = source_name.replace('\\', '\\\\').replace('"', '\\"')
-                    lines.append(f'      ["{escaped_source}"] = {rate},')
-                lines.append('    },')
-            
-            lines.append('  }')
-            lines.append('end')
-    
-    lines.append('')
-    
-    # Generate quest data (QuestieLevLookup and QuestieHashMap)
-    quest_count = 0
-    lines.append('---------------------------------------------------------------------------------------------------')
-    lines.append('-- TurtleWoW Quest Data (QuestieLevLookup)')
-    lines.append('---------------------------------------------------------------------------------------------------')
-    lines.append('-- Initialize tables if not already defined (for loading order safety)')
-    lines.append('QuestieLevLookup = QuestieLevLookup or {}')
-    lines.append('QuestieHashMap = QuestieHashMap or {}')
-    lines.append('')
-    
-    lev_lookup_entries = []
-    hash_map_entries = []
-    
-    for quest_id, quest_info in sorted(quest_data.items()):
-        locale_info = quest_locale.get(quest_id)
-        if not locale_info:
-            continue
-        
-        title = locale_info.get("T", "")
-        objectives = locale_info.get("O", "")
-        
-        if not title:
-            continue
-        
-        # Compute hash
-        quest_hash = adler32_hash(title + objectives)
-        
-        # Get quest giver name
-        started_by = "unknown"
-        started_type = "monster"
-        if "start" in quest_info:
-            if "U" in quest_info["start"]:
-                unit_id = quest_info["start"]["U"]
-                started_by = units_names.get(unit_id, f"Unit_{unit_id}")
-                started_type = "monster"
-            elif "I" in quest_info["start"]:
-                item_id = quest_info["start"]["I"]
-                started_by = items_names.get(item_id, f"Item_{item_id}")
-                started_type = "item"
-            elif "O" in quest_info["start"]:
-                obj_id = quest_info["start"]["O"]
-                started_by = objects_names.get(obj_id, f"Object_{obj_id}")
-                started_type = "object"
-        
-        # Get turn-in NPC name
-        finished_by = "unknown"
-        finished_type = "monster"
-        if "end" in quest_info:
-            if "U" in quest_info["end"]:
-                unit_id = quest_info["end"]["U"]
-                finished_by = units_names.get(unit_id, f"Unit_{unit_id}")
-                finished_type = "monster"
-            elif "O" in quest_info["end"]:
-                obj_id = quest_info["end"]["O"]
-                finished_by = objects_names.get(obj_id, f"Object_{obj_id}")
-                finished_type = "object"
-        
-        level = quest_info.get("min", 1)
-        quest_level = quest_info.get("lvl", 1)
-        race = quest_info.get("race", 0)
-        faction = race_to_questie_faction(race) if race else 0
-        
-        # Escape strings
-        esc_title = title.replace('\\', '\\\\').replace('"', '\\"').replace("'", "\\'")
-        esc_obj = objectives.replace('\\', '\\\\').replace('"', '\\"').replace("'", "\\'")
-        esc_started = started_by.replace('\\', '\\\\').replace('"', '\\"').replace("'", "\\'")
-        esc_finished = finished_by.replace('\\', '\\\\').replace('"', '\\"').replace("'", "\\'")
-        
-        # QuestieLevLookup entry
-        lev_lookup_entries.append(f'if not QuestieLevLookup["{esc_title}"] then QuestieLevLookup["{esc_title}"] = {{}} end')
-        lev_lookup_entries.append(f'if not QuestieLevLookup["{esc_title}"]["{esc_obj}"] then QuestieLevLookup["{esc_title}"]["{esc_obj}"] = {{{faction}, {quest_hash}}} end')
-        
-        # QuestieHashMap entry
-        hash_map_entries.append(f'if not QuestieHashMap[{quest_hash}] then')
-        hash_map_entries.append(f'  QuestieHashMap[{quest_hash}] = {{')
-        hash_map_entries.append(f"    ['name'] = \"{esc_title}\",")
-        hash_map_entries.append(f"    ['startedType'] = \"{started_type}\",")
-        hash_map_entries.append(f"    ['finishedType'] = \"{finished_type}\",")
-        hash_map_entries.append(f"    ['startedBy'] = \"{esc_started}\",")
-        hash_map_entries.append(f"    ['finishedBy'] = \"{esc_finished}\",")
-        hash_map_entries.append(f"    ['level'] = {level},")
-        hash_map_entries.append(f"    ['questLevel'] = '{quest_level}',")
-        hash_map_entries.append(f"    ['rr'] = {faction},")
-        hash_map_entries.append(f"    ['rc'] = 0,")
-        hash_map_entries.append('  }')
-        hash_map_entries.append('end')
-        
-        quest_count += 1
-    
-    lines.extend(lev_lookup_entries)
-    lines.append('')
-    lines.append('---------------------------------------------------------------------------------------------------')
-    lines.append('-- TurtleWoW Quest Data (QuestieHashMap)')
-    lines.append('---------------------------------------------------------------------------------------------------')
-    lines.extend(hash_map_entries)
-    
-    lines.append('')
-    lines.append('---------------------------------------------------------------------------------------------------')
-    lines.append(f'-- Summary: {monster_count} monsters, {object_count} objects, {quest_count} quests')
-    if locale == "enUS":
-        lines.append('-- TurtleWoW enUS database loaded successfully')
-    else:
-        lines.append('-- TurtleWoW zhCN database loaded successfully')
-    lines.append('---------------------------------------------------------------------------------------------------')
-    
-    return '\n'.join(lines)
-
-
-# ============================================================================
 # NEW ID-BASED GENERATION FUNCTIONS
 # ============================================================================
 
@@ -1144,8 +846,9 @@ def generate_turtle_items_data(items_data: dict) -> str:
         
         drop_units = list(data.get("U", {}).keys())
         contained_objects = list(data.get("O", {}).keys())
+        vendor_units = list(data.get("V", {}).keys())
         
-        if not drop_units and not contained_objects:
+        if not drop_units and not contained_objects and not vendor_units:
             continue
         
         lines.append(f'  [{item_id}] = {{')
@@ -1157,6 +860,10 @@ def generate_turtle_items_data(items_data: dict) -> str:
         if contained_objects:
             objs_str = ', '.join(str(o) for o in sorted(contained_objects))
             lines.append(f'    containedObjects = {{{objs_str}}},')
+
+        if vendor_units:
+            vendors_str = ', '.join(str(v) for v in sorted(vendor_units))
+            lines.append(f'    vendorUnits = {{{vendors_str}}},')
         
         lines.append('  },')
     
@@ -1189,6 +896,8 @@ def generate_turtle_quests_data(quest_data: dict) -> str:
             lines.append(f'    race = {data["race"]},')
         if "class" in data:
             lines.append(f'    class = {data["class"]},')
+        if "skill" in data:
+            lines.append(f'    skill = {data["skill"]},')
         
         if "start" in data:
             if "U" in data["start"]:
@@ -1203,6 +912,21 @@ def generate_turtle_quests_data(quest_data: dict) -> str:
                 lines.append(f'    endUnit = {data["end"]["U"]},')
             if "O" in data["end"]:
                 lines.append(f'    endObject = {data["end"]["O"]},')
+
+        if "obj" in data:
+            if "U" in data["obj"]:
+                units_str = ', '.join(str(u) for u in data["obj"]["U"])
+                lines.append(f'    objectiveUnits = {{{units_str}}},')
+            if "I" in data["obj"]:
+                items_str = ', '.join(str(i) for i in data["obj"]["I"])
+                lines.append(f'    objectiveItems = {{{items_str}}},')
+            if "O" in data["obj"]:
+                objs_str = ', '.join(str(o) for o in data["obj"]["O"])
+                lines.append(f'    objectiveObjects = {{{objs_str}}},')
+
+        if "pre" in data:
+            pre_str = ', '.join(str(p) for p in data["pre"])
+            lines.append(f'    preQuests = {{{pre_str}}},')
         
         lines.append('  },')
     
@@ -1384,7 +1108,7 @@ def validate_turtle_structured_quest_db(quest_data: dict, units_data: dict, obje
 def main():
     print("=" * 70)
     print("pfQuest-turtle to Questie Database Converter")
-    print("Multi-source synthesis with QUEST DATA support")
+    print("Structured Turtle overlay generation from pfQuest-turtle")
     print("=" * 70)
     
     # Verify existing infrastructure
@@ -1394,12 +1118,7 @@ def main():
         print(f"ERROR: {TURTLE_DIR} does not exist!")
         sys.exit(1)
     
-    if not TURTLE_ZHCN_DIR.exists():
-        print(f"ERROR: {TURTLE_ZHCN_DIR} does not exist!")
-        sys.exit(1)
-    
     print(f"  Found: {TURTLE_DIR}")
-    print(f"  Found: {TURTLE_ZHCN_DIR}")
     
     # =========================================================================
     # PHASE 1: Load all data from local files
@@ -1451,11 +1170,6 @@ def main():
     objects_zh_nt = ""
     quests_zh_nt = ""
     
-    # Vanilla pfQuest Chinese names (for vanilla monsters referenced by TurtleWoW items)
-    print("\n  Loading vanilla pfQuest Chinese locale...")
-    vanilla_units_zh_content = read_local_file(PFQUEST_VANILLA_DIR / "zhCN" / "units.lua")
-    vanilla_objects_zh_content = read_local_file(PFQUEST_VANILLA_DIR / "zhCN" / "objects.lua")
-    
     # =========================================================================
     # PHASE 2: Parse data
     # =========================================================================
@@ -1503,12 +1217,6 @@ def main():
     print(f"    NineTears added: +{nt_added} entries")
     print(f"    Final zhCN - Units: {len(units_names_zh)}, Items: {len(items_names_zh)}, Objects: {len(objects_names_zh)}, Quests: {len(quests_locale_zh)}")
     
-    # Parse vanilla pfQuest Chinese names (for fallback when TurtleWoW items reference vanilla monsters)
-    print("\n  Parsing vanilla pfQuest Chinese names...")
-    vanilla_units_names_zh = parse_name_table(vanilla_units_zh_content, 'pfDB["units"]["zhCN"]')
-    vanilla_objects_names_zh = parse_name_table(vanilla_objects_zh_content, 'pfDB["objects"]["zhCN"]')
-    print(f"    Vanilla zhCN - Units: {len(vanilla_units_names_zh)}, Objects: {len(vanilla_objects_names_zh)}")
-
     validate_turtle_structured_quest_db(quest_data, units_data, objects_data, items_data)
     
     # =========================================================================
@@ -1574,8 +1282,9 @@ def main():
     print(f"\nNow includes:")
     print(f"  - Monster/NPC locations (ID-based)")
     print(f"  - World object locations (ID-based)")
-    print(f"  - Quest data (ID-based)")
-    print(f"\nQuestieHashMap and QuestieLevLookup are built at runtime from ID-based data.")
+    print(f"  - Item sources including vendors (ID-based)")
+    print(f"  - Quest starters, finishers, objectives, prerequisites, and skill requirements")
+    print(f"\nQuestie questId metadata is built at runtime from these ID-based overlay tables.")
     
     # Report unmapped zones
     if unmapped_zones:

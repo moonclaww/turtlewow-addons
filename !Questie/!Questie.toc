@@ -6,7 +6,7 @@
 ## RequiredDeps:
 ## OptionalDeps: Cartographer, MetaMap, EQL3, ShaguQuest
 ## SavedVariables:
-## SavedVariablesPerCharacter: QuestieSeenQuests, QuestieCachedQuests, QuestieConfig, QuestieTrackerVariables, QuestieMinimapPosition
+## SavedVariablesPerCharacter: QuestieQuestStatusById, QuestieQuestRuntimeById, QuestieConfig, QuestieTrackerVariables, QuestieMinimapPosition
 
 # Astrolabe
 Libs\AceLibrary\AceLibrary.lua
@@ -55,6 +55,7 @@ Database\turtle\locale\zhCN\names.lua
 # Addendum files (must load last - merges data and builds lookups)
 Database\addendum.lua
 Database\zhCN\addendum.lua
+Database\bootstrap.lua
 
 # Questie
 Questie.lua

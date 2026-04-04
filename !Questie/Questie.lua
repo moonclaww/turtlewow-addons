@@ -22,8 +22,8 @@ local MapRegistry = AceLibrary("MapRegistry-1.0")
 --Setup Default Profile
 ---------------------------------------------------------------------------------------------------
 function Questie:SetupDefaults()
-    if not QuestieSeenQuests then QuestieSeenQuests = {}; end
-    if not QuestieCachedQuests then QuestieCachedQuests = {}; end
+    if not QuestieQuestStatusById then QuestieQuestStatusById = {}; end
+    if not QuestieQuestRuntimeById then QuestieQuestRuntimeById = {}; end
     if not QuestieConfig then QuestieConfig = {
         ["alwaysShowObjectives"] = true,
         ["arrowEnabled"] = true,
@@ -157,15 +157,15 @@ function Questie:CheckDefaults()
         Questie:ClearConfig("version");
     end
     --Setups default QuestDB's for fresh characters
-    if QuestieCachedQuests == nil then
-        QuestieCachedQuests = {};
+    if QuestieQuestRuntimeById == nil then
+        QuestieQuestRuntimeById = {};
     end
     --If the user deletes a character and makes a new one by the same name then it will continue to use
     --the same Saved Variables file. This check will delete the Questie Saved Variables file to prevent
     --any quest issues for the new character
     if UnitLevel("player") == 1 then
         local i = 0;
-        for _,_ in pairs(QuestieSeenQuests) do
+        for _,_ in pairs(QuestieQuestStatusById) do
             if (i < 3) then
                 i = i + 1;
             else
@@ -344,7 +344,11 @@ function Questie:OnUpdate(elapsed)
         --runs.
         if (UnitIsDead("player") ~= 1) and (bgactive == false) then
             if DiedAtX and DiedAtY and DiedAtX ~= 0 and DiedAtY ~= 0 then --<--set globally by PLAYER_DEAD event
-                local ddist, xDelta, yDelta = Astrolabe:ComputeDistance(DiedInMapId, DiedAtX, DiedAtY, GetCurrentMapID(), xNote, yNote)
+                local ddist = 0
+                local playerMapId, playerX, playerY = Astrolabe:GetCurrentPlayerPosition();
+                if playerMapId and playerX and playerY then
+                    ddist = Astrolabe:ComputeDistance(playerMapId, playerX, playerY, DiedInMapId, DiedAtX, DiedAtY) or 0;
+                end
                 local dtitle = "My Dead Corpse"
                 local dpoint = {mapId = DiedInMapId, x = DiedAtX, y = DiedAtY}
                 SetCrazyArrow(dpoint, ddist, dtitle) --<--sets corpseArrow
@@ -509,9 +513,11 @@ function Questie:Toggle()
         QuestieMapNotes = {};
         QuestieAvailableMapNotes = {};
         Questie:CLEAR_ALL_NOTES();
-        LastQuestLogHashes = nil;
+        QuestieObjectiveSnapshotsByQuestId = nil;
+        QUESTIE_UPDATE_EVENT = 1;
     else
-        LastQuestLogHashes = nil;
+        QuestieObjectiveSnapshotsByQuestId = nil;
+        QUESTIE_UPDATE_EVENT = 1;
         IsQuestieActive = true;
         QuestieConfig.showMapNotes = true;
         Questie:UpdateGameClientCache(true)
@@ -531,11 +537,11 @@ function Questie:Toggle_Position()
     end
 end
 ---------------------------------------------------------------------------------------------------
--- QuestieSeenQuests flags to denote quest status in all cache and saved variable checks.
+-- QuestieQuestStatusById flags denote quest status in all cache and saved variable checks.
 --    1 : Quest Complete
 --    0 : Found in QuestLog
 --   -1 : Abandoned Quest
--- Example: QuestieSeenQuests[hash] = flag
+-- Example: QuestieQuestStatusById[questId] = flag
 ---------------------------------------------------------------------------------------------------
 --Cleans and resets the users Questie SavedVariables. Will also perform some quest and quest
 --tracker database clean up to purge stale/invalid entries. More notes below. Popup confirmation
@@ -558,14 +564,8 @@ function Questie:ClearConfig(arg)
             QuestieTrackerVariables = nil;
             --Set default settings
             Questie:SetupDefaults();
-            --Clean QuestieSeenQuests DB
-            for k,v in pairs(QuestieSeenQuests) do
-                if (k == 0) or (k == -1) then
-                    QuestieSeenQuests[k] = nil;
-                end
-            end
-            --Clear QuestieCachedQuests DB
-            QuestieCachedQuests = {};
+            QuestieQuestStatusById = {};
+            QuestieQuestRuntimeById = {};
             Questie:CheckDefaults();
             ReloadUI();
         end,
@@ -592,9 +592,9 @@ function Questie:NUKE(arg)
         button2 = TEXT(NO),
         OnAccept = function()
             --Clears quests DB
-            QuestieSeenQuests = {};
+            QuestieQuestStatusById = {};
             --Clears cached quests DB
-            QuestieCachedQuests = {};
+            QuestieQuestRuntimeById = {};
             --Clears config settings
             QuestieConfig = nil;
             --Clears tracker settings
@@ -1135,36 +1135,33 @@ function SetItemRef(link, text, button)
                 ShowUIPanel(ItemRefTooltip);
                 ItemRefTooltip:SetOwner(UIParent, "ANCHOR_PRESERVE");
                 ItemRefTooltip:AddLine(questTitle);
-                local questHash = Questie:getQuestHash(questTitle);
-                questOb = nil;
-                local questData = QuestieHashMap and QuestieHashMap[questHash];
-                if questData then
-                    local QuestName = questData.name;
-                    local localizedName = Questie:GetLocalizedQuestName(questHash) or QuestName;
-                    if QuestName == questTitle or localizedName == questTitle then
-                        local index = 0;
-                        local questLookup = Questie:SanitisedQuestLookup(QuestName);
-                        if questLookup and type(questLookup) == "table" then
-                            for k,v in pairs(questLookup) do
-                                index = index + 1;
-                                if (index == 1) and (v[2] == questHash) and (k ~= "") then
-                                    questOb = k;
-                                elseif (index > 0) and(v[2] == questHash) and (k ~= "") then
-                                    questOb = k;
-                                elseif (index == 1) and (v[2] ~= questHash) and (k ~= "") then
-                                    questOb = k;
-                                end
-                            end
-                        end
-                        ItemRefTooltip:AddLine(QL("STARTED_BY")..": |cFFa6a6a6"..(questData.startedBy or "Unknown").."|r",1,1,1);
-                        if questOb ~= nil then
-                            ItemRefTooltip:AddLine("|cffffffff"..questOb.."|r",1,1,1,true);
+                local questId = nil;
+                local questCandidates = QuestieGetQuestCandidateIdsByTitleAndObjectives and QuestieGetQuestCandidateIdsByTitleAndObjectives(questTitle) or {}
+                for _, candidateQuestId in ipairs(questCandidates) do
+                    local candidateQuest = QuestieQuestMetaById and QuestieQuestMetaById[candidateQuestId]
+                    local localizedName = candidateQuest and Questie:GetLocalizedQuestName(candidateQuestId) or nil
+                    if candidateQuest and (candidateQuest.name == questTitle or localizedName == questTitle) then
+                        questId = candidateQuestId
+                        break
+                    end
+                end
+                if not questId and questCandidates[1] then
+                    questId = questCandidates[1]
+                end
+
+                local questMeta = questId and QuestieQuestMetaById and QuestieQuestMetaById[questId] or nil
+                if questMeta then
+                    local localizedName = Questie:GetLocalizedQuestName(questId) or questMeta.name
+                    if questMeta.name == questTitle or localizedName == questTitle then
+                        ItemRefTooltip:AddLine(QL("STARTED_BY")..": |cFFa6a6a6"..(questMeta.startDisplayName or "Unknown").."|r",1,1,1);
+                        if questMeta.objectivesText and questMeta.objectivesText ~= "" then
+                            ItemRefTooltip:AddLine("|cffffffff"..questMeta.objectivesText.."|r",1,1,1,true);
                         else
                             ItemRefTooltip:AddLine(QL("QUEST_NOT_FOUND"), 1, .8, .8);
                             ItemRefTooltip:AddLine(QL("BUG_REPORT"), 1, .8, .8);
                             ItemRefTooltip:AddLine("https://github.com/AeroScripts/QuestieDev/issues", 1, .8, .8);
                         end
-                        local questLevelStr = questData.questLevel or "1";
+                        local questLevelStr = questMeta.questLevel or "1";
                         local _, _, questLevel = string.find(questLevelStr, "(%d+)");
                         if questLevel and questLevel ~= 0 and questLevel ~= "0" then
                             local color = GetDifficultyColor(questLevel);
@@ -1181,7 +1178,6 @@ function SetItemRef(link, text, button)
                         ItemRefTooltip:Show();
                     end
                 else
-                    -- Quest hash not found in QuestieHashMap
                     ShowUIPanel(ItemRefTooltip);
                     ItemRefTooltip:SetOwner(UIParent, "ANCHOR_PRESERVE");
                     ItemRefTooltip:AddLine(questTitle, 1,1,0);

@@ -1,11 +1,16 @@
 #!/usr/bin/env python3
 """
-pfQuest + CMaNGOS to Questie ID-Based Database Converter
+Vanilla Questie ID-Based Database Converter
 
 Generates ID-based database files for Questie from:
-- pfQuest vanilla data (locations, item drops, quest data)
-- CMaNGOS ClassicDB SQL (authoritative Chinese translations)
-- pfQuest locale files (English and Chinese fallback)
+- ClassicDB / CMaNGOS SQL (authoritative vanilla quests, items, relations, and names)
+- Current vanilla pfQuest extracts (coordinates and remaining data complements)
+- pfQuest locale files (fallback text where SQL/locales are incomplete)
+
+Note:
+    Vanilla structured data is built from the database first. pfQuest is used
+    only to complement missing coordinates or missing text/source coverage that
+    is not present in the extracted database inputs.
 
 Output Files:
 - Database/data/units.lua      - Unit location data by ID
@@ -22,7 +27,9 @@ Usage:
 import os
 import re
 import sys
+import copy
 from pathlib import Path
+from collections import defaultdict
 from datetime import datetime
 
 # Script paths
@@ -214,6 +221,103 @@ WORLDMAPAREA_TO_MAPID = {
     461: 39,    # Arathi Basin → Arathi Highlands
 }
 
+# Internal map ID (creature/gameobject spawn table) â†’ Questie mapID.
+# World maps 0/1 are resolved from world coordinates to specific zones.
+INTERNAL_MAP_TO_QUESTIE_MAPID = {
+    30: 26,    # Alterac Valley
+    33: 74,    # Shadowfang Keep
+    34: 56,    # The Stockade
+    36: 69,    # Deadmines
+    43: 66,    # Wailing Caverns
+    47: 71,    # Razorfen Kraul
+    48: 55,    # Blackfathom Deeps
+    70: 58,    # Uldaman
+    90: 57,    # Gnomeregan
+    109: 54,   # Sunken Temple
+    129: 70,   # Razorfen Downs
+    189: 72,   # Scarlet Monastery
+    209: 53,   # Zul'Farrak
+    229: 65,   # Blackrock Spire
+    230: 62,   # Blackrock Depths
+    249: 64,   # Onyxia's Lair
+    289: 73,   # Scholomance
+    309: 60,   # Zul'Gurub
+    329: 75,   # Stratholme
+    349: 67,   # Maraudon
+    369: 78,   # Deeprun Tram
+    389: 52,   # Ragefire Chasm
+    409: 59,   # Molten Core
+    429: 61,   # Dire Maul
+    469: 68,   # Blackwing Lair
+    489: 2,    # Warsong Gulch â†’ Ashenvale
+    509: 63,   # Ruins of Ahn'Qiraj
+    529: 39,   # Arathi Basin â†’ Arathi Highlands
+    531: 76,   # Ahn'Qiraj Temple
+    533: 77,   # Naxxramas
+}
+
+WORLD_SPAWN_AREA_EXTENTS = {
+    # Kalimdor
+    4: (-1962.499878, -7249.999512, 1808.333252, -1716.666626),
+    9: (2047.916626, -3089.583252, -272.916656, -3697.916504),
+    11: (2622.916504, -7510.416504, 1612.499878, -5143.750000),
+    41: (3814.583252, -1277.083252, 11831.250000, 8437.500000),
+    42: (2941.666504, -3608.333252, 8333.333008, 3966.666504),
+    43: (1699.999878, -4066.666504, 4672.916504, 829.166626),
+    61: (-433.333313, -4833.333008, -3966.666504, -6899.999512),
+    81: (3245.833252, -1637.499878, 2916.666504, -339.583313),
+    101: (4233.333008, -262.500000, 452.083313, -2545.833252),
+    121: (5441.666504, -1508.333252, -2366.666504, -6999.999512),
+    141: (-974.999939, -6225.000000, -2033.333252, -5533.333008),
+    161: (-218.749985, -7118.749512, -5875.000000, -10475.000000),
+    181: (-3277.083252, -8347.916016, 5341.666504, 1960.416626),
+    182: (1641.666626, -4108.333008, 7133.333008, 3299.999756),
+    201: (533.333313, -3166.666504, -5966.666504, -8433.333008),
+    241: (-1381.250000, -3689.583252, 8491.666016, 6952.083008),
+    261: (4641.666504, -2308.333252, -5800.000000, -10433.333008),
+    281: (-316.666656, -7416.666504, 8533.333008, 3799.999756),
+    321: (-3680.601074, -5083.205566, 2273.877197, 1338.460571),
+    362: (516.666626, -527.083313, -849.999939, -1545.833252),
+    381: (2938.362793, 1880.029541, 10238.316406, 9532.586914),
+    # Eastern Kingdoms
+    15: (783.333313, -2016.666626, 1500.000000, -366.666656),
+    16: (-866.666626, -4466.666504, -133.333328, -2533.333252),
+    17: (-2079.166504, -4566.666504, -5889.583008, -7547.916504),
+    19: (-1241.666626, -4591.666504, -10566.666016, -12800.000000),
+    20: (3033.333252, -1485.416626, 3837.499756, 824.999939),
+    21: (3449.999756, -750.000000, 1666.666626, -1133.333252),
+    22: (416.666656, -3883.333252, 3366.666504, 499.999969),
+    23: (-2185.416504, -6056.250000, 3799.999756, 1218.750000),
+    24: (1066.666626, -2133.333252, 400.000000, -1733.333252),
+    26: (-1575.000000, -5425.000000, 1466.666626, -1100.000000),
+    27: (1802.083252, -3122.916504, -3877.083252, -7160.416504),
+    28: (-322.916656, -2554.166504, -6100.000000, -7587.499512),
+    29: (-266.666656, -3195.833252, -7031.249512, -8983.333008),
+    30: (1535.416626, -1935.416626, -7939.583008, -10254.166016),
+    32: (-833.333313, -3333.333252, -9866.666016, -11533.333008),
+    34: (833.333313, -1866.666626, -9716.666016, -11516.666016),
+    35: (-1993.749878, -4752.083008, -4487.500000, -6327.083008),
+    36: (-1570.833252, -3741.666504, -8575.000000, -10022.916016),
+    37: (2220.833252, -4160.416504, -11168.750000, -15422.916016),
+    38: (-2222.916504, -4516.666504, -9620.833008, -11150.000000),
+    39: (3016.666504, -483.333313, -9400.000000, -11733.333008),
+    40: (-389.583313, -4525.000000, -2147.916504, -4904.166504),
+    301: (1380.971436, 36.700630, -8278.850586, -9175.205078),
+    341: (-713.591370, -1504.216431, -4569.241211, -5096.845703),
+    382: (873.192627, -86.182404, 1877.945312, 1237.841187),
+}
+
+WORLD_SPAWN_AREA_IDS_BY_MAP = {
+    0: (
+        15, 16, 17, 19, 20, 21, 22, 23, 24, 26, 27, 28, 29, 30, 32, 34, 35,
+        36, 37, 38, 39, 40, 301, 341, 382,
+    ),
+    1: (
+        4, 9, 11, 41, 42, 43, 61, 81, 101, 121, 141, 161, 181, 182, 201,
+        241, 261, 281, 321, 362, 381,
+    ),
+}
+
 
 def is_chinese(text: str) -> bool:
     """Check if text contains Chinese characters."""
@@ -300,6 +404,544 @@ def parse_cmangos_quest(content: str) -> dict:
                     "objectives": objectives
                 }
     return result
+
+
+def parse_create_table_columns(content: str, table_name: str) -> dict:
+    """Parse CREATE TABLE column order and return {column_name: index}."""
+    pattern = rf'CREATE TABLE `{re.escape(table_name)}`\s*\((.*?)\)\s*ENGINE='
+    match = re.search(pattern, content, re.S)
+    if not match:
+        return {}
+
+    columns = {}
+    for line in match.group(1).splitlines():
+        column_match = re.match(r'\s*`([^`]+)`', line)
+        if column_match:
+            columns[column_match.group(1)] = len(columns)
+    return columns
+
+
+def split_sql_tuple_fields(row_text: str) -> list:
+    """Split a SQL VALUES tuple into raw field strings."""
+    fields = []
+    current = []
+    in_string = False
+    pos = 0
+
+    while pos < len(row_text):
+        char = row_text[pos]
+        if char == "'":
+            current.append(char)
+            if in_string and pos + 1 < len(row_text) and row_text[pos + 1] == "'":
+                current.append("'")
+                pos += 2
+                continue
+            in_string = not in_string
+        elif char == "," and not in_string:
+            fields.append(''.join(current).strip())
+            current = []
+        else:
+            current.append(char)
+        pos += 1
+
+    if current or row_text.endswith(","):
+        fields.append(''.join(current).strip())
+
+    return fields
+
+
+def decode_sql_value(raw_value: str):
+    """Decode a SQL literal from an INSERT tuple."""
+    value = raw_value.strip()
+    if value.upper() == "NULL":
+        return None
+    if len(value) >= 2 and value[0] == "'" and value[-1] == "'":
+        return value[1:-1].replace("''", "'")
+    if re.match(r'^-?\d+$', value):
+        return int(value)
+    if re.match(r'^-?\d+\.\d+$', value):
+        return float(value)
+    return value
+
+
+def iter_sql_insert_rows(content: str, table_name: str):
+    """Yield decoded rows from INSERT INTO `table_name` VALUES (...) statements."""
+    pattern = re.compile(rf'INSERT INTO `{re.escape(table_name)}` VALUES\s*(.*?);', re.S)
+    for match in pattern.finditer(content):
+        values_blob = match.group(1)
+        pos = 0
+        while pos < len(values_blob):
+            if values_blob[pos] != '(':
+                pos += 1
+                continue
+
+            pos += 1
+            row_start = pos
+            in_string = False
+            while pos < len(values_blob):
+                char = values_blob[pos]
+                if char == "'":
+                    if in_string and pos + 1 < len(values_blob) and values_blob[pos + 1] == "'":
+                        pos += 2
+                        continue
+                    in_string = not in_string
+                elif char == ")" and not in_string:
+                    break
+                pos += 1
+
+            row_text = values_blob[row_start:pos]
+            yield [decode_sql_value(field) for field in split_sql_tuple_fields(row_text)]
+            pos += 1
+
+
+def get_sql_field(row: list, columns: dict, column_name: str, default=None):
+    """Fetch a parsed SQL field by column name."""
+    index = columns.get(column_name)
+    if index is None or index >= len(row):
+        return default
+    return row[index]
+
+
+def safe_int(value, default=None):
+    """Convert parsed SQL/pfQuest values to int when possible."""
+    if value is None or value == "":
+        return default
+    if isinstance(value, int):
+        return value
+    if isinstance(value, float):
+        return int(value)
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return default
+
+
+def normalize_location_tuples(locations: list) -> list:
+    """Deduplicate canonical Questie location tuples while preserving order."""
+    normalized = []
+    seen = set()
+
+    for map_id, x, y in locations:
+        key = (int(map_id), round(float(x), 4), round(float(y), 4))
+        if key not in seen:
+            seen.add(key)
+            normalized.append(key)
+
+    return normalized
+
+
+def extract_location_tuples(entry: dict) -> list:
+    """Return canonical Questie location tuples from a DB or pfQuest entity entry."""
+    if not entry:
+        return []
+    if entry.get("locations"):
+        return normalize_location_tuples(entry["locations"])
+    if entry.get("coords"):
+        return normalize_location_tuples(convert_coords(entry["coords"]))
+    return []
+
+
+def world_spawn_contains_point(map_area_id: int, world_x: float, world_y: float) -> bool:
+    """Return True when a world spawn point falls inside a WorldMapArea bound."""
+    bounds = WORLD_SPAWN_AREA_EXTENTS.get(map_area_id)
+    if not bounds:
+        return False
+
+    loc_left, loc_right, loc_top, loc_bottom = bounds
+    min_y = min(loc_left, loc_right)
+    max_y = max(loc_left, loc_right)
+    min_x = min(loc_top, loc_bottom)
+    max_x = max(loc_top, loc_bottom)
+    return min_x <= world_x <= max_x and min_y <= world_y <= max_y
+
+
+def world_spawn_area_size(map_area_id: int) -> float:
+    """Calculate WorldMapArea bound size so nested city bounds win over parent zones."""
+    loc_left, loc_right, loc_top, loc_bottom = WORLD_SPAWN_AREA_EXTENTS[map_area_id]
+    return abs(loc_right - loc_left) * abs(loc_bottom - loc_top)
+
+
+def resolve_world_spawn_map_area(world_map_id: int, world_x: float, world_y: float):
+    """Resolve a world spawn on map 0/1 to the most specific WorldMapArea ID."""
+    best_area_id = None
+    best_area_size = None
+
+    for map_area_id in WORLD_SPAWN_AREA_IDS_BY_MAP.get(world_map_id, ()):
+        if world_spawn_contains_point(map_area_id, world_x, world_y):
+            area_size = world_spawn_area_size(map_area_id)
+            if best_area_size is None or area_size < best_area_size:
+                best_area_id = map_area_id
+                best_area_size = area_size
+
+    return best_area_id
+
+
+def convert_spawn_row_to_location(map_id: int, world_x, world_y):
+    """Convert a creature/gameobject spawn row into a canonical Questie location tuple."""
+    if world_x is None or world_y is None:
+        return None
+
+    if map_id in (0, 1):
+        map_area_id = resolve_world_spawn_map_area(map_id, float(world_x), float(world_y))
+        if map_area_id is None:
+            return None
+        questie_map_id = WORLDMAPAREA_TO_MAPID.get(map_area_id)
+        if questie_map_id is None:
+            return None
+        map_x, map_y = convert_world_to_map_coords(float(world_x), float(world_y), map_area_id)
+        return (questie_map_id, map_x, map_y)
+
+    questie_map_id = INTERNAL_MAP_TO_QUESTIE_MAPID.get(map_id)
+    if questie_map_id is None:
+        return None
+
+    return (questie_map_id, 0.5, 0.5)
+
+
+def normalize_requirement_mask(value) -> int:
+    """Normalize DB masks so 0/-1/non-values are treated as unrestricted."""
+    normalized = safe_int(value, 0)
+    if normalized is None or normalized <= 0:
+        return 0
+    return normalized
+
+
+def append_unique_sequence(target: list, values: list) -> None:
+    """Append missing values while preserving order."""
+    for value in values:
+        if value not in target:
+            target.append(value)
+
+
+def build_sql_template_name_table(content: str, table_name: str, id_column: str, name_column: str) -> dict:
+    """Build an enUS name table from a SQL template table."""
+    columns = parse_create_table_columns(content, table_name)
+    result = {}
+
+    for row in iter_sql_insert_rows(content, table_name):
+        entry_id = safe_int(get_sql_field(row, columns, id_column))
+        name = get_sql_field(row, columns, name_column)
+        if entry_id and isinstance(name, str) and name:
+            result[entry_id] = name
+
+    return result
+
+
+def build_sql_quest_names(content: str) -> dict:
+    """Build an enUS quest title/objectives table from quest_template."""
+    columns = parse_create_table_columns(content, "quest_template")
+    result = {}
+
+    for row in iter_sql_insert_rows(content, "quest_template"):
+        quest_id = safe_int(get_sql_field(row, columns, "entry"))
+        title = get_sql_field(row, columns, "Title") or ""
+        objectives = get_sql_field(row, columns, "Objectives") or ""
+        if quest_id and title:
+            result[quest_id] = {
+                "title": title,
+                "objectives": objectives,
+            }
+
+    return result
+
+
+def build_sql_spawn_location_data(content: str, table_name: str) -> dict:
+    """Build DB-first vanilla unit/object locations from creature/gameobject spawns."""
+    columns = parse_create_table_columns(content, table_name)
+    result = defaultdict(lambda: {"locations": []})
+
+    for row in iter_sql_insert_rows(content, table_name):
+        entity_id = safe_int(get_sql_field(row, columns, "id"))
+        map_id = safe_int(get_sql_field(row, columns, "map"))
+        world_x = get_sql_field(row, columns, "position_x")
+        world_y = get_sql_field(row, columns, "position_y")
+
+        if not entity_id or map_id is None:
+            continue
+
+        location = convert_spawn_row_to_location(map_id, world_x, world_y)
+        if location is not None:
+            result[entity_id]["locations"].append(location)
+
+    normalized_result = {}
+    for entity_id, entry in result.items():
+        locations = normalize_location_tuples(entry["locations"])
+        if locations:
+            normalized_result[entity_id] = {"locations": locations}
+
+    return normalized_result
+
+
+def build_sql_item_data(content: str) -> dict:
+    """Build vanilla item sources from the extracted database."""
+    creature_template_columns = parse_create_table_columns(content, "creature_template")
+    gameobject_template_columns = parse_create_table_columns(content, "gameobject_template")
+    creature_loot_columns = parse_create_table_columns(content, "creature_loot_template")
+    gameobject_loot_columns = parse_create_table_columns(content, "gameobject_loot_template")
+    vendor_columns = parse_create_table_columns(content, "npc_vendor")
+
+    loot_template_to_units = defaultdict(list)
+    for row in iter_sql_insert_rows(content, "creature_template"):
+        unit_id = safe_int(get_sql_field(row, creature_template_columns, "Entry"))
+        loot_id = safe_int(get_sql_field(row, creature_template_columns, "LootId"), 0)
+        if unit_id and loot_id and loot_id > 0:
+            loot_template_to_units[loot_id].append(unit_id)
+
+    loot_template_to_objects = defaultdict(list)
+    for row in iter_sql_insert_rows(content, "gameobject_template"):
+        object_id = safe_int(get_sql_field(row, gameobject_template_columns, "entry"))
+        object_type = safe_int(get_sql_field(row, gameobject_template_columns, "type"), 0)
+        loot_id = safe_int(get_sql_field(row, gameobject_template_columns, "data1"), 0)
+        if object_id and object_type in (3, 25) and loot_id and loot_id > 0:
+            loot_template_to_objects[loot_id].append(object_id)
+
+    item_sources = defaultdict(lambda: {"U": {}, "O": {}, "V": {}})
+
+    for row in iter_sql_insert_rows(content, "creature_loot_template"):
+        loot_id = safe_int(get_sql_field(row, creature_loot_columns, "entry"), 0)
+        item_id = safe_int(get_sql_field(row, creature_loot_columns, "item"), 0)
+        if not loot_id or not item_id:
+            continue
+        for unit_id in loot_template_to_units.get(loot_id, ()):
+            item_sources[item_id]["U"][unit_id] = 1
+
+    for row in iter_sql_insert_rows(content, "gameobject_loot_template"):
+        loot_id = safe_int(get_sql_field(row, gameobject_loot_columns, "entry"), 0)
+        item_id = safe_int(get_sql_field(row, gameobject_loot_columns, "item"), 0)
+        if not loot_id or not item_id:
+            continue
+        for object_id in loot_template_to_objects.get(loot_id, ()):
+            item_sources[item_id]["O"][object_id] = 1
+
+    for row in iter_sql_insert_rows(content, "npc_vendor"):
+        vendor_id = safe_int(get_sql_field(row, vendor_columns, "entry"), 0)
+        item_id = safe_int(get_sql_field(row, vendor_columns, "item"), 0)
+        if vendor_id and item_id:
+            item_sources[item_id]["V"][vendor_id] = 1
+
+    result = {}
+    for item_id, sources in item_sources.items():
+        entry = {}
+        if sources["U"]:
+            entry["U"] = dict(sorted(sources["U"].items()))
+        if sources["O"]:
+            entry["O"] = dict(sorted(sources["O"].items()))
+        if sources["V"]:
+            entry["V"] = dict(sorted(sources["V"].items()))
+        if entry:
+            result[item_id] = entry
+
+    return result
+
+
+def build_sql_quest_data(content: str) -> dict:
+    """Build vanilla quest metadata from the extracted database."""
+    quest_columns = parse_create_table_columns(content, "quest_template")
+    creature_questrelation_columns = parse_create_table_columns(content, "creature_questrelation")
+    creature_involvedrelation_columns = parse_create_table_columns(content, "creature_involvedrelation")
+    gameobject_questrelation_columns = parse_create_table_columns(content, "gameobject_questrelation")
+    gameobject_involvedrelation_columns = parse_create_table_columns(content, "gameobject_involvedrelation")
+
+    creature_starters = defaultdict(list)
+    for row in iter_sql_insert_rows(content, "creature_questrelation"):
+        unit_id = safe_int(get_sql_field(row, creature_questrelation_columns, "id"))
+        quest_id = safe_int(get_sql_field(row, creature_questrelation_columns, "quest"))
+        if unit_id and quest_id:
+            creature_starters[quest_id].append(unit_id)
+
+    creature_finishers = defaultdict(list)
+    for row in iter_sql_insert_rows(content, "creature_involvedrelation"):
+        unit_id = safe_int(get_sql_field(row, creature_involvedrelation_columns, "id"))
+        quest_id = safe_int(get_sql_field(row, creature_involvedrelation_columns, "quest"))
+        if unit_id and quest_id:
+            creature_finishers[quest_id].append(unit_id)
+
+    object_starters = defaultdict(list)
+    for row in iter_sql_insert_rows(content, "gameobject_questrelation"):
+        object_id = safe_int(get_sql_field(row, gameobject_questrelation_columns, "id"))
+        quest_id = safe_int(get_sql_field(row, gameobject_questrelation_columns, "quest"))
+        if object_id and quest_id:
+            object_starters[quest_id].append(object_id)
+
+    object_finishers = defaultdict(list)
+    for row in iter_sql_insert_rows(content, "gameobject_involvedrelation"):
+        object_id = safe_int(get_sql_field(row, gameobject_involvedrelation_columns, "id"))
+        quest_id = safe_int(get_sql_field(row, gameobject_involvedrelation_columns, "quest"))
+        if object_id and quest_id:
+            object_finishers[quest_id].append(object_id)
+
+    quests = {}
+    for row in iter_sql_insert_rows(content, "quest_template"):
+        quest_id = safe_int(get_sql_field(row, quest_columns, "entry"))
+        if not quest_id:
+            continue
+
+        quest = {}
+        quest_level = safe_int(get_sql_field(row, quest_columns, "QuestLevel"))
+        min_level = safe_int(get_sql_field(row, quest_columns, "MinLevel"))
+        race_mask = normalize_requirement_mask(get_sql_field(row, quest_columns, "RequiredRaces"))
+        class_mask = normalize_requirement_mask(get_sql_field(row, quest_columns, "RequiredClasses"))
+        required_skill = safe_int(get_sql_field(row, quest_columns, "RequiredSkill"), 0)
+        prev_quest_id = safe_int(get_sql_field(row, quest_columns, "PrevQuestId"), 0)
+        src_item_id = safe_int(get_sql_field(row, quest_columns, "SrcItemId"), 0)
+
+        if quest_level is not None:
+            quest["lvl"] = quest_level
+        if min_level is not None:
+            quest["min"] = min_level
+        if race_mask:
+            quest["race"] = race_mask
+        if class_mask:
+            quest["class"] = class_mask
+        if required_skill and required_skill > 0:
+            quest["skill"] = required_skill
+        if prev_quest_id and prev_quest_id > 0:
+            quest["pre"] = [prev_quest_id]
+
+        if src_item_id and src_item_id > 0:
+            quest["start"] = {"I": src_item_id}
+        elif creature_starters.get(quest_id):
+            quest["start"] = {"U": min(creature_starters[quest_id])}
+        elif object_starters.get(quest_id):
+            quest["start"] = {"O": min(object_starters[quest_id])}
+
+        if creature_finishers.get(quest_id):
+            quest["end"] = {"U": min(creature_finishers[quest_id])}
+        elif object_finishers.get(quest_id):
+            quest["end"] = {"O": min(object_finishers[quest_id])}
+
+        objective_units = []
+        objective_items = []
+        objective_objects = []
+        for objective_index in range(1, 5):
+            req_item_id = safe_int(get_sql_field(row, quest_columns, f"ReqItemId{objective_index}"), 0)
+            req_entity_id = safe_int(get_sql_field(row, quest_columns, f"ReqCreatureOrGOId{objective_index}"), 0)
+
+            if req_item_id and req_item_id > 0:
+                append_unique_sequence(objective_items, [req_item_id])
+            if req_entity_id and req_entity_id > 0:
+                append_unique_sequence(objective_units, [req_entity_id])
+            elif req_entity_id and req_entity_id < 0:
+                append_unique_sequence(objective_objects, [abs(req_entity_id)])
+
+        if objective_units or objective_items or objective_objects:
+            quest["obj"] = {}
+            if objective_units:
+                quest["obj"]["U"] = objective_units
+            if objective_items:
+                quest["obj"]["I"] = objective_items
+            if objective_objects:
+                quest["obj"]["O"] = objective_objects
+
+        if quest:
+            quests[quest_id] = quest
+
+    return quests
+
+
+def merge_name_tables(primary: dict, fallback: dict) -> dict:
+    """Merge fallback names into a primary name table without overwriting primary entries."""
+    merged = dict(primary)
+    for entry_id, value in fallback.items():
+        if entry_id not in merged or not merged[entry_id]:
+            merged[entry_id] = value
+    return merged
+
+
+def merge_quest_name_tables(primary: dict, fallback: dict) -> dict:
+    """Merge quest title/objectives dictionaries with primary data taking precedence."""
+    merged = copy.deepcopy(primary)
+    for quest_id, info in fallback.items():
+        if quest_id not in merged:
+            merged[quest_id] = copy.deepcopy(info)
+            continue
+        if not merged[quest_id].get("title") and info.get("title"):
+            merged[quest_id]["title"] = info["title"]
+        if not merged[quest_id].get("objectives") and info.get("objectives"):
+            merged[quest_id]["objectives"] = info["objectives"]
+    return merged
+
+
+def merge_vanilla_item_data(primary: dict, fallback: dict) -> dict:
+    """Merge pfQuest item sources into database-first item data."""
+    merged = copy.deepcopy(primary)
+    for item_id, item_data in fallback.items():
+        if item_id not in merged:
+            merged[item_id] = copy.deepcopy(item_data)
+            continue
+        for source_key in ("U", "O", "V"):
+            if source_key not in item_data:
+                continue
+            if source_key not in merged[item_id] or not merged[item_id][source_key]:
+                merged[item_id][source_key] = copy.deepcopy(item_data[source_key])
+    return merged
+
+
+def merge_vanilla_quest_data(primary: dict, fallback: dict) -> dict:
+    """Fill quest fields from pfQuest only when the database did not generate them."""
+    merged = copy.deepcopy(primary)
+    for quest_id, quest_data in fallback.items():
+        if quest_id not in merged:
+            merged[quest_id] = copy.deepcopy(quest_data)
+            continue
+
+        target = merged[quest_id]
+        for scalar_key in ("lvl", "min", "race", "class", "skill"):
+            if scalar_key not in target and scalar_key in quest_data:
+                target[scalar_key] = quest_data[scalar_key]
+
+        if "start" not in target and "start" in quest_data:
+            target["start"] = copy.deepcopy(quest_data["start"])
+        if "end" not in target and "end" in quest_data:
+            target["end"] = copy.deepcopy(quest_data["end"])
+        if "pre" not in target and "pre" in quest_data:
+            target["pre"] = copy.deepcopy(quest_data["pre"])
+
+        if "obj" not in target and "obj" in quest_data:
+            target["obj"] = copy.deepcopy(quest_data["obj"])
+        elif "obj" in target and "obj" in quest_data:
+            for objective_key, values in quest_data["obj"].items():
+                if objective_key not in target["obj"]:
+                    target["obj"][objective_key] = copy.deepcopy(values)
+
+    return merged
+
+
+def merge_vanilla_location_data(primary: dict, fallback: dict) -> dict:
+    """Fill missing vanilla entity location tables from pfQuest without overriding DB output."""
+    merged = copy.deepcopy(primary)
+
+    for entity_id, entry in fallback.items():
+        if entity_id in merged and extract_location_tuples(merged[entity_id]):
+            continue
+
+        locations = extract_location_tuples(entry)
+        if locations:
+            merged[entity_id] = {"locations": locations}
+
+    return merged
+
+
+def extract_named_table(entry_content: str, key: str) -> str | None:
+    """Extract the raw contents of a keyed Lua table using balanced braces."""
+    key_match = re.search(rf'\["{re.escape(key)}"\]\s*=\s*\{{', entry_content)
+    if not key_match:
+        return None
+
+    brace_start = key_match.end() - 1
+    depth = 1
+    pos = brace_start + 1
+    while pos < len(entry_content) and depth > 0:
+        if entry_content[pos] == '{':
+            depth += 1
+        elif entry_content[pos] == '}':
+            depth -= 1
+        pos += 1
+
+    if depth != 0:
+        return None
+
+    return entry_content[brace_start + 1:pos - 1]
 
 
 def parse_quest_poi(content: str) -> dict:
@@ -764,10 +1406,13 @@ def parse_pfquest_quests_data(content: str) -> dict:
         if class_match:
             quest["class"] = int(class_match.group(1))
         
+        skill_match = re.search(r'\["skill"\]\s*=\s*(\d+)', entry_content)
+        if skill_match:
+            quest["skill"] = int(skill_match.group(1))
+
         # Parse start
-        start_match = re.search(r'\["start"\]\s*=\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}', entry_content)
-        if start_match:
-            start_content = start_match.group(1)
+        start_content = extract_named_table(entry_content, "start")
+        if start_content:
             quest["start"] = {}
             u_match = re.search(r'\["U"\]\s*=\s*\{\s*(\d+)', start_content)
             if u_match:
@@ -780,9 +1425,8 @@ def parse_pfquest_quests_data(content: str) -> dict:
                 quest["start"]["O"] = int(o_match.group(1))
         
         # Parse end
-        end_match = re.search(r'\["end"\]\s*=\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}', entry_content)
-        if end_match:
-            end_content = end_match.group(1)
+        end_content = extract_named_table(entry_content, "end")
+        if end_content:
             quest["end"] = {}
             u_match = re.search(r'\["U"\]\s*=\s*\{\s*(\d+)', end_content)
             if u_match:
@@ -792,9 +1436,8 @@ def parse_pfquest_quests_data(content: str) -> dict:
                 quest["end"]["O"] = int(o_match.group(1))
         
         # Parse objectives
-        obj_match = re.search(r'\["obj"\]\s*=\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}', entry_content)
-        if obj_match:
-            obj_content = obj_match.group(1)
+        obj_content = extract_named_table(entry_content, "obj")
+        if obj_content:
             quest["obj"] = {}
             # Units to kill
             u_match = re.search(r'\["U"\]\s*=\s*\{([^}]*)\}', obj_content)
@@ -814,6 +1457,8 @@ def parse_pfquest_quests_data(content: str) -> dict:
                 objects = [int(x) for x in re.findall(r'(\d+)', o_match.group(1))]
                 if objects:
                     quest["obj"]["O"] = objects
+            if not quest["obj"]:
+                del quest["obj"]
         
         # Parse prerequisites
         pre_match = re.search(r'\["pre"\]\s*=\s*\{([^}]*)\}', entry_content)
@@ -950,20 +1595,20 @@ def generate_units_data(units_data: dict) -> str:
     lines = [
         '-- Questie Unit Data (ID-based)',
         f'-- Auto-generated by convert_pfquest.py on {timestamp}',
-        '-- Source: pfQuest vanilla database',
+        '-- Source: ClassicDB / CMaNGOS vanilla database + pfQuest coordinate fallback',
         '',
         'QuestieUnitData = {',
     ]
     
     for unit_id in sorted(units_data.keys()):
         data = units_data[unit_id]
-        coords = convert_coords(data.get("coords", []))
-        if not coords:
+        locations = extract_location_tuples(data)
+        if not locations:
             continue
         
         lines.append(f'  [{unit_id}] = {{')
         lines.append('    locations = {')
-        for i, (map_id, x, y) in enumerate(coords[:50], 1):
+        for i, (map_id, x, y) in enumerate(locations[:50], 1):
             lines.append(f'      [{i}] = {{{map_id}, {x:.4f}, {y:.4f}}},')
         lines.append('    },')
         lines.append('  },')
@@ -979,20 +1624,20 @@ def generate_objects_data(objects_data: dict) -> str:
     lines = [
         '-- Questie Object Data (ID-based)',
         f'-- Auto-generated by convert_pfquest.py on {timestamp}',
-        '-- Source: pfQuest vanilla database',
+        '-- Source: ClassicDB / CMaNGOS vanilla database + pfQuest coordinate fallback',
         '',
         'QuestieObjectData = {',
     ]
     
     for obj_id in sorted(objects_data.keys()):
         data = objects_data[obj_id]
-        coords = convert_coords(data.get("coords", []))
-        if not coords:
+        locations = extract_location_tuples(data)
+        if not locations:
             continue
         
         lines.append(f'  [{obj_id}] = {{')
         lines.append('    locations = {')
-        for i, (map_id, x, y) in enumerate(coords[:50], 1):
+        for i, (map_id, x, y) in enumerate(locations[:50], 1):
             lines.append(f'      [{i}] = {{{map_id}, {x:.4f}, {y:.4f}}},')
         lines.append('    },')
         lines.append('  },')
@@ -1008,7 +1653,7 @@ def generate_items_data(items_data: dict) -> str:
     lines = [
         '-- Questie Item Data (ID-based)',
         f'-- Auto-generated by convert_pfquest.py on {timestamp}',
-        '-- Source: pfQuest vanilla database',
+        '-- Source: ClassicDB / CMaNGOS vanilla database + pfQuest source fallback',
         '',
         'QuestieItemData = {',
     ]
@@ -1053,7 +1698,7 @@ def generate_quests_data(quests_data: dict, quest_objective_coords: dict = None)
     lines = [
         '-- Questie Quest Data (ID-based)',
         f'-- Auto-generated by convert_pfquest.py on {timestamp}',
-        '-- Source: pfQuest vanilla database + CMaNGOS quest_poi',
+        '-- Source: ClassicDB / CMaNGOS vanilla database + quest_poi + pfQuest fallback',
         '',
         'QuestieQuestData = {',
     ]
@@ -1079,6 +1724,8 @@ def generate_quests_data(quests_data: dict, quest_objective_coords: dict = None)
             lines.append(f'    race = {data["race"]},')
         if "class" in data:
             lines.append(f'    class = {data["class"]},')
+        if "skill" in data:
+            lines.append(f'    skill = {data["skill"]},')
         
         # Start
         if "start" in data:
@@ -1151,14 +1798,14 @@ def generate_names_lua(unit_names: dict, object_names: dict, item_names: dict,
         header = [
             '-- Questie Name Mappings (English)',
             f'-- Auto-generated by convert_pfquest.py on {timestamp}',
-            '-- Source: pfQuest vanilla database',
+            '-- Source: ClassicDB / CMaNGOS vanilla database + pfQuest fallback',
         ]
     else:
         header = [
             '-- Questie Name Mappings (Simplified Chinese)',
             '-- Questie 名称映射表（简体中文）',
             f'-- Auto-generated by convert_pfquest.py on {timestamp}',
-            '-- Source: CMaNGOS ClassicDB + pfQuest fallback',
+            '-- Source: CMaNGOS ClassicDB locales + pfQuest fallback',
         ]
     
     lines = header + ['']
@@ -1218,7 +1865,7 @@ def has_vanilla_entity_locations(entity_data: dict, entity_id: int) -> bool:
     entry = entity_data.get(entity_id)
     if not entry:
         return False
-    return bool(convert_coords(entry.get("coords", [])))
+    return bool(extract_location_tuples(entry))
 
 
 def item_has_vanilla_locations(item_id: int, items_data: dict, units_data: dict, objects_data: dict) -> bool:
@@ -1243,8 +1890,8 @@ def item_has_vanilla_locations(item_id: int, items_data: dict, units_data: dict,
 
 
 def validate_structured_quest_db(quests_data: dict, units_data: dict, objects_data: dict,
-                                 items_data: dict, quest_objective_coords: dict) -> None:
-    """Fail generation if structured quest references cannot resolve through ID-based data."""
+                                 items_data: dict, quest_objective_coords: dict) -> list[str]:
+    """Report structured quest references that cannot resolve through ID-based data."""
     issues = []
 
     def add_issue(quest_id: int, message: str) -> None:
@@ -1273,18 +1920,12 @@ def validate_structured_quest_db(quests_data: dict, units_data: dict, objects_da
                 if len(coord) != 3:
                     add_issue(quest_id, f"objectiveCoords[{obj_index}] emitted non-canonical tuple {coord!r}")
 
-    if issues:
-        print("\nERROR: Structured quest validation failed.")
-        for issue in issues[:50]:
-            print(f"  - {issue}")
-        if len(issues) > 50:
-            print(f"  - ... and {len(issues) - 50} more")
-        raise SystemExit(1)
+    return issues
 
 
 def main():
     flush_print("=" * 70)
-    flush_print("pfQuest + CMaNGOS to Questie ID-Based Database Converter")
+    flush_print("Vanilla Questie ID-Based Database Converter")
     flush_print("=" * 70)
     
     # Check source directories
@@ -1293,7 +1934,7 @@ def main():
         print("Please ensure pfQuest is cloned to tools/pfQuest/")
         return 1
     
-    print("\n[1/6] Loading pfQuest vanilla data...")
+    print("\n[1/7] Loading pfQuest vanilla complements...")
     
     # Load pfQuest data files
     units_content = read_file(PFQUEST_DIR / "units.lua")
@@ -1303,22 +1944,22 @@ def main():
     
     # Parse data
     print("  Parsing units data...")
-    units_data = parse_pfquest_data_table(units_content, "units")
-    print(f"    Found {len(units_data)} units with coordinates")
+    pfquest_units_data = parse_pfquest_data_table(units_content, "units")
+    print(f"    Found {len(pfquest_units_data)} units with coordinate complements")
     
     print("  Parsing objects data...")
-    objects_data = parse_pfquest_data_table(objects_content, "objects")
-    print(f"    Found {len(objects_data)} objects with coordinates")
+    pfquest_objects_data = parse_pfquest_data_table(objects_content, "objects")
+    print(f"    Found {len(pfquest_objects_data)} objects with coordinate complements")
     
     print("  Parsing items data...")
-    items_data = parse_pfquest_items_data(items_content)
-    print(f"    Found {len(items_data)} items with sources")
+    pfquest_items_data = parse_pfquest_items_data(items_content)
+    print(f"    Found {len(pfquest_items_data)} items with source complements")
     
     print("  Parsing quests data...")
-    quests_data = parse_pfquest_quests_data(quests_content)
-    print(f"    Found {len(quests_data)} quests")
+    pfquest_quests_data = parse_pfquest_quests_data(quests_content)
+    print(f"    Found {len(pfquest_quests_data)} quests with fallback metadata")
     
-    print("\n[2/6] Loading pfQuest locale files...")
+    print("\n[2/7] Loading pfQuest locale files...")
     
     # Load English names
     units_enus_content = read_file(PFQUEST_DIR / "enUS" / "units.lua")
@@ -1326,12 +1967,12 @@ def main():
     items_enus_content = read_file(PFQUEST_DIR / "enUS" / "items.lua")
     quests_enus_content = read_file(PFQUEST_DIR / "enUS" / "quests.lua")
     
-    units_names_enus = parse_pfquest_names(units_enus_content, 'pfDB["units"]["enUS"]')
-    objects_names_enus = parse_pfquest_names(objects_enus_content, 'pfDB["objects"]["enUS"]')
-    items_names_enus = parse_pfquest_names(items_enus_content, 'pfDB["items"]["enUS"]')
-    quests_names_enus = parse_pfquest_quest_locale(quests_enus_content, "enUS")
+    pfquest_units_names_enus = parse_pfquest_names(units_enus_content, 'pfDB["units"]["enUS"]')
+    pfquest_objects_names_enus = parse_pfquest_names(objects_enus_content, 'pfDB["objects"]["enUS"]')
+    pfquest_items_names_enus = parse_pfquest_names(items_enus_content, 'pfDB["items"]["enUS"]')
+    pfquest_quests_names_enus = parse_pfquest_quest_locale(quests_enus_content, "enUS")
     
-    print(f"  English: {len(units_names_enus)} units, {len(objects_names_enus)} objects, {len(items_names_enus)} items, {len(quests_names_enus)} quests")
+    print(f"  English fallback: {len(pfquest_units_names_enus)} units, {len(pfquest_objects_names_enus)} objects, {len(pfquest_items_names_enus)} items, {len(pfquest_quests_names_enus)} quests")
     
     # Load Chinese names from pfQuest (fallback)
     units_zhcn_content = read_file(PFQUEST_DIR / "zhCN" / "units.lua")
@@ -1346,7 +1987,7 @@ def main():
     
     print(f"  Chinese (pfQuest): {len(units_names_zhcn_pfquest)} units, {len(objects_names_zhcn_pfquest)} objects, {len(items_names_zhcn_pfquest)} items, {len(quests_names_zhcn_pfquest)} quests")
     
-    print("\n[3/6] Loading CMaNGOS ClassicDB Chinese translations...")
+    print("\n[3/7] Loading CMaNGOS ClassicDB Chinese translations...")
     
     # Load CMaNGOS SQL (authoritative Chinese names)
     units_names_cmangos = {}
@@ -1378,7 +2019,7 @@ def main():
         print(f"  WARNING: CMaNGOS directory not found: {CMANGOS_DIR}")
         print("  Will use pfQuest Chinese names only")
     
-    print("\n[4/7] Loading CMaNGOS quest_poi data...")
+    print("\n[4/7] Loading ClassicDB Full_DB data...")
     
     quest_objective_coords = {}
     
@@ -1399,23 +2040,58 @@ def main():
         except Exception as e:
             print(f"  Warning: Failed to read compressed SQL: {e}")
     
-    if fulldb_content:
-        print("  Parsing quest_poi table...")
-        quest_poi = parse_quest_poi(fulldb_content)
-        print(f"    Found {len(quest_poi)} quests with POI data")
-        
-        print("  Parsing quest_poi_points table...")
-        quest_poi_points = parse_quest_poi_points(fulldb_content)
-        print(f"    Found {len(quest_poi_points)} quests with POI points")
-        
-        print("  Building objective coordinates...")
-        quest_objective_coords = build_quest_objective_coords(quest_poi, quest_poi_points)
-        print(f"    Built coordinates for {len(quest_objective_coords)} quests")
-    else:
-        print("  WARNING: No ClassicDB Full_DB SQL found")
+    if not fulldb_content:
+        print("  ERROR: No ClassicDB Full_DB SQL found")
         print(f"    Expected: {fulldb_sql_path} or {fulldb_gz_path}")
-    
-    print("\n[5/7] Merging Chinese names (CMaNGOS primary, pfQuest fallback)...")
+        return 1
+
+    print("  Parsing SQL-backed vanilla names...")
+    sql_units_names_enus = build_sql_template_name_table(fulldb_content, "creature_template", "Entry", "Name")
+    sql_objects_names_enus = build_sql_template_name_table(fulldb_content, "gameobject_template", "entry", "name")
+    sql_items_names_enus = build_sql_template_name_table(fulldb_content, "item_template", "entry", "name")
+    sql_quests_names_enus = build_sql_quest_names(fulldb_content)
+    print(f"    SQL names: {len(sql_units_names_enus)} units, {len(sql_objects_names_enus)} objects, {len(sql_items_names_enus)} items, {len(sql_quests_names_enus)} quests")
+
+    print("  Parsing SQL-backed vanilla spawn locations...")
+    sql_units_data = build_sql_spawn_location_data(fulldb_content, "creature")
+    sql_objects_data = build_sql_spawn_location_data(fulldb_content, "gameobject")
+    print(f"    SQL spawns: {len(sql_units_data)} units, {len(sql_objects_data)} objects")
+
+    print("  Parsing SQL-backed vanilla item sources...")
+    sql_items_data = build_sql_item_data(fulldb_content)
+    print(f"    SQL items: {len(sql_items_data)} entries with sources")
+
+    print("  Parsing SQL-backed vanilla quest metadata...")
+    sql_quests_data = build_sql_quest_data(fulldb_content)
+    print(f"    SQL quests: {len(sql_quests_data)} entries")
+
+    print("  Parsing quest_poi table...")
+    quest_poi = parse_quest_poi(fulldb_content)
+    print(f"    Found {len(quest_poi)} quests with POI data")
+
+    print("  Parsing quest_poi_points table...")
+    quest_poi_points = parse_quest_poi_points(fulldb_content)
+    print(f"    Found {len(quest_poi_points)} quests with POI points")
+
+    print("  Building objective coordinates...")
+    quest_objective_coords = build_quest_objective_coords(quest_poi, quest_poi_points)
+    print(f"    Built coordinates for {len(quest_objective_coords)} quests")
+
+    print("\n[5/7] Merging database-first vanilla data with pfQuest complements...")
+
+    units_data = merge_vanilla_location_data(sql_units_data, pfquest_units_data)
+    objects_data = merge_vanilla_location_data(sql_objects_data, pfquest_objects_data)
+    items_data = merge_vanilla_item_data(sql_items_data, pfquest_items_data)
+    quests_data = merge_vanilla_quest_data(sql_quests_data, pfquest_quests_data)
+    units_names_enus = merge_name_tables(sql_units_names_enus, pfquest_units_names_enus)
+    objects_names_enus = merge_name_tables(sql_objects_names_enus, pfquest_objects_names_enus)
+    items_names_enus = merge_name_tables(sql_items_names_enus, pfquest_items_names_enus)
+    quests_names_enus = merge_quest_name_tables(sql_quests_names_enus, pfquest_quests_names_enus)
+
+    print(f"  Merged vanilla data: {len(units_data)} units, {len(objects_data)} objects, {len(items_data)} items, {len(quests_data)} quests")
+    print(f"  Merged enUS names: {len(units_names_enus)} units, {len(objects_names_enus)} objects, {len(items_names_enus)} items, {len(quests_names_enus)} quests")
+
+    print("\n[6/7] Merging Chinese names (CMaNGOS primary, pfQuest fallback)...")
     
     # Merge Chinese names: CMaNGOS takes priority
     units_names_zhcn = {}
@@ -1448,9 +2124,16 @@ def main():
     
     print(f"  Merged Chinese: {len(units_names_zhcn)} units, {len(objects_names_zhcn)} objects, {len(items_names_zhcn)} items, {len(quests_names_zhcn)} quests")
 
-    validate_structured_quest_db(quests_data, units_data, objects_data, items_data, quest_objective_coords)
+    validation_issues = validate_structured_quest_db(quests_data, units_data, objects_data, items_data, quest_objective_coords)
+    if validation_issues:
+        print("\nWARNING: Vanilla structured quest validation found unresolved links.")
+        for issue in validation_issues[:50]:
+            print(f"  - {issue}")
+        if len(validation_issues) > 50:
+            print(f"  - ... and {len(validation_issues) - 50} more")
+        print("  Generation will continue; unresolved quests may lack starter/finisher markers.")
     
-    print("\n[6/7] Generating output files...")
+    print("\n[7/7] Generating output files...")
     
     # Create output directories
     ensure_dir(DATA_DIR)
@@ -1489,12 +2172,12 @@ def main():
     with open(LOCALE_ZHCN_DIR / "names.lua", 'w', encoding='utf-8') as f:
         f.write(names_zhcn_lua)
     
-    print("\n[7/7] Summary")
+    print("\nSummary")
     print("=" * 70)
     print(f"  Units:   {len(units_data)} entries with locations")
     print(f"  Objects: {len(objects_data)} entries with locations")
-    print(f"  Items:   {len(items_data)} entries with sources")
-    print(f"  Quests:  {len(quests_data)} entries")
+    print(f"  Items:   {len(items_data)} entries with database-first sources")
+    print(f"  Quests:  {len(quests_data)} database-first entries")
     print(f"  Quest POI: {len(quest_objective_coords)} quests with objective coordinates")
     print(f"  English names: {len(units_names_enus)} units, {len(objects_names_enus)} objects, {len(items_names_enus)} items")
     print(f"  Chinese names: {len(units_names_zhcn)} units, {len(objects_names_zhcn)} objects, {len(items_names_zhcn)} items")

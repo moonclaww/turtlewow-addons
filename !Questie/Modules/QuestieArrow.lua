@@ -108,7 +108,10 @@ function SetArrowFromIcon(icon)
         ["x"] = icon.averageX,
         ["y"] = icon.averageY
     }
-    local quest = QuestieHashMap[icon.data.questHash]
+    local quest = QuestieQuestMetaById and QuestieQuestMetaById[icon.data.questId]
+    if not quest then
+        return
+    end
     local data = {
         ["point"] = targetPoint,
         ["questName"] = quest.name,
@@ -131,22 +134,22 @@ function SetArrowFromData(data)
     arrow_data = data
 end
 ---------------------------------------------------------------------------------------------------
-function SetArrowObjective(hash)
-    if arrow_objective == hash then
+function SetArrowObjective(questId)
+    if arrow_objective == questId then
         wayframe:Hide();
         arrow_objective = 0;
         return;
     end
-    arrow_objective = hash
+    arrow_objective = questId
     arrow_data = nil
-    if not QuestieCachedQuests[hash] or not QuestieCachedQuests[hash]["arrowPoint"] then return end
-    local objective = QuestieCachedQuests[hash]["arrowPoint"]
+    if not QuestieQuestRuntimeById[questId] or not QuestieQuestRuntimeById[questId]["arrowPoint"] then return end
+    local objective = QuestieQuestRuntimeById[questId]["arrowPoint"]
     SetCrazyArrow(objective, objective.dist, objective.title)
 end
 ---------------------------------------------------------------------------------------------------
-function RemoveCrazyArrow(hash)
-    if hash then
-        if (TomTomCrazyArrow:IsVisible() ~= nil) and (arrow_objective == hash or arrow_data) then
+function RemoveCrazyArrow(questId)
+    if questId then
+        if (TomTomCrazyArrow:IsVisible() ~= nil) and (arrow_objective == questId or arrow_data) then
             TomTomCrazyArrow:Hide()
         end
     end
@@ -171,8 +174,8 @@ local function OnUpdate(self, elapsed)
     local dist,x,y
     if not UnitIsDeadOrGhost("player") then
         if arrow_objective then
-            if QuestieCachedQuests[arrow_objective] then
-                local objective = QuestieCachedQuests[arrow_objective]["arrowPoint"]
+            if QuestieQuestRuntimeById[arrow_objective] then
+                local objective = QuestieQuestRuntimeById[arrow_objective]["arrowPoint"]
                 if objective then
                     SetCrazyArrow(objective, objective.dist, objective.title)
                 end
