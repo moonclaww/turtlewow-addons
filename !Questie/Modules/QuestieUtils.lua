@@ -94,6 +94,36 @@ function GetNumberFromString(arg)
     return nil
 end
 ---------------------------------------------------------------------------------------------------
+-- Get a quest's required minimum level.
+---------------------------------------------------------------------------------------------------
+function QuestieGetQuestRequiredLevel(questMeta)
+    if type(questMeta) ~= "table" then
+        return 1
+    end
+
+    return tonumber(questMeta.level) or 1
+end
+---------------------------------------------------------------------------------------------------
+-- Normalize a quest's level for UI filtering.
+---------------------------------------------------------------------------------------------------
+function QuestieGetQuestDisplayLevel(questMeta)
+    if type(questMeta) ~= "table" then
+        return 1
+    end
+
+    local requiredLevel = QuestieGetQuestRequiredLevel(questMeta)
+    local recommendedLevel = GetNumberFromString(questMeta.questLevel)
+    if not recommendedLevel then
+        recommendedLevel = tonumber(questMeta.questLevel) or requiredLevel
+    end
+
+    if recommendedLevel < requiredLevel then
+        return requiredLevel
+    end
+
+    return recommendedLevel
+end
+---------------------------------------------------------------------------------------------------
 -- Simple Rounding Function
 ---------------------------------------------------------------------------------------------------
 function round(x)

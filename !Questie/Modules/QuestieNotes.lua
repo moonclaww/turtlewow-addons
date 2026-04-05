@@ -1241,7 +1241,7 @@ function Questie:SetAvailableQuests(customLevel)
         for k, v in pairs(quests) do
             count = count + 1;
             local icontype = "available";
-            if QuestieQuestMetaById[k].level > level then icontype = "availablesoon"; end
+            if QuestieGetQuestRequiredLevel(QuestieQuestMetaById[k]) > level then icontype = "availablesoon"; end
             Questie:RecursiveCreateNotes(c, z, k, v, {["selectedIcon"] = icontype});
         end
         --Questie:debug_Print("SetAvailableQuests: Adding "..count.." available quests took "..tostring((GetTime()- saqtime)*1000).."ms");

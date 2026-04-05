@@ -125,7 +125,44 @@ local function QuestieGetAllQuestIds()
     return questIds
 end
 
+local function QuestieHasTurtleQuestOverride(questId)
+    if not QuestieIsTurtleWoW or not questId then
+        return false
+    end
+
+    return (QuestieTurtleQuestData and QuestieTurtleQuestData[questId] ~= nil)
+        or (QuestieTurtleQuestNames and QuestieTurtleQuestNames[questId] ~= nil)
+end
+
+local function QuestieMergeOverlayEntry(baseEntry, overlayEntry)
+    if overlayEntry == nil then
+        return baseEntry
+    end
+
+    if baseEntry == nil then
+        return overlayEntry
+    end
+
+    if type(baseEntry) ~= "table" or type(overlayEntry) ~= "table" then
+        return overlayEntry
+    end
+
+    local merged = {}
+    for key, value in pairs(baseEntry) do
+        merged[key] = value
+    end
+    for key, value in pairs(overlayEntry) do
+        merged[key] = value
+    end
+
+    return merged
+end
+
 local function QuestieGetQuestNameInfo(questId)
+    if QuestieHasTurtleQuestOverride(questId) and QuestieTurtleQuestNames and QuestieTurtleQuestNames[questId] then
+        return QuestieMergeOverlayEntry(QuestieVanillaQuestNames and QuestieVanillaQuestNames[questId], QuestieTurtleQuestNames[questId])
+    end
+
     if QuestieVanillaQuestNames and QuestieVanillaQuestNames[questId] then
         return QuestieVanillaQuestNames[questId]
     end
@@ -140,8 +177,7 @@ end
 local function QuestieBuildQuestNameLookup()
     local lookup = {}
 
-    for _, questId in ipairs(QuestieGetAllQuestIds()) do
-        local info = QuestieGetQuestNameInfo(questId)
+    local function addQuestLookupEntry(questId, info)
         local title = QuestieSanitizeQuestTitle(info and info.title)
         local objectives = info and info.objectives or ""
 
@@ -152,24 +188,37 @@ local function QuestieBuildQuestNameLookup()
             if lookup[title][objectives] == nil then
                 lookup[title][objectives] = {}
             end
-            table.insert(lookup[title][objectives], questId)
+            QuestieAppendUniqueId(lookup[title][objectives], questId)
+        end
+    end
+
+    for _, questId in ipairs(QuestieGetAllQuestIds()) do
+        if QuestieVanillaQuestNames and QuestieVanillaQuestNames[questId] then
+            addQuestLookupEntry(questId, QuestieVanillaQuestNames[questId])
+        end
+
+        if QuestieIsTurtleWoW and QuestieTurtleQuestNames and QuestieTurtleQuestNames[questId] then
+            addQuestLookupEntry(questId, QuestieTurtleQuestNames[questId])
         end
     end
 
     return lookup
 end
 
-local function QuestieIsTurtleOnlyQuest(questId)
-    return QuestieIsTurtleWoW and questId and QuestieTurtleQuestData and QuestieTurtleQuestData[questId] ~= nil and QuestieVanillaQuestData[questId] == nil
-end
-
 local function QuestieGetDomainEntry(vanillaTable, turtleTable, entryId, questId)
-    if QuestieIsTurtleOnlyQuest(questId) and turtleTable and turtleTable[entryId] then
-        return turtleTable[entryId]
+    local vanillaEntry = vanillaTable and vanillaTable[entryId] or nil
+    local turtleEntry = turtleTable and turtleTable[entryId] or nil
+
+    if QuestieHasTurtleQuestOverride(questId) and turtleEntry ~= nil then
+        return QuestieMergeOverlayEntry(vanillaEntry, turtleEntry)
     end
 
-    if vanillaTable and vanillaTable[entryId] then
-        return vanillaTable[entryId]
+    if vanillaEntry ~= nil then
+        return vanillaEntry
+    end
+
+    if QuestieIsTurtleWoW and turtleEntry ~= nil then
+        return turtleEntry
     end
 
     return nil
@@ -182,8 +231,9 @@ local function QuestieGetEntityIdsByName(vanillaLookup, turtleLookup, entityName
         return candidates
     end
 
-    if QuestieIsTurtleOnlyQuest(questId) then
+    if QuestieHasTurtleQuestOverride(questId) then
         QuestieAppendUniqueIds(candidates, turtleLookup[entityName] or {})
+        QuestieAppendUniqueIds(candidates, vanillaLookup[entityName] or {})
     elseif questId then
         QuestieAppendUniqueIds(candidates, vanillaLookup[entityName] or {})
     else
@@ -279,12 +329,21 @@ function QuestieGetItemIdsByName(itemName, questId)
 end
 
 function QuestieGetQuestById(questId)
-    if QuestieVanillaQuestData and QuestieVanillaQuestData[questId] then
-        return QuestieVanillaQuestData[questId]
+    local vanillaQuest = QuestieVanillaQuestData and QuestieVanillaQuestData[questId] or nil
+    local turtleQuest = QuestieTurtleQuestData and QuestieTurtleQuestData[questId] or nil
+
+    if QuestieHasTurtleQuestOverride(questId) and turtleQuest ~= nil then
+        return QuestieMergeOverlayEntry(vanillaQuest, turtleQuest)
     end
-    if QuestieIsTurtleWoW and QuestieTurtleQuestData and QuestieTurtleQuestData[questId] then
-        return QuestieTurtleQuestData[questId]
+
+    if vanillaQuest ~= nil then
+        return vanillaQuest
     end
+
+    if QuestieIsTurtleWoW and turtleQuest ~= nil then
+        return turtleQuest
+    end
+
     return nil
 end
 

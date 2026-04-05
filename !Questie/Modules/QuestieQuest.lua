@@ -788,11 +788,12 @@ local function QuestieIsQuestAvailableToPlayer(questId, levelFrom, levelTo)
         return false
     end
 
-    local questLevel = tonumber(questMeta.questLevel) or 1
-    if QuestieConfig.minLevelFilter and questLevel < levelFrom then
+    local recommendedLevel = QuestieGetQuestDisplayLevel(questMeta)
+    local requiredLevel = QuestieGetQuestRequiredLevel(questMeta)
+    if QuestieConfig.minLevelFilter and recommendedLevel < levelFrom then
         return false
     end
-    if QuestieConfig.maxLevelFilter and questMeta.level > levelTo then
+    if QuestieConfig.maxLevelFilter and requiredLevel > levelTo then
         return false
     end
     if not QuestieCheckRequirements(playerClass, playerRace, questMeta.requiredClassMask, questMeta.requiredRaceMask) then
