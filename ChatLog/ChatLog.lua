@@ -729,6 +729,8 @@ function ChatLog:OnInitialize()
 end
 
 function ChatLog:OnEnable()
+	self:InitCurrentChannelStructures()
+	
 	--[[ Registering events ]]
 	self:RegisterEvent("CHAT_MSG_WHISPER")
 	self:RegisterEvent("CHAT_MSG_WHISPER_INFORM")
@@ -775,6 +777,35 @@ function ChatLog:InitCustomStructure(id, name)
 	self:CreateNewLogStructure(id, name)
 	if CHATLOG_LOGS[id]["enabled"] then
 		self:AddHeaderToTable(CHATLOG_LOGS[id]["logs"])
+	end
+end
+
+function ChatLog:GetChannelLogIndex(channelName)
+	if (channelName == nil) or (channelName == "") then return nil end
+	
+	local lChannelName = string.lower(channelName)
+	local cIndex
+	for k,v in pairs(L["generalchats"]) do
+		local channelString = string.lower(v["string"])
+		if (lChannelName == channelString) or string.find(lChannelName, channelString .. " - ", 1, true) then
+			cIndex = k
+			break
+		end
+	end
+	if cIndex == nil then cIndex = lChannelName end
+	
+	return cIndex
+end
+
+function ChatLog:InitCurrentChannelStructures()
+	local i, cname
+	for i,cname in ipairs( {GetChannelList()} ) do
+		if type(cname) == "string" then
+			local cIndex = self:GetChannelLogIndex(cname)
+			if cIndex and not L["generalchats"][cIndex] then
+				self:InitCustomStructure(cIndex, cname)
+			end
+		end
 	end
 end
 
@@ -1038,21 +1069,16 @@ end
 function ChatLog:CHAT_MSG_CHANNEL_NOTICE()
 	if (arg1 == nil) or (arg9 == nil) or (arg9 == "") then return end
 	
-	local larg9 = string.lower(arg9)
-	local cIndex
-	for k,v in pairs(L["generalchats"]) do
-		if (larg9 == k) or string.find(larg9, k .. " - ") then
-			cIndex = k
-			break
-		end
-	end
-	if cIndex == nil then cIndex = larg9 end
+	local cIndex = self:GetChannelLogIndex(arg9)
+	if cIndex == nil then return end
 	
 	if arg1 == "YOU_JOINED" then
-		self:InitCustomStructure(cIndex, arg9)
-		self:CaptureNewMessage("|c" .. CHATLOG_DEFAULT_CONF["textcolors"]["info"] .. L["customchat"]["join"] .. "|r", cIndex)
-		if CHATLOG_TEMP_CONF["currentlogindex"] == cIndex then
-			self:UpdateCurrentLogButtons()
+		if not L["generalchats"][cIndex] then
+			self:InitCustomStructure(cIndex, arg9)
+			self:CaptureNewMessage("|c" .. CHATLOG_DEFAULT_CONF["textcolors"]["info"] .. L["customchat"]["join"] .. "|r", cIndex)
+			if CHATLOG_TEMP_CONF["currentlogindex"] == cIndex then
+				self:UpdateCurrentLogButtons()
+			end
 		end
 	end
 	if arg1 == "YOU_LEFT" then
@@ -1068,15 +1094,8 @@ end
 function ChatLog:CHAT_MSG_CHANNEL()
 	if (arg1 == nil) or (arg2 == nil) or (arg9 == nil) then return end
 	
-	local larg9 = string.lower(arg9)
-	local cIndex
-	for k,v in pairs(L["generalchats"]) do
-		if (larg9 == k) or string.find(larg9, k .. " - ") then
-			cIndex = k
-			break
-		end
-	end
-	if cIndex == nil then cIndex = larg9 end
+	local cIndex = self:GetChannelLogIndex(arg9)
+	if cIndex == nil then return end
 	
 	if not CHATLOG_LOGS[cIndex]["enabled"] then return end
 	
@@ -1268,18 +1287,10 @@ function ChatLog:Reset()
 	local i, cname
 	for i,cname in ipairs( {GetChannelList()} ) do
 		if type(cname) == "string" then
-			local lcname = string.lower(cname)
-			local found = false
-			local k,v
-			for k,v in pairs(L["generalchats"]) do
-				if (lcname == k) or string.find(lcname, k .. " - ") then
-					found = true
-					break
-				end
-			end
-			if not found then
-				self:InitCustomStructure(lcname, cname)
-				self:CaptureNewMessage("|c" .. CHATLOG_DEFAULT_CONF["textcolors"]["info"] .. L["customchat"]["join"] .. "|r", lcname)
+			local cIndex = self:GetChannelLogIndex(cname)
+			if cIndex and not L["generalchats"][cIndex] then
+				self:InitCustomStructure(cIndex, cname)
+				self:CaptureNewMessage("|c" .. CHATLOG_DEFAULT_CONF["textcolors"]["info"] .. L["customchat"]["join"] .. "|r", cIndex)
 			end
 		end
 	end
