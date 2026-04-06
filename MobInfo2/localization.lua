@@ -130,8 +130,8 @@ MI2_OPTIONS["MI2_OptItemTooltip"] =
 info = "List the names of all Mobs that drop a hovered item\nin the item tooltip. For each item list the amount\ndropped by the Mob along with percentage." }
 
 MI2_OPTIONS["MI2_OptCursorTooltip"] =
-{ text = "Follow Cursor Tooltip"; help = "Move MobInfo mob and item tooltips to the cursor";
-info = "When enabled, MobInfo moves only its own hostile mob and item drop\ntooltips to follow the cursor. Search and options help tooltips stay put." }
+{ text = "Follow Cursor Tooltip"; help = "Move MobInfo creature and item tooltips to the cursor";
+info = "When enabled, MobInfo moves its own non-player creature and item drop\ntooltips to follow the cursor. Bag, bank, and inventory-slot item\ntooltips stay anchored. Search and options help tooltips stay put." }
 
 MI2_OPTIONS["MI2_OptCompactMode"] = 
 { text = "Compact Mob Tooltip"; help = "Enables a compact mob tooltip layout with 2 values per tooltip line";

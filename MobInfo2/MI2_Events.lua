@@ -41,14 +41,61 @@ local function MI2_StopCursorTooltip()
 	MI2_MobInfoFrame:SetScript("OnUpdate", nil)
 end
 
+local function MI2_IsMobCursorTooltipUnit(unit)
+	if not unit or not UnitExists(unit) or UnitIsPlayer(unit) then
+		return false
+	end
+
+	if UnitPlayerControlled and UnitPlayerControlled(unit) then
+		return false
+	end
+
+	return UnitCreatureType(unit) ~= nil
+end
+
+local function MI2_IsContainerTooltipOwner(owner)
+	if not owner or not owner.GetID then
+		return false
+	end
+
+	local slotId = owner:GetID()
+	local parent = owner:GetParent()
+	if not slotId or not parent or not parent.GetID then
+		return false
+	end
+
+	local bagId = parent:GetID()
+	if bagId == nil then
+		return false
+	end
+
+	return GetContainerItemLink(bagId, slotId) ~= nil
+end
+
+local function MI2_IsInventoryTooltipOwner(owner)
+	if not owner or not owner.GetInventorySlot then
+		return false
+	end
+
+	local slotId = owner:GetInventorySlot()
+	if not slotId then
+		return false
+	end
+
+	return GetInventoryItemLink("player", slotId) ~= nil
+end
+
+local function MI2_IsAnchoredItemTooltipOwner(owner)
+	return MI2_IsContainerTooltipOwner(owner) or MI2_IsInventoryTooltipOwner(owner)
+end
+
 local function MI2_ShouldHideCursorTooltip()
 	if not MI2_CursorTooltipActive then
 		return true
 	end
 
 	if MI2_CursorTooltipActive.kind == "mob" then
-		if not UnitExists("mouseover") or UnitIsPlayer("mouseover")
-				or UnitIsFriend("player", "mouseover") then
+		if not MI2_IsMobCursorTooltipUnit("mouseover") then
 			return true
 		end
 	elseif MI2_CursorTooltipActive.owner and not MouseIsOver(MI2_CursorTooltipActive.owner) then
@@ -500,8 +547,9 @@ function MI2_GameTooltip_OnShow( )
 	if MobInfoConfig.DisableMobInfo == 0 and (MobInfoConfig.KeypressMode == 0
 			or MobInfoConfig.KeypressMode == 1 and IsAltKeyDown())  then
 		local firstline = getglobal("GameTooltipTextLeft1");
+		local owner = GameTooltip.owner
 
-		if  UnitCreatureType("mouseover") and UnitIsFriend("player","mouseover") == nil then
+		if MI2_IsMobCursorTooltipUnit("mouseover") then
 			-- add mob data to mob tooltip (show abbreviated location)
 			MI2_BuildMobInfoTooltip( UnitName("mouseover"), UnitLevel("mouseover"), nil )
 			GameTooltip:Show()
@@ -510,7 +558,9 @@ function MI2_GameTooltip_OnShow( )
 			-- add item loot info to item tooltip
 			if MI2_BuildItemDataTooltip( firstline:GetText() ) then
 				GameTooltip:Show()
-				followCursor = "item"
+				if not MI2_IsAnchoredItemTooltipOwner(owner) then
+					followCursor = "item"
+				end
 			end
 		end
 	end
