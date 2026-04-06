@@ -1,13 +1,21 @@
-﻿## Interface: 11200
-## Title: [任务]AtlasQuest
-## Notes: 显示副本任务列表。这是英文版本。
+## Interface: 11200
+## Title: [ä»»åŠ¡]AtlasQuest
+## Notes: æ˜¾ç¤ºå‰¯æœ¬ä»»åŠ¡åˆ—è¡¨ã€‚
 ## Author: Asurn
 ## Version: 3.14.28
 ## Notes-deDE: Zeigt die Quests, die es f\195\88r die jeweiligen Instanzen gibt.
 ## Notes-frFR: Shows the Quests for the instance. (French translator needed)
 ## Notes-koKR: Shows the Quests for the instance. (translator needed)
+## Notes-zhCN: æ˜¾ç¤ºå‰¯æœ¬ä»»åŠ¡åˆ—è¡¨ã€‚
 ## SavedVariables:
-## OptionalDeps: Atlasloot
+## OptionalDeps: Atlasloot,!Questie
 ## Dependencies: Atlas
+Generated\Quests.lua
+Generated\Items.lua
+Generated\Locales.enUS.lua
+Generated\Locales.zhCN.lua
+AtlasQuest_Instanzen.lua
+AtlasQuest_Buttons.lua
+AtlasQuest.lua
 AtlasQuest_InsideFrame.xml
 AtlasQuest.xml

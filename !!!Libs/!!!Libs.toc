@@ -7,6 +7,8 @@
 ## OptionalDeps: !!Warmup, !BugGrabber
 ## X-Category: Library
 
+ClientCompat.lua
+
 Ace2\AceLibrary\AceLibrary.lua
 Ace2\AceOO-2.0\AceOO-2.0.lua
 

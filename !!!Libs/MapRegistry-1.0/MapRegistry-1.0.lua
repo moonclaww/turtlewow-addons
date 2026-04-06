@@ -194,6 +194,26 @@ end
 
 buildLookups()
 
+local function registerRecord(mapFile, record)
+    record.mapFile = mapFile
+    if not record.astrolabeKey then
+        record.astrolabeKey = mapFile
+    end
+
+    baseRecords[mapFile] = record
+    recordLookup[record.id] = record
+
+    if record.vanillaContinent and record.vanillaContinent > 0 and record.vanillaZone and record.vanillaZone >= 0 then
+        vanillaLookup[record.vanillaContinent * 100 + record.vanillaZone] = record.id
+    end
+
+    if record.turtleContinent and record.turtleContinent > 0 and record.turtleZone and record.turtleZone >= 0 then
+        turtleLookup[record.turtleContinent * 100 + record.turtleZone] = record.id
+    end
+
+    liveBindings = nil
+end
+
 local function dottedVersionScore(version)
     if not version or version == "" then
         return nil
@@ -333,6 +353,47 @@ end
 
 function MapRegistry:GetTurtleBuildVersion()
     return GameVersion:GetBuildVersion()
+end
+
+function MapRegistry:RegisterGeneratedRecord(mapFile, record)
+    if not mapFile or not record or not record.id then
+        return
+    end
+    local existingRecord = baseRecords[mapFile]
+    if existingRecord and existingRecord.id ~= record.id then
+        return
+    end
+    registerRecord(mapFile, copyTable(record))
+end
+
+function MapRegistry:RegisterMapFileAlias(alias, mapFile)
+    if not alias or not mapFile then
+        return
+    end
+    local existingMapFile = mapFileAliases[alias]
+    if existingMapFile and existingMapFile ~= mapFile then
+        return
+    end
+    mapFileAliases[alias] = mapFile
+    liveBindings = nil
+end
+
+function MapRegistry:RegisterGeneratedManifest(manifestData)
+    if not manifestData then
+        return
+    end
+
+    if manifestData.records then
+        for mapFile, record in pairs(manifestData.records) do
+            self:RegisterGeneratedRecord(mapFile, record)
+        end
+    end
+
+    if manifestData.aliases then
+        for alias, mapFile in pairs(manifestData.aliases) do
+            self:RegisterMapFileAlias(alias, mapFile)
+        end
+    end
 end
 
 function MapRegistry:GetAvailableTurtleVersions()

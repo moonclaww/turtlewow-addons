@@ -427,6 +427,23 @@
 	        </OnClick>
 	      </Scripts>
         </Button>
+        <Button name="AQQuestieButton" inherits="OptionsButtonTemplate" text="Questie" hidden="false">
+          <Size>
+            <AbsDimension x="78" y="24"/>
+          </Size>
+          <Anchors>
+             <Anchor point="TOPRIGHT">
+               <Offset>
+                  <AbsDimension x="-38" y="-8"/>
+               </Offset>
+             </Anchor>
+          </Anchors>
+          <Scripts>
+            <OnClick>
+              AQQUESTIE_OnClick();
+            </OnClick>
+          </Scripts>
+        </Button>
      </Frames>
 		<Layers>
 			<Layer level="BACKGROUND">

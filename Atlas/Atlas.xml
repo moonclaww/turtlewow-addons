@@ -472,6 +472,7 @@
 				</FontString>
 			</Layer>
 			<Layer level="BACKGROUND">
+				<Texture name="AtlasMapBackground"/>
 				<Texture name="AtlasMap"/>
           	</Layer>
 		</Layers>

@@ -39,6 +39,220 @@ local DefaultAtlasOptions = {
 	["AtlasAcronyms"] = true;
 };
 
+local ATLAS_GENERATED_TEXTURE_PATH_PREFIX = "Interface\\AddOns\\Atlas\\Generated\\Images\\";
+local ATLAS_GENERATED_RUNTIME_SIZE = 512;
+local ATLAS_GENERATED_SOURCE_WIDTH = 1024;
+local ATLAS_GENERATED_SOURCE_HEIGHT = 768;
+local ATLAS_GENERATED_CONTENT_WIDTH = 1002;
+local ATLAS_GENERATED_CONTENT_HEIGHT = 668;
+local ATLAS_GENERATED_CONTENT_RUNTIME_WIDTH = (ATLAS_GENERATED_CONTENT_WIDTH * ATLAS_GENERATED_RUNTIME_SIZE) / ATLAS_GENERATED_SOURCE_WIDTH;
+local ATLAS_GENERATED_CONTENT_RUNTIME_HEIGHT = (ATLAS_GENERATED_CONTENT_HEIGHT * ATLAS_GENERATED_RUNTIME_SIZE) / ATLAS_GENERATED_SOURCE_WIDTH;
+local ATLAS_GENERATED_CONTENT_RUNTIME_OFFSET_Y = (ATLAS_GENERATED_RUNTIME_SIZE - ((ATLAS_GENERATED_SOURCE_HEIGHT * ATLAS_GENERATED_RUNTIME_SIZE) / ATLAS_GENERATED_SOURCE_WIDTH)) / 2;
+local ATLAS_MAP_PREVIEW_WIDTH = 512;
+local ATLAS_MAP_PREVIEW_HEIGHT = 512;
+local ATLAS_MAP_PREVIEW_OFFSET_X = 18;
+local ATLAS_MAP_PREVIEW_OFFSET_Y = -84;
+
+local function Atlas_IsGeneratedRuntimeTexture(texturePath)
+	return texturePath and string.find(texturePath, ATLAS_GENERATED_TEXTURE_PATH_PREFIX, 1, true);
+end
+
+local function Atlas_GetDropdownListForType(mapType)
+	if ( mapType == 1 ) then
+		return ATLAS_DROPDOWN_LIST;
+	elseif ( mapType == 2 ) then
+		return ATLAS_DROPDOWN_LIST_BG;
+	elseif ( mapType == 3 ) then
+		return ATLAS_DROPDOWN_LIST_FP;
+	elseif ( mapType == 4 ) then
+		return ATLAS_DROPDOWN_LIST_DL;
+	elseif ( mapType == 5 ) then
+		return ATLAS_DROPDOWN_LIST_RE;
+	end
+	return nil;
+end
+
+local function Atlas_GetPageInfo(pageID)
+	if ( AtlasGeneratedMaps and AtlasGeneratedMaps.pages ) then
+		return AtlasGeneratedMaps.pages[pageID];
+	end
+	return nil;
+end
+
+local function Atlas_GetLegacyTextTable(category)
+	if ( category == 1 ) then
+		return AtlasText;
+	elseif ( category == 2 ) then
+		return AtlasBG;
+	elseif ( category == 3 ) then
+		return AtlasFP;
+	elseif ( category == 4 ) then
+		return AtlasDL;
+	elseif ( category == 5 ) then
+		return AtlasRE;
+	end
+	return nil;
+end
+
+local function Atlas_GetGeneratedLocaleAtlasData()
+	if ( not AtlasGeneratedLocales ) then
+		return nil;
+	end
+
+	local locale = GetLocale();
+	local payload = AtlasGeneratedLocales[locale];
+	if ( payload and payload["atlas"] and next(payload["atlas"]) ) then
+		return payload["atlas"];
+	end
+
+	payload = AtlasGeneratedLocales["enUS"];
+	if ( payload and payload["atlas"] ) then
+		return payload["atlas"];
+	end
+
+	return nil;
+end
+
+local function Atlas_RegisterGeneratedLocaleEntry(pageID, page, generatedText)
+	local legacyTable = Atlas_GetLegacyTextTable(page.category);
+	if ( not legacyTable or not generatedText ) then
+		return;
+	end
+
+	local entry = {
+		ZoneName = generatedText["ZoneName"] or page.source_key or page.map_file or tostring(pageID);
+		Acronym = generatedText["Acronym"];
+		Location = generatedText["Location"] or "---";
+		LevelRange = generatedText["LevelRange"] or "---";
+		PlayerLimit = generatedText["PlayerLimit"] or "---";
+	};
+
+	local lines = generatedText["lines"];
+	if ( type(lines) == "table" ) then
+		for i = 1, getn(lines), 1 do
+			entry[i] = lines[i];
+		end
+	end
+
+	if ( page.source_key ) then
+		legacyTable[page.source_key] = entry;
+	end
+	legacyTable[pageID] = entry;
+end
+
+local function Atlas_ApplyGeneratedLocales()
+	local generatedAtlas = Atlas_GetGeneratedLocaleAtlasData();
+	if ( not generatedAtlas or not AtlasGeneratedMaps or not AtlasGeneratedMaps.pages ) then
+		return;
+	end
+
+	for pageID, page in pairs(AtlasGeneratedMaps.pages) do
+		local generatedText = nil;
+		if ( page.source_key and generatedAtlas[page.source_key] ) then
+			generatedText = generatedAtlas[page.source_key];
+		elseif ( page.map_file and generatedAtlas[page.map_file] ) then
+			generatedText = generatedAtlas[page.map_file];
+		elseif ( generatedAtlas[pageID] ) then
+			generatedText = generatedAtlas[pageID];
+		end
+
+		if ( generatedText ) then
+			Atlas_RegisterGeneratedLocaleEntry(pageID, page, generatedText);
+		end
+	end
+end
+
+local function Atlas_GetPageTextEntry(category, pageID, page)
+	local legacyTable = Atlas_GetLegacyTextTable(category);
+	if ( not legacyTable ) then
+		return nil;
+	end
+	if ( legacyTable[pageID] ) then
+		return legacyTable[pageID];
+	end
+	if ( page and page.source_key and legacyTable[page.source_key] ) then
+		return legacyTable[page.source_key];
+	end
+	if ( page and page.map_file and legacyTable[page.map_file] ) then
+		return legacyTable[page.map_file];
+	end
+	return nil;
+end
+
+local function Atlas_GetPageDisplayName(category, pageID)
+	local page = Atlas_GetPageInfo(pageID);
+	local entry = Atlas_GetPageTextEntry(category, pageID, page);
+	if ( entry and entry["ZoneName"] ) then
+		return entry["ZoneName"];
+	end
+	if ( page and page.source_key ) then
+		return page.source_key;
+	end
+	if ( page and page.map_file ) then
+		return page.map_file;
+	end
+	return tostring(pageID);
+end
+
+local function Atlas_GetSelectedPageID()
+	local dropList = Atlas_GetDropdownListForType(AtlasOptions.AtlasType);
+	if ( not dropList or getn(dropList) == 0 ) then
+		return nil;
+	end
+
+	if ( AtlasOptions.AtlasMapID ) then
+		for i = 1, getn(dropList), 1 do
+			if ( dropList[i] == AtlasOptions.AtlasMapID ) then
+				AtlasOptions.AtlasZone = i;
+				return AtlasOptions.AtlasMapID;
+			end
+		end
+	end
+
+	if ( AtlasOptions.AtlasZone and dropList[AtlasOptions.AtlasZone] ) then
+		AtlasOptions.AtlasMapID = dropList[AtlasOptions.AtlasZone];
+		return AtlasOptions.AtlasMapID;
+	end
+
+	AtlasOptions.AtlasZone = 1;
+	AtlasOptions.AtlasMapID = dropList[1];
+	return AtlasOptions.AtlasMapID;
+end
+
+local function Atlas_SetSelectedPageID(pageID)
+	local page = Atlas_GetPageInfo(pageID);
+	if ( not page ) then
+		return nil;
+	end
+
+	local dropList = Atlas_GetDropdownListForType(page.category);
+	if ( not dropList ) then
+		return nil;
+	end
+
+	AtlasOptions.AtlasType = page.category;
+	for i = 1, getn(dropList), 1 do
+		if ( dropList[i] == pageID ) then
+			AtlasOptions.AtlasZone = i;
+			AtlasOptions.AtlasMapID = pageID;
+			return pageID;
+		end
+	end
+
+	return nil;
+end
+
+local function Atlas_GetTextureForPage(pageID)
+	local page = Atlas_GetPageInfo(pageID);
+	if ( page and page.texture_path ) then
+		return page.texture_path, page.texture_width, page.texture_height;
+	end
+	if ( page and page.texture ) then
+		return "Interface\\AddOns\\Atlas\\Images\\"..page.texture, nil, nil;
+	end
+	return nil, nil, nil;
+end
+
 function Atlas_FreshOptions()
 	AtlasOptions = CloneTable(DefaultAtlasOptions);
 end
@@ -67,6 +281,9 @@ function Atlas_OnLoad()
 
 	--Allows Atlas to be closed with the Escape key
 	tinsert(UISpecialFrames, "AtlasFrame");
+	AtlasMapBackground:SetTexture(0.05, 0.05, 0.05, 1.0);
+	AtlasMapBackground:SetDrawLayer("BACKGROUND", 0);
+	AtlasMap:SetDrawLayer("ARTWORK", 0);
 	
 	--Dragging involves some special registration
 	AtlasFrame:RegisterForDrag("LeftButton");
@@ -96,36 +313,36 @@ end
 
 --Comparator function for alphabetic sorting of maps
 local function Atlas_SortZonesAlpha(a, b)
-	local aa = Atlas_SanitizeName(AtlasText[a].ZoneName);
-	local bb = Atlas_SanitizeName(AtlasText[b].ZoneName);
+	local aa = Atlas_SanitizeName(Atlas_GetPageDisplayName(1, a));
+	local bb = Atlas_SanitizeName(Atlas_GetPageDisplayName(1, b));
 	return aa < bb;
 end
 
 --Comparator function for alphabetic sorting of BG maps
 local function Atlas_SortZonesAlphaBG(a, b)
-	local aa = Atlas_SanitizeName(AtlasBG[a].ZoneName);
-	local bb = Atlas_SanitizeName(AtlasBG[b].ZoneName);
+	local aa = Atlas_SanitizeName(Atlas_GetPageDisplayName(2, a));
+	local bb = Atlas_SanitizeName(Atlas_GetPageDisplayName(2, b));
 	return aa < bb;
 end
 
 --Comparator function for alphabetic sorting of FP maps
 local function Atlas_SortZonesAlphaFP(a, b)
-	local aa = Atlas_SanitizeName(AtlasFP[a].ZoneName);
-	local bb = Atlas_SanitizeName(AtlasFP[b].ZoneName);
+	local aa = Atlas_SanitizeName(Atlas_GetPageDisplayName(3, a));
+	local bb = Atlas_SanitizeName(Atlas_GetPageDisplayName(3, b));
 	return aa < bb;
 end
 
 --Comparator function for alphabetic sorting of DL maps
 local function Atlas_SortZonesAlphaDL(a, b)
-	local aa = Atlas_SanitizeName(AtlasDL[a].ZoneName);
-	local bb = Atlas_SanitizeName(AtlasDL[b].ZoneName);
+	local aa = Atlas_SanitizeName(Atlas_GetPageDisplayName(4, a));
+	local bb = Atlas_SanitizeName(Atlas_GetPageDisplayName(4, b));
 	return aa < bb;
 end
 
 --Comparator function for alphabetic sorting of RE maps
 local function Atlas_SortZonesAlphaRE(a, b)
-	local aa = Atlas_SanitizeName(AtlasRE[a].ZoneName);
-	local bb = Atlas_SanitizeName(AtlasRE[b].ZoneName);
+	local aa = Atlas_SanitizeName(Atlas_GetPageDisplayName(5, a));
+	local bb = Atlas_SanitizeName(Atlas_GetPageDisplayName(5, b));
 	return aa < bb;
 end
 
@@ -252,22 +469,33 @@ function Atlas_Init()
 		Atlas_FreshOptions();
 	end
 
-	--Take all the maps listed in the localization files and import them into the dropdown list structure
-	table.foreach(AtlasText, function(v)
-		table.insert(ATLAS_DROPDOWN_LIST, v)
-	end);
-	table.foreach(AtlasBG, function(v)
-		table.insert(ATLAS_DROPDOWN_LIST_BG, v)
-	end);
-	table.foreach(AtlasFP, function(v)
-		table.insert(ATLAS_DROPDOWN_LIST_FP, v)
-	end);
-	table.foreach(AtlasDL, function(v)
-		table.insert(ATLAS_DROPDOWN_LIST_DL, v)
-	end);
-	table.foreach(AtlasRE, function(v)
-		table.insert(ATLAS_DROPDOWN_LIST_RE, v)
-	end);
+	ATLAS_DROPDOWN_LIST = {};
+	ATLAS_DROPDOWN_LIST_BG = {};
+	ATLAS_DROPDOWN_LIST_FP = {};
+	ATLAS_DROPDOWN_LIST_DL = {};
+	ATLAS_DROPDOWN_LIST_RE = {};
+
+	if ( not AtlasGeneratedMaps or not AtlasGeneratedMaps.categories ) then
+		error("AtlasGeneratedMaps is required for Atlas initialization.");
+	end
+
+	for _, pageID in ipairs(AtlasGeneratedMaps.categories[1] or {}) do
+		table.insert(ATLAS_DROPDOWN_LIST, pageID);
+	end
+	for _, pageID in ipairs(AtlasGeneratedMaps.categories[2] or {}) do
+		table.insert(ATLAS_DROPDOWN_LIST_BG, pageID);
+	end
+	for _, pageID in ipairs(AtlasGeneratedMaps.categories[3] or {}) do
+		table.insert(ATLAS_DROPDOWN_LIST_FP, pageID);
+	end
+	for _, pageID in ipairs(AtlasGeneratedMaps.categories[4] or {}) do
+		table.insert(ATLAS_DROPDOWN_LIST_DL, pageID);
+	end
+	for _, pageID in ipairs(AtlasGeneratedMaps.categories[5] or {}) do
+		table.insert(ATLAS_DROPDOWN_LIST_RE, pageID);
+	end
+
+	Atlas_ApplyGeneratedLocales();
 
 	--Update the level ranges and player limits
 	--Overrides the values in the localization files because I'm too lazy to change them all
@@ -390,7 +618,6 @@ end
 --Also responsible for updating all the text when a map is changed
 function Atlas_Refresh()
 	local zoneID;
-	local textSource;
 	
 	--Just in case AtlasType hasn't been initialized
 	--Added in response to a possible error
@@ -399,37 +626,71 @@ function Atlas_Refresh()
 	end
 	
 	if ( AtlasOptions.AtlasType == 1 ) then
-		zoneID = ATLAS_DROPDOWN_LIST[AtlasOptions.AtlasZone];
-		textSource = AtlasText;
+		zoneID = Atlas_GetSelectedPageID();
 	elseif ( AtlasOptions.AtlasType == 2 ) then
-		zoneID = ATLAS_DROPDOWN_LIST_BG[AtlasOptions.AtlasZone];
-		textSource = AtlasBG;
+		zoneID = Atlas_GetSelectedPageID();
 	elseif ( AtlasOptions.AtlasType == 3 ) then
-		zoneID = ATLAS_DROPDOWN_LIST_FP[AtlasOptions.AtlasZone];
-		textSource = AtlasFP;
+		zoneID = Atlas_GetSelectedPageID();
 	elseif ( AtlasOptions.AtlasType == 4 ) then
-		zoneID = ATLAS_DROPDOWN_LIST_DL[AtlasOptions.AtlasZone];
-		textSource = AtlasDL;
+		zoneID = Atlas_GetSelectedPageID();
 	elseif ( AtlasOptions.AtlasType == 5 ) then
-		zoneID = ATLAS_DROPDOWN_LIST_RE[AtlasOptions.AtlasZone];
-		textSource = AtlasRE;
+		zoneID = Atlas_GetSelectedPageID();
 	end
+	if ( not zoneID ) then
+		return;
+	end
+
+	local page = Atlas_GetPageInfo(zoneID);
+	local pageText = Atlas_GetPageTextEntry(AtlasOptions.AtlasType, zoneID, page) or {};
+	local texturePath, textureWidth, textureHeight = Atlas_GetTextureForPage(zoneID);
+	if ( not texturePath ) then
+		return;
+	end
+
+	local maxWidth = ATLAS_MAP_PREVIEW_WIDTH;
+	local maxHeight = ATLAS_MAP_PREVIEW_HEIGHT;
+	local drawWidth = maxWidth;
+	local drawHeight = maxHeight;
+	local texCoordLeft = 0;
+	local texCoordRight = 1;
+	local texCoordTop = 0;
+	local texCoordBottom = 1;
+	if ( Atlas_IsGeneratedRuntimeTexture(texturePath) ) then
+		local scale = math.min(maxWidth / ATLAS_GENERATED_CONTENT_RUNTIME_WIDTH, maxHeight / ATLAS_GENERATED_CONTENT_RUNTIME_HEIGHT);
+		drawWidth = math.floor(ATLAS_GENERATED_CONTENT_RUNTIME_WIDTH * scale + 0.5);
+		drawHeight = math.floor(ATLAS_GENERATED_CONTENT_RUNTIME_HEIGHT * scale + 0.5);
+		texCoordRight = ATLAS_GENERATED_CONTENT_RUNTIME_WIDTH / ATLAS_GENERATED_RUNTIME_SIZE;
+		texCoordTop = ATLAS_GENERATED_CONTENT_RUNTIME_OFFSET_Y / ATLAS_GENERATED_RUNTIME_SIZE;
+		texCoordBottom = (ATLAS_GENERATED_CONTENT_RUNTIME_OFFSET_Y + ATLAS_GENERATED_CONTENT_RUNTIME_HEIGHT) / ATLAS_GENERATED_RUNTIME_SIZE;
+	elseif ( textureWidth and textureHeight and textureWidth > 0 and textureHeight > 0 ) then
+		local scale = math.min(maxWidth / textureWidth, maxHeight / textureHeight);
+		drawWidth = math.floor(textureWidth * scale + 0.5);
+		drawHeight = math.floor(textureHeight * scale + 0.5);
+	end
+	local offsetX = ATLAS_MAP_PREVIEW_OFFSET_X + math.floor((maxWidth - drawWidth) / 2);
+	local offsetY = ATLAS_MAP_PREVIEW_OFFSET_Y - math.floor((maxHeight - drawHeight) / 2);
+
+	AtlasMapBackground:ClearAllPoints();
+	AtlasMapBackground:SetWidth(maxWidth);
+	AtlasMapBackground:SetHeight(maxHeight);
+	AtlasMapBackground:SetPoint("TOPLEFT", "AtlasFrame", "TOPLEFT", ATLAS_MAP_PREVIEW_OFFSET_X, ATLAS_MAP_PREVIEW_OFFSET_Y);
 	AtlasMap:ClearAllPoints();
-	AtlasMap:SetWidth(512);
-	AtlasMap:SetHeight(512);
-	AtlasMap:SetPoint("TOPLEFT", "AtlasFrame", "TOPLEFT", 18, -84);
-	AtlasMap:SetTexture("Interface\\AddOns\\Atlas\\Images\\"..zoneID);
-	local ZoneNameText = textSource[zoneID]["ZoneName"];
-	if ( AtlasOptions.AtlasAcronyms and textSource[zoneID]["Acronym"] ~= nil) then
+	AtlasMap:SetWidth(drawWidth);
+	AtlasMap:SetHeight(drawHeight);
+	AtlasMap:SetPoint("TOPLEFT", "AtlasFrame", "TOPLEFT", offsetX, offsetY);
+	AtlasMap:SetTexCoord(texCoordLeft, texCoordRight, texCoordTop, texCoordBottom);
+	AtlasMap:SetTexture(texturePath);
+	local ZoneNameText = pageText["ZoneName"] or Atlas_GetPageDisplayName(AtlasOptions.AtlasType, zoneID);
+	if ( AtlasOptions.AtlasAcronyms and pageText["Acronym"] ~= nil) then
 		local _RED = "|cffcc6666";
-		ZoneNameText = ZoneNameText.._RED.." ["..textSource[zoneID]["Acronym"].."]";
+		ZoneNameText = ZoneNameText.._RED.." ["..pageText["Acronym"].."]";
 	end
 	AtlasText_ZoneName:SetText(ZoneNameText);
-	AtlasText_Location:SetText(ATLAS_STRING_LOCATION..": "..textSource[zoneID]["Location"]);
-	AtlasText_LevelRange:SetText(ATLAS_STRING_LEVELRANGE..": "..textSource[zoneID]["LevelRange"]);
-	AtlasText_PlayerLimit:SetText(ATLAS_STRING_PLAYERLIMIT..": "..textSource[zoneID]["PlayerLimit"]);
+	AtlasText_Location:SetText(ATLAS_STRING_LOCATION..": "..(pageText["Location"] or "---"));
+	AtlasText_LevelRange:SetText(ATLAS_STRING_LEVELRANGE..": "..(pageText["LevelRange"] or "---"));
+	AtlasText_PlayerLimit:SetText(ATLAS_STRING_PLAYERLIMIT..": "..(pageText["PlayerLimit"] or "---"));
 	for i = 1, 27, 1 do
-		getglobal("AtlasText_"..i):SetText(textSource[zoneID][i]);
+		getglobal("AtlasText_"..i):SetText(pageText[i] or "");
 	end
 end
 
@@ -460,6 +721,10 @@ function AtlasFrameDropDownType_OnClick()
 	UIDropDownMenu_SetSelectedID(AtlasFrameDropDownType, i);
 	AtlasOptions.AtlasType = i;
 	AtlasOptions.AtlasZone = 1;
+	local dropList = Atlas_GetDropdownListForType(i);
+	if ( dropList and dropList[1] ) then
+		AtlasOptions.AtlasMapID = dropList[1];
+	end
 	AtlasFrameDropDown_OnShow();
 	Atlas_Refresh();
 end
@@ -486,8 +751,9 @@ end
 function AtlasFrameDropDown_Populate(mapType, dropList)
 	local info;
 	for i = 1, getn(dropList), 1 do
+		local pageID = dropList[i];
 		info = {
-			text = mapType[dropList[i]]["ZoneName"];
+			text = Atlas_GetPageDisplayName(AtlasOptions.AtlasType, pageID);
 			func = AtlasFrameDropDown_OnClick;
 		};
 		UIDropDownMenu_AddButton(info);
@@ -507,6 +773,10 @@ function AtlasFrameDropDown_OnClick()
 	i = this:GetID();
 	UIDropDownMenu_SetSelectedID(AtlasFrameDropDown, i);
 	AtlasOptions.AtlasZone = i;
+	local dropList = Atlas_GetDropdownListForType(AtlasOptions.AtlasType);
+	if ( dropList and dropList[i] ) then
+		AtlasOptions.AtlasMapID = dropList[i];
+	end
 	Atlas_Refresh();
 end
 
@@ -523,18 +793,18 @@ end
 --Checks the player's current location against all Atlas maps
 --If a match is found display that map right away
 function Atlas_AutoSelect()
-	local currentZone = Atlas_GetFixedZoneText();
-	local currentMap = AtlasText[ATLAS_DROPDOWN_LIST[AtlasOptions.AtlasZone]]["ZoneName"];
-	if(currentZone ~= currentMap) then
-		for i = 1, getn(ATLAS_DROPDOWN_LIST), 1 do
-			local mapName = AtlasText[ATLAS_DROPDOWN_LIST[i]]["ZoneName"];
-			if(currentZone == mapName) then
-				AtlasOptions.AtlasType = 1;
-				AtlasOptions.AtlasZone = i;
-				UIDropDownMenu_SetSelectedID(AtlasFrameDropDown, i);
-				Atlas_Refresh();
-			end
-		end
+	if ( not AceLibrary ) then
+		return;
+	end
+	local mapRegistry = AceLibrary("MapRegistry-1.0");
+	if ( not mapRegistry ) then
+		return;
+	end
+	local currentMapID = mapRegistry:GetCurrentMapID();
+	local selectedPageID = AtlasGeneratedMaps.defaults[currentMapID];
+	if ( selectedPageID and Atlas_SetSelectedPageID(selectedPageID) ) then
+		UIDropDownMenu_SetSelectedID(AtlasFrameDropDown, AtlasOptions.AtlasZone);
+		Atlas_Refresh();
 	end
 end
 
@@ -549,12 +819,16 @@ end
 --Is the feature turned on? Is the player in an instance?
 function Atlas_ReplaceWorldMap()
 	if(AtlasOptions.AtlasReplaceWorldMap) then
-		local currentZone = Atlas_GetFixedZoneText();
-		for i = 1, getn(ATLAS_DROPDOWN_LIST), 1 do
-			local mapName = AtlasText[ATLAS_DROPDOWN_LIST[i]]["ZoneName"];
-			if(currentZone == mapName) then
-				return true;
-			end
+		if ( not AceLibrary ) then
+			return false;
+		end
+		local mapRegistry = AceLibrary("MapRegistry-1.0");
+		if ( not mapRegistry ) then
+			return false;
+		end
+		local currentMapID = mapRegistry:GetCurrentMapID();
+		if ( AtlasGeneratedMaps.defaults[currentMapID] ) then
+			return true;
 		end
 	end
 	return false;

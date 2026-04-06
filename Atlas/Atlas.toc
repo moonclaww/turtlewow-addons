@@ -20,6 +20,9 @@ localization.kr.lua
 localization.nl.lua
 localization.tw.lua
 localization.es.lua
+Generated\Maps.lua
+Generated\Locales.enUS.lua
+Generated\Locales.zhCN.lua
 Atlas.lua
 AtlasButton.lua
 AtlasOptions.lua

@@ -77,6 +77,13 @@ StaticPopupDialogs["ATLASLOOT_OLD_ATLAS"] = {
   hideOnEscape = 1
 };
 
+local function AtlasLoot_GetLegacyZoneID(pageID)
+	if ( AtlasLootGeneratedMaps and AtlasLootGeneratedMaps.pages and AtlasLootGeneratedMaps.pages[pageID] and AtlasLootGeneratedMaps.pages[pageID].legacy_key ) then
+		return AtlasLootGeneratedMaps.pages[pageID].legacy_key;
+	end
+	return pageID;
+end
+
 --------------------------------------------------------------------------------
 -- OnEvent
 --------------------------------------------------------------------------------
@@ -180,13 +187,14 @@ function AtlasLoot_Refresh()
 	    Hooked_Atlas_Refresh();
 	    --If we are dealing with instances
 	    if ( AtlasOptions.AtlasType == 1 ) then
-		    local zoneID = ATLAS_DROPDOWN_LIST[AtlasOptions.AtlasZone];
+		    local pageID = ATLAS_DROPDOWN_LIST[AtlasOptions.AtlasZone];
+		    local zoneID = AtlasLoot_GetLegacyZoneID(pageID);
 		    local text;
 		    --If we have atlasloot data
-		    if(AtlasLootBossButtons[zoneID] ~= nil) then
+		    if(AtlasLootBossButtons[pageID] ~= nil) then
 			    for i = 1, 27, 1 do
                     --If we have items in the atlasloot data
-				    if(AtlasLootBossButtons[zoneID][i] ~= nil and AtlasLootBossButtons[zoneID][i] ~= "") then
+				    if(AtlasLootBossButtons[pageID][i] ~= nil and AtlasLootBossButtons[pageID][i] ~= "") then
 					    getglobal("AtlasText_"..i):Hide();
 					    getglobal("AtlasBossLine_"..i):Show();
                         --Ridiculous number of special cases, need to to something to clean this up
@@ -210,9 +218,9 @@ function AtlasLoot_Refresh()
                             getglobal("AtlasBossLine_"..i.."_Text"):SetText(ATLASLOOT_SCARLETSET);
 					    elseif(zoneID == "MoltenCore" and getglobal("AtlasBossLine_"..(i-1).."_Text"):GetText() == ATLASLOOT_TRASH_MOBS) then
                             getglobal("AtlasBossLine_"..i.."_Text"):SetText(ATLASLOOT_RANDOM_LOOT);
-                        elseif(zoneID == "MoltenCore" and getglobal("AtlasBossLine_"..(i-1).."_Text"):GetText() == ATLASLOOT_RANDOM_LOOT and AtlasLootBossButtons[zoneID][i] == "T1SET") then
+                        elseif(zoneID == "MoltenCore" and getglobal("AtlasBossLine_"..(i-1).."_Text"):GetText() == ATLASLOOT_RANDOM_LOOT and AtlasLootBossButtons[pageID][i] == "T1SET") then
                             getglobal("AtlasBossLine_"..i.."_Text"):SetText(ATLASLOOT_MC_SET_PIECES);
-                        elseif(zoneID == "BlackwingLair" and getglobal("AtlasBossLine_"..(i-1).."_Text"):GetText() == ATLASLOOT_TRASH_MOBS and AtlasLootBossButtons[zoneID][i] == "T2SET") then
+                        elseif(zoneID == "BlackwingLair" and getglobal("AtlasBossLine_"..(i-1).."_Text"):GetText() == ATLASLOOT_TRASH_MOBS and AtlasLootBossButtons[pageID][i] == "T2SET") then
                             getglobal("AtlasBossLine_"..i.."_Text"):SetText(ATLASLOOT_BWL_SET_PIECES);
                         elseif(zoneID == "TheTempleofAhnQiraj" and getglobal("AtlasBossLine_"..(i-1).."_Text"):GetText() == ATLASLOOT_TRASH_MOBS) then
                             getglobal("AtlasBossLine_"..i.."_Text"):SetText(ATLASLOOT_AQ_ENCHANTS);
@@ -234,7 +242,7 @@ function AtlasLoot_Refresh()
                             getglobal("AtlasBossLine_"..i.."_Text"):SetText(ATLASLOOT_ZG_ENCHANTS);
                         elseif(zoneID == "DireMaulNorth" and getglobal("AtlasBossLine_"..(i-1).."_Text"):GetText() == ATLASLOOT_TRIBUTE_RUN) then
                             getglobal("AtlasBossLine_"..i.."_Text"):SetText(ATLASLOOT_DM_BOOKS);
-                        elseif(zoneID == "Naxxramas" and getglobal("AtlasBossLine_"..(i-1).."_Text"):GetText() == ATLASLOOT_TRASH_MOBS and AtlasLootBossButtons[zoneID][i] == "T3SET") then
+                        elseif(zoneID == "Naxxramas" and getglobal("AtlasBossLine_"..(i-1).."_Text"):GetText() == ATLASLOOT_TRASH_MOBS and AtlasLootBossButtons[pageID][i] == "T3SET") then
                             getglobal("AtlasBossLine_"..i.."_Text"):SetText(ATLASLOOT_NAXX_SET_PIECES);
                         else
 						    getglobal("AtlasBossLine_"..i.."_Text"):SetText(strsub(getglobal("AtlasText_"..i):GetText(), 11));
@@ -256,12 +264,13 @@ function AtlasLoot_Refresh()
 		    end
         --If we are dealing with battlegrounds
         elseif ( AtlasOptions.AtlasType == 2 ) then
-            zoneID = ATLAS_DROPDOWN_LIST_BG[AtlasOptions.AtlasZone];
+            local pageID = ATLAS_DROPDOWN_LIST_BG[AtlasOptions.AtlasZone];
+            zoneID = AtlasLoot_GetLegacyZoneID(pageID);
             local text;
-            if(AtlasLootBattlegrounds[zoneID] ~= nil) then
+            if(AtlasLootBattlegrounds[pageID] ~= nil) then
                 --If we have data, just show the rep rewards where we set them.
                 for i = 1, 27, 1 do
-                    if(AtlasLootBattlegrounds[zoneID][i] ~= nil and AtlasLootBattlegrounds[zoneID][i] ~= "") then
+                    if(AtlasLootBattlegrounds[pageID][i] ~= nil and AtlasLootBattlegrounds[pageID][i] ~= "") then
                         if(getglobal("AtlasBossLine_"..(i-1).."_Text"):GetText() == ATLASLOOT_BG_FRIENDLY) then
                             getglobal("AtlasBossLine_"..i.."_Text"):SetText(ATLASLOOT_BG_HONORED);
                         elseif(getglobal("AtlasBossLine_"..(i-1).."_Text"):GetText() == ATLASLOOT_BG_HONORED) then
@@ -292,12 +301,13 @@ function AtlasLoot_Refresh()
             end
         --World Bosses
         elseif ( AtlasOptions.AtlasType == 5 ) then
-            zoneID = ATLAS_DROPDOWN_LIST_RE[AtlasOptions.AtlasZone];
+            local pageID = ATLAS_DROPDOWN_LIST_RE[AtlasOptions.AtlasZone];
+            zoneID = AtlasLoot_GetLegacyZoneID(pageID);
             local text;
-            if(AtlasLootWBBossButtons[zoneID] ~= nil) then
+            if(AtlasLootWBBossButtons[pageID] ~= nil) then
                 --If we have data, just show the rep rewards where we set them.
                 for i = 1, 27, 1 do
-                    if(AtlasLootWBBossButtons[zoneID][i] ~= nil and AtlasLootWBBossButtons[zoneID][i] ~= "") then
+                    if(AtlasLootWBBossButtons[pageID][i] ~= nil and AtlasLootWBBossButtons[pageID][i] ~= "") then
                         getglobal("AtlasBossLine_"..i.."_Text"):SetText(getglobal("AtlasText_"..i):GetText());
                         getglobal("AtlasBossLine_"..i.."_Loot"):Show();
                         getglobal("AtlasBossLine_"..i.."_Selected"):Hide();
@@ -359,18 +369,18 @@ function AtlasLootBoss_OnClick(id)
         end
 
 		if ( AtlasOptions.AtlasType == 1 ) then
-			local zoneID = ATLAS_DROPDOWN_LIST[AtlasOptions.AtlasZone];
-			local dataID = AtlasLootBossButtons[zoneID][id];
+			local pageID = ATLAS_DROPDOWN_LIST[AtlasOptions.AtlasZone];
+			local dataID = AtlasLootBossButtons[pageID][id];
 			AtlasLoot_ShowItemsFrame(dataID, AtlasLootItems, "|cffFFFFFF"..boss);
 
 		elseif( AtlasOptions.AtlasType == 2 ) then
-			zoneID = ATLAS_DROPDOWN_LIST_BG[AtlasOptions.AtlasZone];
-			local dataID = AtlasLootBattlegrounds[zoneID][id];
+			local pageID = ATLAS_DROPDOWN_LIST_BG[AtlasOptions.AtlasZone];
+			local dataID = AtlasLootBattlegrounds[pageID][id];
 			AtlasLoot_ShowItemsFrame(dataID, AtlasLootBGItems, "|cffFFFFFF"..boss);
             
         elseif( AtlasOptions.AtlasType == 5 ) then
-			zoneID = ATLAS_DROPDOWN_LIST_RE[AtlasOptions.AtlasZone];
-			local dataID = AtlasLootWBBossButtons[zoneID][id];
+			local pageID = ATLAS_DROPDOWN_LIST_RE[AtlasOptions.AtlasZone];
+			local dataID = AtlasLootWBBossButtons[pageID][id];
 			AtlasLoot_ShowItemsFrame(dataID, AtlasLootWBItems, "|cffFFFFFF"..boss);
             
 		end

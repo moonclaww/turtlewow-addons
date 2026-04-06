@@ -1,4 +1,4 @@
--- Auto-generated from WorldMapArea.dbc by !Questie/tools/extract_dbc.py
+-- Auto-generated from WorldMapArea.dbc by tools/questie/extract_dbc.py
 -- Loaded after Astrolabe.lua to override continent/zone bounds with client data.
 -- DO NOT EDIT MANUALLY.
 

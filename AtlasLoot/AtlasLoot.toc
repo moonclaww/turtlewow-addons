@@ -26,4 +26,8 @@ Battlegrounds\Battlegrounds.xml
 Instances\Instances.xml
 Addons\Addons.xml
 WorldBosses\WorldBosses.xml
+Generated\Maps.lua
+Generated\Items.lua
+Generated\Locales.enUS.lua
+Generated\Locales.zhCN.lua
 Core\AtlasLoot.xml
