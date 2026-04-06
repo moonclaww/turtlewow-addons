@@ -1,6 +1,33 @@
+---- playerNameFromLink(string name) returns a plain player name from chat/player links
+function playerNameFromLink(name)
+	if not name then
+		return nil
+	end
+
+	local _, _, linkName = string.find(name, "|Hplayer:([^:|]+)")
+	if linkName then
+		name = linkName
+	else
+		_, _, linkName = string.find(name, "|h%[([^%]]+)%]|h")
+		if linkName then
+			name = linkName
+		end
+	end
+
+	name = string.gsub(name, "|c%x%x%x%x%x%x%x%x", "")
+	name = string.gsub(name, "|r", "")
+	name = string.gsub(name, "^%[", "")
+	name = string.gsub(name, "%]$", "")
+	name = string.gsub(name, "^%s+", "")
+	name = string.gsub(name, "%s+$", "")
+	name = string.gsub(name, "(-.*)", "")
+
+	return name
+end
+
 ---- unitFromPlayerName(string name) returns string unit or false if not in group
 function unitFromPlayerName(name)
-	name = string.gsub(name, "(-.*)", "")
+	name = playerNameFromLink(name)
 
 	if UnitName("player") == name then 
 		return "player" 

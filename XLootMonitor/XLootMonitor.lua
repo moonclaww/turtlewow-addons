@@ -407,7 +407,7 @@ function XLootMonitor:LootHandler(text)
 		local matches = nilTable(self.matchcache)
 		matches = { deformat(text, v.pattern) }
 		if matches[1] then
-			recipient = v.recipient == "self" and UnitName("player") or matches[v.recipient]
+			local recipient = v.recipient == "self" and UnitName("player") or playerNameFromLink(matches[v.recipient])
 			local item = v.item == "coin" and "coin" or matches[v.item]
 			local count = item == "coin" and (XLoot:ParseCoinString(matches[v.count]) or 0) or (v.count ~= nil and matches[v.count] or 1)
 			local unit = unitFromPlayerName(recipient)
