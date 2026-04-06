@@ -223,8 +223,7 @@ function QuestieTracker:createOrGetTrackingButton(index)
             local questId = btn.questId;
             local quest = QuestieQuestRuntimeById[questId];
             if not quest then return; end
-            local questMeta = QuestieQuestMetaById and QuestieQuestMetaById[questId]
-            local questObjectiveText = questMeta and questMeta.objectivesText or nil
+            local questObjectiveText = Questie:GetQuestTooltipObjectiveText(questId, true)
             Tooltip = GameTooltip;
             if quest["questName"] then
                 local x = tonumber(QuestieTrackerVariables["position"]["xOfs"]);
@@ -234,13 +233,19 @@ function QuestieTracker:createOrGetTrackingButton(index)
                     Tooltip:SetOwner(this, "ANCHOR_LEFT");
                 end
                 if (QuestieConfig.showToolTips == true) then
-                    if questObjectiveText and questObjectiveText ~= "" and (quest["isComplete"] or quest["objectiveCount"] == 0) then
+                    if questObjectiveText and questObjectiveText ~= "" then
                         Tooltip:AddLine("|cFFa6a6a6"..QL("TO_FINISH_QUEST").." |r",1,1,1,true);
-                        Tooltip:AddLine("|cffffffff"..Questie:RemoveUniqueSuffix(questObjectiveText).."|r",1,1,1,true);
+                        Tooltip:AddLine("|cffffffff"..questObjectiveText.."|r",1,1,1,true);
                     else
-                        Tooltip:AddLine(QL("QUEST_NOT_FOUND"), 1, .8, .8);
-                        Tooltip:AddLine(QL("BUG_REPORT"), 1, .8, .8);
-                        Tooltip:AddLine("https://github.com/AeroScripts/QuestieDev/issues", 1, .8, .8);
+                        local unfinishedObjectives = Questie:GetUnfinishedQuestObjectiveDescriptions(questId, quest)
+                        if table.getn(unfinishedObjectives) > 0 then
+                            Tooltip:AddLine("|cFFa6a6a6"..QL("TO_FINISH_QUEST").." |r",1,1,1,true);
+                            for _, objectiveDesc in ipairs(unfinishedObjectives) do
+                                Tooltip:AddLine("|cffffffff"..objectiveDesc.."|r",1,1,1,true);
+                            end
+                        else
+                            Questie:AddMissingTooltipFallback(Tooltip)
+                        end
                     end
                     Tooltip:Show();
                 end
@@ -414,9 +419,12 @@ function QuestieTracker:SortTrackingFrame()
             local questTrack = QuestieQuestRuntimeById[questId];
             if questTrack ~= nil and questTrack.tracked then
                 local objectiveCount = 0;
+                local unfinishedObjectiveCount = 0;
+                questTrack["arrowPoint"] = nil;
                 if not questTrack.isComplete then
                     for objectiveid, objective in pairs(quest.objectives) do
                         if not objective.done then
+                            unfinishedObjectiveCount = unfinishedObjectiveCount + 1;
                             local locations = Questie:RecursiveGetPathLocations(objective.path);
                             for i, location in pairs(locations) do
                                 local dist, xDelta, yDelta = Astrolabe:ComputeDistance(playerMapId, X, Y, location[1], location[2], location[3]);
@@ -437,7 +445,7 @@ function QuestieTracker:SortTrackingFrame()
                         end
                     end
                 end
-                if objectiveCount == 0 then
+                if objectiveCount == 0 and unfinishedObjectiveCount == 0 then
                     -- Show quest finished in tracker
                     local questMeta = QuestieQuestMetaById[questId];
                     if questMeta ~= nil then

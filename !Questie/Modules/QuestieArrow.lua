@@ -142,7 +142,11 @@ function SetArrowObjective(questId)
     end
     arrow_objective = questId
     arrow_data = nil
-    if not QuestieQuestRuntimeById[questId] or not QuestieQuestRuntimeById[questId]["arrowPoint"] then return end
+    if not QuestieQuestRuntimeById[questId] or not QuestieQuestRuntimeById[questId]["arrowPoint"] then
+        active_point = nil
+        wayframe:Hide()
+        return
+    end
     local objective = QuestieQuestRuntimeById[questId]["arrowPoint"]
     SetCrazyArrow(objective, objective.dist, objective.title)
 end
@@ -178,6 +182,10 @@ local function OnUpdate(self, elapsed)
                 local objective = QuestieQuestRuntimeById[arrow_objective]["arrowPoint"]
                 if objective then
                     SetCrazyArrow(objective, objective.dist, objective.title)
+                else
+                    active_point = nil
+                    self:Hide()
+                    return
                 end
             else
                  self:Hide()

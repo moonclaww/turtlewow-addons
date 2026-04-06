@@ -156,6 +156,123 @@ local function QuestieGetObjectiveEntityData(objectiveName, objectiveType, quest
     return nil, {}
 end
 
+local function QuestieTrimText(text)
+    return string.gsub(text or "", "^%s*(.-)%s*$", "%1")
+end
+
+local function QuestieAppendUniqueText(target, value)
+    value = QuestieTrimText(value)
+    if value == "" then
+        return
+    end
+
+    for _, existing in ipairs(target) do
+        if existing == value then
+            return
+        end
+    end
+
+    table.insert(target, value)
+end
+
+local function QuestieBuildObjectiveTextContexts(objectiveText, objectiveName)
+    local contexts = {}
+    if not objectiveText or objectiveText == "" then
+        return contexts
+    end
+
+    if objectiveName and objectiveName ~= "" then
+        local objectiveNames = { objectiveName }
+        if string.sub(objectiveName, -1) == "]" then
+            local strlen = string.len(objectiveName)
+            QuestieAppendUniqueText(objectiveNames, string.sub(objectiveName, 1, strlen - 4))
+        end
+
+        for _, name in ipairs(objectiveNames) do
+            local startPos, endPos = string.find(objectiveText, name, 1, true)
+            if startPos then
+                local contextEnd = math.min(string.len(objectiveText), endPos + 160)
+                QuestieAppendUniqueText(contexts, string.sub(objectiveText, math.max(1, startPos - 48), contextEnd))
+                QuestieAppendUniqueText(contexts, string.sub(objectiveText, math.max(1, startPos - 96), contextEnd))
+            end
+        end
+    end
+
+    QuestieAppendUniqueText(contexts, objectiveText)
+    return contexts
+end
+
+local function QuestieBuildSourceNameCandidates(sourceName)
+    local candidates = {}
+    local trimmed = QuestieTrimText(sourceName)
+    if trimmed == "" then
+        return candidates
+    end
+
+    QuestieAppendUniqueText(candidates, trimmed)
+    QuestieAppendUniqueText(candidates, string.gsub(trimmed, "^[Tt]he%s+", ""))
+    QuestieAppendUniqueText(candidates, string.gsub(trimmed, "'s$", ""))
+    QuestieAppendUniqueText(candidates, string.gsub(string.gsub(trimmed, "^[Tt]he%s+", ""), "'s$", ""))
+    local _, _, chinesePossessive = string.find(trimmed, ".*的(.*)")
+    QuestieAppendUniqueText(candidates, chinesePossessive)
+
+    local singular = string.gsub(trimmed, "s$", "")
+    if singular ~= trimmed then
+        QuestieAppendUniqueText(candidates, singular)
+    end
+
+    return candidates
+end
+
+local function QuestieGetObjectivePathFromQuestText(objectiveName, questId)
+    local questMeta = QuestieQuestMetaById and QuestieQuestMetaById[questId]
+    local contexts = QuestieBuildObjectiveTextContexts(questMeta and questMeta.objectivesText or nil, objectiveName)
+    local patterns = {
+        "from%s+(.-)%s+at%s+",
+        "from%s+(.-)%s+in%s+",
+        "from%s+(.-)%s+near%s+",
+        "from%s+(.-)%s+inside%s+",
+        "from%s+(.-)%s+within%s+",
+        "from%s+(.-)%s+for%s+",
+        "from%s+(.-)[,%.;\n]",
+        "从(.-)那里",
+        "从(.-)处",
+        "从(.-)获取",
+        "从(.-)获得",
+        "与(.-)交谈",
+        "和(.-)交谈",
+        "同(.-)交谈",
+        "向(.-)索取",
+    }
+
+    for _, context in ipairs(contexts) do
+        for _, pattern in ipairs(patterns) do
+            local _, _, sourceName = string.find(context, pattern)
+            if sourceName and sourceName ~= "" then
+                for _, candidate in ipairs(QuestieBuildSourceNameCandidates(sourceName)) do
+                    local unitIds = QuestieGetUnitIdsByName(candidate, questId)
+                    if table.getn(unitIds) > 0 then
+                        local path = QuestieBuildEntityPathByIds("monster", unitIds, questId)
+                        if QuestiePathHasData(path) then
+                            return path, "monster", unitIds
+                        end
+                    end
+
+                    local objectIds = QuestieGetObjectIdsByName(candidate, questId)
+                    if table.getn(objectIds) > 0 then
+                        local path = QuestieBuildEntityPathByIds("object", objectIds, questId)
+                        if QuestiePathHasData(path) then
+                            return path, "object", objectIds
+                        end
+                    end
+                end
+            end
+        end
+    end
+
+    return nil, nil, nil
+end
+
 local function QuestieGetObjectivePath(objectiveName, objectiveType, questId, objectiveIndex)
     local entityType, entityIds = QuestieGetObjectiveEntityData(objectiveName, objectiveType, questId)
     local path = {}
@@ -163,15 +280,26 @@ local function QuestieGetObjectivePath(objectiveName, objectiveType, questId, ob
     if objectiveType == "monster" or objectiveType == "object" then
         path = QuestieBuildEntityPathByIds(entityType, entityIds, questId)
     elseif objectiveType == "item" then
-        for _, itemId in ipairs(entityIds) do
-            local itemPath = QuestieGetItemLocationsById(itemId, questId)
-            if itemPath and QuestiePathHasData(itemPath) then
-                QuestieMergePathTables(path, itemPath)
-            end
+        local hintedPath, hintedEntityType, hintedEntityIds = nil, nil, nil
+        if questId then
+            hintedPath, hintedEntityType, hintedEntityIds = QuestieGetObjectivePathFromQuestText(objectiveName, questId)
         end
 
-        if not QuestiePathHasData(path) and questId and objectiveIndex and QuestieGetQuestObjectiveCoords then
-            path = QuestieGetQuestObjectiveCoords(questId, objectiveIndex) or {}
+        if hintedPath and QuestiePathHasData(hintedPath) then
+            path = hintedPath
+            entityType = hintedEntityType
+            entityIds = hintedEntityIds
+        else
+            for _, itemId in ipairs(entityIds) do
+                local itemPath = QuestieGetItemLocationsById(itemId, questId)
+                if itemPath and QuestiePathHasData(itemPath) then
+                    QuestieMergePathTables(path, itemPath)
+                end
+            end
+
+            if not QuestiePathHasData(path) and questId and objectiveIndex and QuestieGetQuestObjectiveCoords then
+                path = QuestieGetQuestObjectiveCoords(questId, objectiveIndex) or {}
+            end
         end
     elseif objectiveType == "event" then
         if questId and objectiveIndex and QuestieGetQuestObjectiveCoords then
@@ -225,6 +353,42 @@ function Questie:RemoveUniqueSuffix(text)
     end
 
     return text
+end
+
+function Questie:GetQuestTooltipObjectiveText(questId, removeUniqueSuffix)
+    local questMeta = questId and QuestieQuestMetaById and QuestieQuestMetaById[questId] or nil
+    local objectiveText = questMeta and questMeta.objectivesText or nil
+    if not objectiveText or objectiveText == "" then
+        return nil
+    end
+
+    if removeUniqueSuffix then
+        objectiveText = Questie:RemoveUniqueSuffix(objectiveText)
+    end
+
+    return objectiveText
+end
+
+function Questie:GetUnfinishedQuestObjectiveDescriptions(questId, runtimeQuest)
+    local lines = {}
+    local quest = runtimeQuest or (questId and QuestieQuestRuntimeById and QuestieQuestRuntimeById[questId]) or nil
+    if not quest or not quest.objectives then
+        return lines
+    end
+
+    for _, objective in ipairs(quest.objectives) do
+        if objective and not objective.done and objective.desc and objective.desc ~= "" then
+            QuestieAppendUniqueText(lines, objective.desc)
+        end
+    end
+
+    return lines
+end
+
+function Questie:AddMissingTooltipFallback(Tooltip)
+    Tooltip:AddLine(QL("QUEST_NOT_FOUND"), 1, .8, .8);
+    Tooltip:AddLine(QL("BUG_REPORT"), 1, .8, .8);
+    Tooltip:AddLine("https://github.com/AeroScripts/QuestieDev/issues", 1, .8, .8);
 end
 
 function Questie:ResolveQuestIdFromLogEntryData(questName, objectiveText, level)

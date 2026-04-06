@@ -1151,39 +1151,20 @@ function SetItemRef(link, text, button)
 
                 local questMeta = questId and QuestieQuestMetaById and QuestieQuestMetaById[questId] or nil
                 if questMeta then
-                    local localizedName = Questie:GetLocalizedQuestName(questId) or questMeta.name
-                    if questMeta.name == questTitle or localizedName == questTitle then
-                        ItemRefTooltip:AddLine(QL("STARTED_BY")..": |cFFa6a6a6"..(questMeta.startDisplayName or "Unknown").."|r",1,1,1);
-                        if questMeta.objectivesText and questMeta.objectivesText ~= "" then
-                            ItemRefTooltip:AddLine("|cffffffff"..questMeta.objectivesText.."|r",1,1,1,true);
-                        else
-                            ItemRefTooltip:AddLine(QL("QUEST_NOT_FOUND"), 1, .8, .8);
-                            ItemRefTooltip:AddLine(QL("BUG_REPORT"), 1, .8, .8);
-                            ItemRefTooltip:AddLine("https://github.com/AeroScripts/QuestieDev/issues", 1, .8, .8);
-                        end
-                        local questLevelStr = questMeta.questLevel or "1";
-                        local _, _, questLevel = string.find(questLevelStr, "(%d+)");
-                        if questLevel and questLevel ~= 0 and questLevel ~= "0" then
-                            local color = GetDifficultyColor(questLevel);
-                            ItemRefTooltip:AddLine("Quest Level " .. questLevelStr, color.r, color.g, color.b);
-                        end
-                        ItemRefTooltip:Show();
-                    else
-                        ShowUIPanel(ItemRefTooltip);
-                        ItemRefTooltip:SetOwner(UIParent, "ANCHOR_PRESERVE");
-                        ItemRefTooltip:AddLine(questTitle, 1,1,0);
-                        ItemRefTooltip:AddLine("Quest not found in Questie Database!", 1, .8, .8);
-                        ItemRefTooltip:AddLine("Please file a bug report on our GitHub portal:)", 1, .8, .8);
-                        ItemRefTooltip:AddLine("https://github.com/AeroScripts/QuestieDev/issues", 1, .8, .8);
-                        ItemRefTooltip:Show();
+                    ItemRefTooltip:AddLine(QL("STARTED_BY")..": |cFFa6a6a6"..(questMeta.startDisplayName or "Unknown").."|r",1,1,1);
+                    local questObjectiveText = Questie:GetQuestTooltipObjectiveText(questId)
+                    if questObjectiveText then
+                        ItemRefTooltip:AddLine("|cffffffff"..questObjectiveText.."|r",1,1,1,true);
                     end
+                    local questLevelStr = questMeta.questLevel or "1";
+                    local _, _, questLevel = string.find(questLevelStr, "(%d+)");
+                    if questLevel and questLevel ~= 0 and questLevel ~= "0" then
+                        local color = GetDifficultyColor(questLevel);
+                        ItemRefTooltip:AddLine("Quest Level " .. questLevelStr, color.r, color.g, color.b);
+                    end
+                    ItemRefTooltip:Show();
                 else
-                    ShowUIPanel(ItemRefTooltip);
-                    ItemRefTooltip:SetOwner(UIParent, "ANCHOR_PRESERVE");
-                    ItemRefTooltip:AddLine(questTitle, 1,1,0);
-                    ItemRefTooltip:AddLine("Quest not found in Questie Database!", 1, .8, .8);
-                    ItemRefTooltip:AddLine("Please file a bug report on our GitHub portal:)", 1, .8, .8);
-                    ItemRefTooltip:AddLine("https://github.com/AeroScripts/QuestieDev/issues", 1, .8, .8);
+                    Questie:AddMissingTooltipFallback(ItemRefTooltip)
                     ItemRefTooltip:Show();
                 end
             end
