@@ -97,6 +97,35 @@ local function QuestieBuildEntityPathByIds(entityType, entityIds, questId)
     return path
 end
 
+local function QuestieGetObjectiveItemRequirementPath(itemIds, questId)
+    local questData = questId and QuestieGetQuestById and QuestieGetQuestById(questId) or nil
+    if not questData or not questData.objectiveItemRequirements then
+        return {}
+    end
+
+    local path = {}
+    for _, itemId in ipairs(itemIds or {}) do
+        local requirement = questData.objectiveItemRequirements[itemId]
+        if requirement then
+            if requirement.units then
+                local unitPath = QuestieBuildEntityPathByIds("monster", requirement.units, questId)
+                if QuestiePathHasData(unitPath) then
+                    QuestieMergePathTables(path, unitPath)
+                end
+            end
+
+            if requirement.objects then
+                local objectPath = QuestieBuildEntityPathByIds("object", requirement.objects, questId)
+                if QuestiePathHasData(objectPath) then
+                    QuestieMergePathTables(path, objectPath)
+                end
+            end
+        end
+    end
+
+    return path
+end
+
 local function QuestieGetQuestObjectiveIds(questId, objectiveType)
     local questData = questId and QuestieGetQuestById and QuestieGetQuestById(questId) or nil
     if not questData then
@@ -294,6 +323,13 @@ local function QuestieGetObjectivePath(objectiveName, objectiveType, questId, ob
                 local itemPath = QuestieGetItemLocationsById(itemId, questId)
                 if itemPath and QuestiePathHasData(itemPath) then
                     QuestieMergePathTables(path, itemPath)
+                end
+            end
+
+            if not QuestiePathHasData(path) and questId then
+                local requirementPath = QuestieGetObjectiveItemRequirementPath(entityIds, questId)
+                if QuestiePathHasData(requirementPath) then
+                    path = requirementPath
                 end
             end
 
