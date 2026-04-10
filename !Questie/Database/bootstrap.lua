@@ -602,6 +602,7 @@ local function QuestieBuildQuestMeta(questId, questData, info)
         ["requiredClassMask"] = questData.class or 0,
         ["requiredQuestId"] = questData.preQuests and questData.preQuests[1] or nil,
         ["requiredSkillId"] = questData.skill,
+        ["eventId"] = questData.eventId,
         ["startType"] = startType,
         ["startId"] = startId,
         ["startDisplayName"] = startDisplayName,

@@ -42,6 +42,7 @@ function Questie:SetupDefaults()
         ["minShowLevel"] = 4,
         ["resizeWorldmap"] = false,
         ["showMapNotes"] = true,
+        ["showEventQuests"] = false,
         ["showProfessionQuests"] = false,
         ["showToolTips"] = true,
         ["showTrackerHeader"] = false,
@@ -121,6 +122,9 @@ function Questie:CheckDefaults()
     end
     if QuestieConfig.showMapNotes == nil then
         QuestieConfig.showMapNotes = true;
+    end
+    if QuestieConfig.showEventQuests == nil then
+        QuestieConfig.showEventQuests = false;
     end
     if QuestieConfig.showProfessionQuests == nil then
         QuestieConfig.showProfessionQuests = false;
@@ -892,6 +896,16 @@ QuestieFastSlash = {
         end
         Questie:AddEvent("DRAWNOTES", 0.1);
     end,
+    ["eventquests"] = function()
+    --Default: False
+        QuestieConfig.showEventQuests = not QuestieConfig.showEventQuests;
+        if QuestieConfig.showEventQuests then
+            DEFAULT_CHAT_FRAME:AddMessage("QuestieQuest:|c0000ffc0 (Event Quests On) |r");
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("QuestieQuest:|c0000ffc0 (Event Quests Off) |r");
+        end
+        Questie:AddEvent("DRAWNOTES", 0.1);
+    end,
     ["qtscale"] = function(arg)
     --Default: Small
         if arg == "large" then
@@ -1032,6 +1046,7 @@ QuestieFastSlash = {
         DEFAULT_CHAT_FRAME:AddMessage("|c0000c0ff  /questie mintracker |r|c0000ffc0(toggle)|r QuestTracker: Minimize or Maximize the QuestieTracker", 0.75, 0.75, 0.75);
         DEFAULT_CHAT_FRAME:AddMessage("|c0000c0ff  /questie NUKE |r|r|c0000ffc0(Pop-up)|r Database: Resets ALL Questie data and settings", 0.75, 0.75, 0.75);
         DEFAULT_CHAT_FRAME:AddMessage("|c0000c0ff  /questie options |r-- Displays the Questie Options configuration interface", 0.75, 0.75, 0.75); -- TODO:Remove when minimap button is used
+        DEFAULT_CHAT_FRAME:AddMessage("|c0000c0ff  /questie eventquests |r|c0000ffc0(toggle)|r QuestMap: Show or hide seasonal/event quest starters", 0.75, 0.75, 0.75);
         DEFAULT_CHAT_FRAME:AddMessage("|c0000c0ff  /questie professions |r|c0000ffc0(toggle)|r QuestQuest: Profession quest filter", 0.75, 0.75, 0.75);
         DEFAULT_CHAT_FRAME:AddMessage("|c0000c0ff  /questie setmaxlevel |r|c0000ffc0<number>|r QuestMap: Show quests <X> levels above players level (default=7)", 0.75, 0.75, 0.75);
         DEFAULT_CHAT_FRAME:AddMessage("|c0000c0ff  /questie setminlevel |r|c0000ffc0<number>|r QuestMap: Show quests <X> levels below players level (default=4)", 0.75, 0.75, 0.75);
@@ -1098,16 +1113,17 @@ function Questie:CurrentUserToggles()
         [15] = { "minShowLevel" },
         [16] = { "resizeWorldmap" },
         [17] = { "showMapNotes" },
-        [18] = { "showProfessionQuests" },
-        [19] = { "showTrackerHeader" },
-        [20] = { "showToolTips" },
-        [21] = { "trackerAlpha" },
-        [22] = { "trackerBackground" },
-        [23] = { "trackerEnabled" },
-        [24] = { "trackerList" },
-        [25] = { "trackerMinimize" },
-        [26] = { "trackerScale" },
-        [27] = { "useQuestLinks" },
+        [18] = { "showEventQuests" },
+        [19] = { "showProfessionQuests" },
+        [20] = { "showTrackerHeader" },
+        [21] = { "showToolTips" },
+        [22] = { "trackerAlpha" },
+        [23] = { "trackerBackground" },
+        [24] = { "trackerEnabled" },
+        [25] = { "trackerList" },
+        [26] = { "trackerMinimize" },
+        [27] = { "trackerScale" },
+        [28] = { "useQuestLinks" },
     };
     if QuestieConfig then
         i = 1;

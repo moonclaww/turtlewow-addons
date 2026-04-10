@@ -980,6 +980,10 @@ local function QuestieScoreAvailableQuest(questId)
     return score
 end
 
+local function QuestieIsEventQuest(questMeta)
+    return questMeta ~= nil and questMeta.eventId ~= nil
+end
+
 local function QuestieIsQuestAvailableToPlayer(questId, levelFrom, levelTo)
     local questMeta = QuestieQuestMetaById and QuestieQuestMetaById[questId]
     local playerClass = UnitClass("Player")
@@ -989,14 +993,16 @@ local function QuestieIsQuestAvailableToPlayer(questId, levelFrom, levelTo)
     end
 
     local recommendedLevel = QuestieGetQuestDisplayLevel(questMeta)
-    local requiredLevel = QuestieGetQuestRequiredLevel(questMeta)
     if QuestieConfig.minLevelFilter and recommendedLevel < levelFrom then
         return false
     end
-    if QuestieConfig.maxLevelFilter and requiredLevel > levelTo then
+    if QuestieConfig.maxLevelFilter and recommendedLevel > levelTo then
         return false
     end
     if not QuestieCheckRequirements(playerClass, playerRace, questMeta.requiredClassMask, questMeta.requiredRaceMask) then
+        return false
+    end
+    if (not QuestieConfig.showEventQuests) and QuestieIsEventQuest(questMeta) then
         return false
     end
     if questMeta.requiredSkillId and not QuestieConfig.showProfessionQuests then
