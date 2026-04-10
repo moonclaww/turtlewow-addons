@@ -169,20 +169,17 @@ end
 ---------------------------------
 
 -- XPerl_DisallowClear
---function XPerl_DisallowClear()
---	return AceLibrary and AceLibrary:HasInstance("Jostle-2.0")
---end
+function XPerl_DisallowClear()
+	return AceLibrary and AceLibrary:HasInstance("Jostle-2.0")
+end
 
 -- XPerl_BlizzFramesDisable
 function XPerl_BlizzFramesDisable()
 	local XPerl_DummyFrame
 	local XPerl_DummyFunc
+	local clearBlizzardFrames = XPerlConfig.ClearBlizzardFrames == 1 and not XPerl_DisallowClear()
 
-	--if (XPerl_DisallowClear()) then
-	--	XPerlConfig.ClearBlizzardFrames = 0
-	--end
-
-	if (XPerlConfig.ClearBlizzardFrames == 1) then
+	if (clearBlizzardFrames) then
 		XPerl_DummyFrame = CreateFrame("Frame")
 		XPerl_DummyFunc = function() end
 	end
@@ -197,7 +194,7 @@ function XPerl_BlizzFramesDisable()
 		PlayerFrame:ClearAllPoints()
 		PlayerFrame:SetPoint("BOTTOMLEFT", UIParent, "TOPLEFT", 0, 50)
 
-		if (XPerlConfig.ClearBlizzardFrames == 1) then
+		if (clearBlizzardFrames) then
 			PlayerFrame = XPerl_DummyFrame
 
 			PlayerFrame_OnLoad = nil
@@ -222,7 +219,7 @@ function XPerl_BlizzFramesDisable()
 		PetFrame:ClearAllPoints()
 		PetFrame:SetPoint("BOTTOMLEFT", UIParent, "TOPLEFT", 0, 50)
 
-		if (XPerlConfig.ClearBlizzardFrames == 1) then
+		if (clearBlizzardFrames) then
 			PetFrame = XPerl_DummyFrame
 
 			PetFrame_OnLoad = nil
@@ -248,7 +245,7 @@ function XPerl_BlizzFramesDisable()
 		TargetofTargetFrame:ClearAllPoints()
 		TargetofTargetFrame:SetPoint("BOTTOMLEFT", UIParent, "TOPLEFT", 0, 50)
 
-		if (XPerlConfig.ClearBlizzardFrames == 1) then
+		if (clearBlizzardFrames) then
 			TargetFrame = XPerl_DummyFrame
 			TargetofTargetFrame = XPerl_DummyFrame
 
@@ -293,7 +290,7 @@ function XPerl_BlizzFramesDisable()
 			f:SetPoint("BOTTOMLEFT", UIParent, "TOPLEFT", 0, 50)
 		end
 
-		if (XPerlConfig.ClearBlizzardFrames == 1) then
+		if (clearBlizzardFrames) then
 			for num = 1, 4 do
 				setglobal("PartyMemberFrame"..num, XPerl_DummyFrame)
 			end
