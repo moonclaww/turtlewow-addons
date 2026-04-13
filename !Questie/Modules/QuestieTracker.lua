@@ -854,16 +854,13 @@ function QuestLogTitleButton_OnClick(button)
         QuestLog_Update();
     else
         local prevQuestLogSelection = QGet_QuestLogSelection();
-        local questName = this:GetText();
         local questIndex = this:GetID() + FauxScrollFrame_GetOffset(QuestLogListScrollFrame);
         local qName, level, questTag, isHeader, isCollapsed, isComplete = QGet_QuestLogTitle(questIndex);
         QSelect_QuestLogEntry(questIndex);
-        local questText, objectiveText = QGet_QuestLogQuestText();
         if (IsShiftKeyDown()) then
             if (this.isHeader) then
                 return;
             end
-            local questId = Questie:ResolveQuestIdFromLogEntryData(qName, objectiveText, level);
             if ChatFrameEditBox:IsVisible() then
                 local text = this:GetText();
                 if QuestieConfig.useQuestLinks then text = "|cffffff00|Hquest:0:0:0:0|h["..gsub(text, "  (.)", "%1").."]|h|r"; end
@@ -874,7 +871,6 @@ function QuestLogTitleButton_OnClick(button)
                 WIM_EditBoxInFocus:Insert(text);
             else
                 if (IsQuestWatched(questIndex)) then
-                    Questie:debug_Print("Tracker:QuestLogTitleButton_OnClick --> RemoveQuestWatch: [Id: "..questIndex.."] | [QuestId: "..questId.."]");
                     RemoveQuestWatch(questIndex);
                 else
                     ------------------------------------------------------------------------------------
@@ -890,7 +886,6 @@ function QuestLogTitleButton_OnClick(button)
                     end
                     ----------------------------------------------------------------------------------]]
                     AddQuestWatch(questIndex);
-                    Questie:debug_Print("Tracker:QuestLogTitleButton_OnClick --> AutoQuestWatch_Insert: [Id: "..questIndex.."] | [QuestId: "..questId.."]");
                 end
                 Questie:AddEvent("SYNCLOG", 0);
                 if QuestieConfig["alwaysShowObjectives"] == false then
@@ -934,11 +929,9 @@ function QuestieTracker:updateQuestWatchLogId(questId, logId)
         return
     end
     if QUEST_WATCH_LIST[questId] and QUEST_WATCH_LIST[questId].questIndex ~= logId then
-        Questie:debug_Print("Tracker:updateQuestWatchLogId: QUEST_WATCH_LIST["..questId.."].questIndex changed from "..QUEST_WATCH_LIST[questId].questIndex.." to "..logId)
         QUEST_WATCH_LIST[questId].questIndex = logId
     end
     if QuestieQuestRuntimeById[questId] and QuestieQuestRuntimeById[questId].logId ~= logId then
-        Questie:debug_Print("Tracker:updateQuestWatchLogId: QuestieQuestRuntimeById["..questId.."].logId changed from "..QuestieQuestRuntimeById[questId].logId.." to "..logId)
         QuestieQuestRuntimeById[questId].logId = logId
     end
 end
@@ -1081,10 +1074,8 @@ function QuestieTracker:syncQuestWatch()
                     local id = v["logId"]
                     if QuestieQuestStatusById[questId] == 0 and QuestieQuestRuntimeById[questId]["tracked"] == true then
                         AddQuestWatch(id);
-                        Questie:debug_Print("Tracker:syncQuestWatch --> AddQuestWatch: [ID: "..id.."] | [questId: "..questId.."]");
                     elseif QuestieQuestStatusById[questId] == 0 and QuestieQuestRuntimeById[questId]["tracked"] == false then
                         RemoveQuestWatch(id);
-                        Questie:debug_Print("Tracker:syncQuestWatch --> RemoveQuestWatch: [ID: "..id.."] | [questId: "..questId.."]");
                     end
                     QuestWatch_Update();
                     -- Prevents QuestWatcher "flickering bug"
@@ -1102,7 +1093,6 @@ end
 --Checks and flags tracked quest status and then adds them to the quest tracker
 ---------------------------------------------------------------------------------------------------
 function QuestieTracker:syncQuestLog()
-    Questie:debug_Print("****************| Running QuestieTracker:syncQuestLog |**************** ");
     if IsAddOnLoaded("EQL3") or IsAddOnLoaded("ShaguQuest") then
         QuestLogSync = EQL3_IsQuestWatched;
     else
@@ -1124,17 +1114,14 @@ function QuestieTracker:syncQuestLog()
                 if isWatched then
                     if QuestieQuestRuntimeById[questId] then
                         if QuestieQuestRuntimeById[questId]["tracked"] ~= true then
-                            Questie:debug_Print("Tracker:syncQuestLog --> addQuestToTracker: Flagging [QuestId: "..questId.."] TRUE");
                             QuestieTracker:addQuestToTracker(questId);
                         end
                     else
-                        Questie:debug_Print("Tracker:syncQuestLog --> Add quest to Tracker and MapNotes caches: [QuestId: "..questId.."]");
                         Questie:AddQuestToMap(questId);
                         QuestieTracker:addQuestToTrackerCache(questId, id, level);
                         QuestieTracker:addQuestToTracker(questId);
                     end
                 elseif QuestieQuestRuntimeById[questId] and QuestieQuestRuntimeById[questId]["tracked"] ~= false then
-                    Questie:debug_Print("Tracker:syncQuestLog --> removeQuestFromTracker: Flagging [QuestId: "..questId.."] FALSE");
                     QuestieTracker:removeQuestFromTracker(questId);
                 end
             end

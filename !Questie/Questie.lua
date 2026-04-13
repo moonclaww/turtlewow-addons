@@ -268,60 +268,37 @@ function Questie:OnUpdate(elapsed)
         for k, v in pairs(QUESTIE_EVENTQUEUE) do
             if GetTime()- v.TIME > v.DELAY then
                 if (v.EVENT == "UPDATE") then
-                    local UpdateTime = GetTime();
-                    while (true) do
-                        local d = Questie:UpdateQuests();
-                        if (not d) then
-                            QUESTIE_EVENTQUEUE[k] = nil;
-                            break;
-                        end
-                    end
-                    Questie:debug_Print("OnUpdate: "..v.EVENT.." Took: "..tostring(GetTime()- UpdateTime).." ms");
-                    Questie:debug_Print();
+                    -- UpdateQuests now scans all active quests in one pass, so repeating it
+                    -- in the same frame just doubles the work during quest progress bursts.
+                    Questie:UpdateQuests();
+                    QUESTIE_EVENTQUEUE[k] = nil;
                 elseif (v.EVENT == "UPDATECACHE") then
-                    local UpdateCacheTime = GetTime();
                     Questie:UpdateGameClientCache();
                     QUESTIE_EVENTQUEUE[k] = nil;
-                    Questie:debug_Print("OnUpdate: "..v.EVENT.." Took: "..tostring((GetTime()- UpdateCacheTime)*1000).." ms");
-                    Questie:debug_Print();
                 elseif (v.EVENT == "CHECKLOG") then
-                    local CheckLogTime = GetTime();
                     Questie:CheckQuestLog();
                     QUESTIE_EVENTQUEUE[k] = nil;
-                    Questie:debug_Print("OnUpdate: "..v.EVENT.." Took: "..tostring((GetTime()- CheckLogTime)*1000).." ms");
                 elseif (v.EVENT == "TRACKER") then
-                    local TrackerTime = GetTime();
                     QuestieTracker:SortTrackingFrame();
                     QuestieTracker:FillTrackingFrame();
                     QUESTIE_EVENTQUEUE[k] = nil;
-                    Questie:debug_Print("OnUpdate: "..v.EVENT.." Took: "..tostring((GetTime()- TrackerTime)*1000).." ms");
-                    Questie:debug_Print();
                 elseif (v.EVENT == "SYNCLOG") then
-                    local SyncLogTime = GetTime();
                     QuestieTracker:syncQuestLog();
                     QUESTIE_EVENTQUEUE[k] = nil;
-                    Questie:debug_Print("OnUpdate: "..v.EVENT.." Took: "..tostring((GetTime()- SyncLogTime)*1000).." ms");
-                    Questie:debug_Print();
                 elseif (v.EVENT == "SYNCWATCH") and (not IsAddOnLoaded("EQL3")) and (not IsAddOnLoaded("ShaguQuest")) then
-                    local SyncWoWLogTime = GetTime();
                     QuestieTracker:syncQuestWatch();
                     QUESTIE_EVENTQUEUE[k] = nil;
-                    Questie:debug_Print("OnUpdate: "..v.EVENT.." Took: "..tostring((GetTime()- SyncWoWLogTime)*1000).." ms");
-                    Questie:debug_Print();
                 elseif (v.EVENT == "DRAWNOTES") then
-                    local DrawNotesTime = GetTime();
                     Questie:SetAvailableQuests();
                     Questie:RedrawNotes();
                     QUESTIE_EVENTQUEUE[k] = nil;
-                    Questie:debug_Print("OnUpdate: "..v.EVENT.." Took: "..tostring((GetTime()- DrawNotesTime)*1000).." ms");
-                    Questie:debug_Print();
+                elseif (v.EVENT == "REDRAWNOTES") then
+                    Questie:RedrawNotes();
+                    QUESTIE_EVENTQUEUE[k] = nil;
                 elseif (v.EVENT == "LOADEVENTS") then
-                    local LoadEventsTime = GetTime();
                     GameLoadingComplete = true;
                     Questie:OnLoad_QuestEvents();
                     QUESTIE_EVENTQUEUE[k] = nil;
-                    Questie:debug_Print("OnUpdate: "..v.EVENT.." Took: "..tostring((GetTime()- LoadEventsTime)*1000).." ms");
-                    Questie:debug_Print();
                 end
             else
                 if k ~= index then
@@ -379,6 +356,25 @@ end
 --Questie Event Handlers
 ---------------------------------------------------------------------------------------------------
 function Questie:AddEvent(EVENT, DELAY, MSG)
+    for _, queuedEvent in pairs(QUESTIE_EVENTQUEUE) do
+        if queuedEvent and queuedEvent.EVENT == EVENT then
+            local now = GetTime();
+            local queuedRunAt = queuedEvent.TIME + queuedEvent.DELAY;
+            local requestedRunAt = now + DELAY;
+
+            if requestedRunAt < queuedRunAt then
+                queuedEvent.TIME = now;
+                queuedEvent.DELAY = DELAY;
+            end
+
+            if MSG ~= nil then
+                queuedEvent.MSG = MSG;
+            end
+
+            return;
+        end
+    end
+
     local evnt = {};
     evnt.EVENT = EVENT;
     evnt.TIME = GetTime();
@@ -389,20 +385,48 @@ end
 ---------------------------------------------------------------------------------------------------
 function Questie:CheckQuestLogStatus()
     QUESTIE_UPDATE_EVENT = 1;
-    if(GetTime() - QUESTIE_LAST_UPDATECACHE > 0.01) then
-        Questie:AddEvent("UPDATECACHE", 0.2);
-        QUESTIE_LAST_UPDATECACHE = GetTime();
-    else
-        QUESTIE_LAST_UPDATECACHE = GetTime();
+    local _, numQuests = GetNumQuestLogEntries();
+    local signatureParts = {}
+    local questLogId = 1
+    local activeQuestCount = 0
+
+    while activeQuestCount < numQuests do
+        local questName, level, questTag, isHeader = GetQuestLogTitle(questLogId)
+        if not isHeader then
+            table.insert(signatureParts, tostring(level or ""))
+            table.insert(signatureParts, "\031")
+            table.insert(signatureParts, tostring(questName or ""))
+            table.insert(signatureParts, "\030")
+            activeQuestCount = activeQuestCount + 1
+        end
+        questLogId = questLogId + 1
     end
-    if(GetTime() - QUESTIE_LAST_CHECKLOG > 0.01) then
-        Questie:AddEvent("CHECKLOG", 0.4);
-        QUESTIE_LAST_CHECKLOG = GetTime();
-    else
-        QUESTIE_LAST_CHECKLOG = GetTime();
+
+    local currentSignature = table.concat(signatureParts)
+    local requiresQuestLogRefresh = (Questie.lastQuestLogCount == nil)
+        or (numQuests ~= Questie.lastQuestLogCount)
+        or (currentSignature ~= (Questie.lastQuestLogSignature or ""));
+
+    if requiresQuestLogRefresh then
+        if(GetTime() - QUESTIE_LAST_CHECKLOG > 0.01) then
+            Questie:AddEvent("CHECKLOG", 0.2);
+            QUESTIE_LAST_CHECKLOG = GetTime();
+        else
+            QUESTIE_LAST_CHECKLOG = GetTime();
+        end
     end
     if(GetTime() - QUESTIE_LAST_UPDATE > 0.01) then
-        Questie:AddEvent("UPDATE", 0.6);
+        Questie:AddEvent("UPDATE", 0.4);
+        QUESTIE_LAST_UPDATE = GetTime();
+    else
+        QUESTIE_LAST_UPDATE = GetTime();
+    end
+end
+---------------------------------------------------------------------------------------------------
+function Questie:CheckQuestProgressStatus()
+    QUESTIE_UPDATE_EVENT = 1;
+    if(GetTime() - QUESTIE_LAST_UPDATE > 0.01) then
+        Questie:AddEvent("UPDATE", 0.2);
         QUESTIE_LAST_UPDATE = GetTime();
     else
         QUESTIE_LAST_UPDATE = GetTime();
@@ -436,7 +460,6 @@ function Questie:OnEvent(this, event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, 
         Questie:CreateMinimapButton();
     -------------------------------------------------
     elseif (event == "CHAT_MSG_LOOT") then
-        --Questie:debug_Print("OnEvent: CHAT_MSG_LOOT");
         Questie:ParseQuestLoot(arg1);
     -------------------------------------------------
     elseif (event == "MINIMAP_UPDATE_ZOOM" ) then
@@ -461,7 +484,6 @@ function Questie:OnEvent(this, event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, 
         Questie:AddEvent("DRAWNOTES", 0.1);
     -------------------------------------------------
     elseif (event == "PLAYER_LOGIN") then
-        Questie:debug_Print("OnEvent: PLAYER_LOGIN");
         Questie:hookTooltip();
         Questie:hookTooltipLineCheck();
         QuestieTracker:createTrackingFrame();
@@ -491,16 +513,13 @@ function Questie:OnEvent(this, event, arg1, arg2, arg3, arg4, arg5, arg6, arg7, 
         WorldMapUpdateSpamOff = nil;
     -------------------------------------------------
     elseif (event == "QUEST_PROGRESS") then
-        Questie:debug_Print("OnEvent: QUEST_PROGRESS.\n    GetNumQuestItems: "..GetNumQuestItems())
         Questie:OnQuestProgress()
     -------------------------------------------------
     elseif (event == "QUEST_LOG_UPDATE") then
-        --Questie:debug_Print("OnEvent: QUEST_LOG_UPDATE");
         Questie:CheckQuestLogStatus();
     -------------------------------------------------
     elseif (event == "QUEST_ITEM_UPDATE") then
-        Questie:debug_Print("OnEvent: QUEST_ITEM_UPDATE");
-        Questie:CheckQuestLogStatus();
+        Questie:CheckQuestProgressStatus();
     -------------------------------------------------
     elseif (event == "VARIABLES_LOADED") then
         Questie:SetupDefaults();

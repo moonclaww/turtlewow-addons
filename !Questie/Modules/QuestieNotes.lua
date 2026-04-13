@@ -235,10 +235,9 @@ end
 function Questie:AddQuestToMap(questId, redraw)
     if(IsQuestieActive == false) then return; end
     if questId == -1 then return; end
-    --Questie:debug_Print("Notes:AddQuestToMap --> Adding Quest to Map [QuestId: "..questId.."]");
     local c, z = GetCurrentMapContinent(), GetCurrentMapZone();
     Questie:RemoveQuestFromMap(questId);
-    local objectives = Questie:GetQuestObjectivePaths(questId)
+    local objectives = {}
     --Cache code
     local ques = {};
     ques["noteHandles"] = {};
@@ -246,7 +245,7 @@ function Questie:AddQuestToMap(questId, redraw)
     UsedZones = {};
     local Quest = Questie:IsQuestFinished(questId);
     if not (Quest) then
-        Questie:debug_Print("Notes:AddQuestToMap --> Display Objective Icons: [QuestId: "..questId.."]");
+        objectives = Questie:GetQuestObjectivePaths(questId)
         for objectiveid, objective in pairs(objectives) do
             if not objective.done then
                 local typeToIcon = {
@@ -263,10 +262,7 @@ function Questie:AddQuestToMap(questId, redraw)
             end
         end
     else
-        --Questie:debug_Print("Notes:AddQuestToMap --> Display Finished Quest Icon: [QuestId: "..questId.."]");
-        local addedNote = false
-        local questInfo = QuestieQuestMetaById[questId];
-        if questInfo ~= nil then
+        if QuestieQuestMetaById[questId] ~= nil then
             local finishPath = QuestieGetQuestFinisherLocationsById(questId);
             if(finishPath) then
                 local locations = Questie:RecursiveGetPathLocations(finishPath);
@@ -274,20 +270,15 @@ function Questie:AddQuestToMap(questId, redraw)
                     for i, location in pairs(locations) do
                         local mapId, x, y = location[1], location[2], location[3];
                         Questie:AddNoteToMap(mapId, x, y, "complete", questId, 0);
-                        addedNote = true
                     end
                 end
             end
-        end
-        if addedNote == false then
-            Questie:debug_Print("AddQuestToMap: ERROR Quest broken! ", Quest["name"], questId, "report on github!")
         end
     end
     --Cache code
     ques["objectives"] = objectives;
     QuestieHandledQuests[questId] = ques;
     if (redraw) then
-        Questie:debug_Print("Notes:AddQuestToMap: redraw VAR true --> Questie:RefreshQuestStatus();");
         Questie:RefreshQuestNotes();
     end
 end
@@ -309,7 +300,6 @@ end
 ---------------------------------------------------------------------------------------------------
 function Questie:UpdateQuestNotes(questId, redraw)
     if not QuestieHandledQuests[questId] then
-        --Questie:debug_Print("UpdateQuestNotes: ERROR! Tried updating a quest not handled. Hash: ", questId);
         return;
     end
     local prevQuestLogSelection = QGet_QuestLogSelection()
@@ -328,15 +318,12 @@ function Questie:UpdateQuestNotes(questId, redraw)
         if noteHeap then
             for id, note in pairs(noteHeap) do
                 if(note.questId == questId) then
-                    local desc, typ, done = QGet_QuestLogLeaderBoard(note.objectiveid);
-                    --Questie:debug_Print("UpdateQuestNotes: Desc: "..tostring(desc).." Type: "..tostring(typ).." Done: "..tostring(done));
                 end
             end
         end
     end
     QSelect_QuestLogEntry(prevQuestLogSelection)
     if(redraw) then
-        Questie:debug_Print("Notes:UpdateQuestNotes: redraw VAR true --> Questie:RefreshQuestStatus();");
         Questie:RefreshQuestNotes();
     end
 end
@@ -354,7 +341,6 @@ function Questie:RemoveQuestFromMap(questId, redraw)
         end
     end
     if(redraw) then
-        Questie:debug_Print("Notes:RemoveQuestFromMap: redraw VAR true --> Questie:RefreshQuestStatus();");
         Questie:RefreshQuestNotes();
     end
     if(QuestieHandledQuests[questId]) then
@@ -813,7 +799,6 @@ function Questie_AvailableQuestClick()
                 local questName = "["..QuestieQuestMetaById[hash].questLevel.."] "..QuestieQuestMetaById[hash]['name'];
                 Questie:finishAndRecurse(hash);
                 DEFAULT_CHAT_FRAME:AddMessage("Completing quest |cFF00FF00\"" .. questName .. "\"|r ("..hash..") and parent quests.");
-                --Questie:debug_Print("Notes:Questie_AvailableQuestClick --> Refreshing QuestNPC Icons: [AddEvent:DRAWNOTES]");
                 Questie:AddEvent("DRAWNOTES", 0.1);
             end
         end
@@ -1093,14 +1078,12 @@ function Questie:NOTES_ON_UPDATE(elapsed)
     if GameLoadingComplete == false then return; end
     local c, z = GetCurrentMapContinent(), GetCurrentMapZone();
     if(c ~= LastContinent or LastZone ~= z) then
-        --Questie:debug_Print("Notes:NOTES_ON_UPDATE: [AddEvent:DRAWNOTES]");
         Questie:SetAvailableQuests();
         Questie:RedrawNotes();
         LastContinent = c;
         LastZone = z;
     end
     if(WorldMapFrame:IsVisible() and UIOpen == false) then
-        --Questie:debug_Print("NOTES_ON_UPDATE: Created Frames: "..CREATED_NOTE_FRAMES, "Used Frames: "..table.getn(QuestieUsedNoteFrames), "Free Frames: "..table.getn(FramePool));
         UIOpen = true;
     elseif(WorldMapFrame:IsVisible() == nil and UIOpen == true) then
         UIOpen = false;
@@ -1111,13 +1094,11 @@ end
 -- is good)
 ---------------------------------------------------------------------------------------------------
 function Questie:NOTES_LOADED()
-    --Questie:debug_Print("NOTES_LOADED: Loading QuestieNotes");
     if(table.getn(FramePool) < 10) then
         for i = 1, INIT_POOL_SIZE do
             Questie:CreateBlankFrameNote();
         end
     end
-    --Questie:debug_Print("NOTES_LOADED: Done Loading QuestieNotes");
 end
 ---------------------------------------------------------------------------------------------------
 function Questie:RecursiveGetPathLocations(path, locations)
@@ -1223,7 +1204,6 @@ end
 ---------------------------------------------------------------------------------------------------
 function Questie:SetAvailableQuests(customLevel)
     QuestieAvailableMapNotes = {};
-    local saqtime = GetTime();
     local level = customLevel or UnitLevel("player");
     local c, z = GetCurrentMapContinent(), GetCurrentMapZone();
     local quests = nil;
@@ -1237,15 +1217,11 @@ function Questie:SetAvailableQuests(customLevel)
     end
     quests = Questie:GetAvailableQuestIds(minLevel, maxLevel);
     if quests then
-        local count = 0;
         for k, v in pairs(quests) do
-            count = count + 1;
             local icontype = "available";
             if QuestieGetQuestRequiredLevel(QuestieQuestMetaById[k]) > level then icontype = "availablesoon"; end
             Questie:RecursiveCreateNotes(c, z, k, v, {["selectedIcon"] = icontype});
         end
-        --Questie:debug_Print("SetAvailableQuests: Adding "..count.." available quests took "..tostring((GetTime()- saqtime)*1000).."ms");
-        saqtime = nil;
     end
 end
 ---------------------------------------------------------------------------------------------------
@@ -1277,7 +1253,6 @@ end
 -- QuestieUsedNotesFrame to new table;
 ---------------------------------------------------------------------------------------------------
 function Questie:CLEAR_ALL_NOTES()
-    --Questie:debug_Print("CLEAR_ALL_NOTES");
     Astrolabe:RemoveAllMinimapIcons();
     clustersByFrame = nil;
     for k, v in pairs(QuestieUsedNoteFrames) do
@@ -1449,7 +1424,6 @@ end
 -- Checks first if there are any notes for the current zone, then draws the desired icon
 ---------------------------------------------------------------------------------------------------
 function Questie:DRAW_NOTES()
-    --Questie:debug_Print("DRAW_NOTES");
     local c, z = GetCurrentMapContinent(), GetCurrentMapZone();
     local playerMapId = Astrolabe:GetCurrentPlayerPosition();
     local currentMapId = QuestieGetCurrentMapId();
@@ -1572,32 +1546,6 @@ function Questie:DrawClusters(clusters, frameName, scale, frame, button)
         end
     end
 end
----------------------------------------------------------------------------------------------------
--- Debug print function
----------------------------------------------------------------------------------------------------
-function Questie:debug_Print(...)
-    local debugWin = 0;
-    local name, shown;
-    for i=1, NUM_CHAT_WINDOWS do
-        name,_,_,_,_,_,shown = GetChatWindowInfo(i);
-        if (string.lower(name) == "questiedebug") then debugWin = i; break; end
-    end
-    if (debugWin == 0) then return; end
-    local out = "";
-    for i = 1, arg.n, 1 do
-        if (i > 1) then out = out .. ", "; end
-        local t = type(arg[i]);
-        if (t == "string") then
-            out = out .. '"'..arg[i]..'"';
-        elseif (t == "number") then
-            out = out .. arg[i];
-        else
-            out = out .. dump(arg[i]);
-        end
-    end
-    getglobal("ChatFrame"..debugWin):AddMessage(out, 1.0, 1.0, 0.3);
-end
----------------------------------------------------------------------------------------------------
 -- Sets the icon type
 ---------------------------------------------------------------------------------------------------
 QuestieIcons = {

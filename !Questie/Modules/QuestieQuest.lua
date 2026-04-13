@@ -53,11 +53,100 @@ local function QuestieClearQuestRuntime(questId)
     end
 end
 
-local function QuestiePathHasData(path)
-    return path and next(path) ~= nil
+local questiePathSourceTypes = {
+    ["drop"] = 1,
+    ["rewardedby"] = 1,
+    ["contained"] = 1,
+    ["contained_id"] = 1,
+    ["created"] = 1,
+    ["containedi"] = 1,
+    ["openedby"] = 1,
+    ["transforms"] = 1,
+    ["transformedby"] = 1,
+}
+
+local QuestiePathHasDataCache = setmetatable({}, { __mode = "k" })
+
+local function QuestiePathHasData(path, visited)
+    if type(path) ~= "table" then
+        return false
+    end
+
+    local cached = QuestiePathHasDataCache[path]
+    if cached ~= nil then
+        return cached
+    end
+
+    local locations = path.locations
+    if type(locations) == "table" and table.getn(locations) > 0 then
+        QuestiePathHasDataCache[path] = true
+        return true
+    end
+
+    visited = visited or {}
+    if visited[path] then
+        return false
+    end
+    visited[path] = true
+
+    for sourceType, sources in pairs(path) do
+        if questiePathSourceTypes[sourceType] == 1 and type(sources) == "table" then
+            for _, sourcePath in pairs(sources) do
+                if QuestiePathHasData(sourcePath, visited) then
+                    visited[path] = nil
+                    QuestiePathHasDataCache[path] = true
+                    return true
+                end
+            end
+        end
+    end
+
+    visited[path] = nil
+    QuestiePathHasDataCache[path] = false
+    return false
+end
+
+local function QuestieCollectPathLocations(path, locations, visited)
+    if type(path) ~= "table" then
+        return locations or {}
+    end
+
+    locations = locations or {}
+    visited = visited or {}
+    if visited[path] then
+        return locations
+    end
+    visited[path] = true
+
+    if type(path.locations) == "table" then
+        for _, location in ipairs(path.locations) do
+            table.insert(locations, location)
+        end
+    end
+
+    for sourceType, sources in pairs(path) do
+        if questiePathSourceTypes[sourceType] == 1 and type(sources) == "table" then
+            for _, sourcePath in pairs(sources) do
+                QuestieCollectPathLocations(sourcePath, locations, visited)
+            end
+        end
+    end
+
+    visited[path] = nil
+    return locations
+end
+
+local function QuestieFlattenPathLocations(path)
+    local locations = QuestieCollectPathLocations(path)
+    if table.getn(locations) > 0 then
+        return { ["locations"] = locations }
+    end
+
+    return {}
 end
 
 local function QuestieMergePathTables(target, source)
+    QuestiePathHasDataCache[target] = nil
     for key, value in pairs(source) do
         if key == "locations" then
             if target.locations == nil then
@@ -91,6 +180,38 @@ local function QuestieBuildEntityPathByIds(entityType, entityIds, questId)
 
         if locations and QuestiePathHasData(locations) then
             QuestieMergePathTables(path, locations)
+        end
+    end
+
+    return path
+end
+
+local function QuestieGetDirectItemPathByIds(itemIds, questId)
+    local path = {}
+
+    for _, itemId in ipairs(itemIds or {}) do
+        local itemData = QuestieGetItemById and QuestieGetItemById(itemId, questId) or nil
+        if itemData then
+            if itemData.dropUnits then
+                local unitPath = QuestieBuildEntityPathByIds("monster", itemData.dropUnits, questId)
+                if QuestiePathHasData(unitPath) then
+                    QuestieMergePathTables(path, unitPath)
+                end
+            end
+
+            if itemData.containedObjects then
+                local objectPath = QuestieBuildEntityPathByIds("object", itemData.containedObjects, questId)
+                if QuestiePathHasData(objectPath) then
+                    QuestieMergePathTables(path, objectPath)
+                end
+            end
+
+            if not QuestiePathHasData(path) and itemData.vendorUnits then
+                local vendorPath = QuestieBuildEntityPathByIds("monster", itemData.vendorUnits, questId)
+                if QuestiePathHasData(vendorPath) then
+                    QuestieMergePathTables(path, vendorPath)
+                end
+            end
         end
     end
 
@@ -183,6 +304,45 @@ local function QuestieGetObjectiveEntityData(objectiveName, objectiveType, quest
     end
 
     return nil, {}
+end
+
+local function QuestieAppendUniqueObjectiveType(objectiveTypes, objectiveType)
+    if not objectiveType then
+        return
+    end
+
+    for _, existingType in ipairs(objectiveTypes) do
+        if existingType == objectiveType then
+            return
+        end
+    end
+
+    table.insert(objectiveTypes, objectiveType)
+end
+
+local function QuestieGetObjectiveTypeCandidates(questId, objectiveType, objectiveIndex)
+    local objectiveTypes = {}
+    QuestieAppendUniqueObjectiveType(objectiveTypes, objectiveType)
+
+    local questData = questId and QuestieGetQuestById and QuestieGetQuestById(questId) or nil
+    if not questData then
+        return objectiveTypes
+    end
+
+    if questData.objectiveItems and table.getn(questData.objectiveItems) > 0 then
+        QuestieAppendUniqueObjectiveType(objectiveTypes, "item")
+    end
+    if questData.objectiveUnits and table.getn(questData.objectiveUnits) > 0 then
+        QuestieAppendUniqueObjectiveType(objectiveTypes, "monster")
+    end
+    if questData.objectiveObjects and table.getn(questData.objectiveObjects) > 0 then
+        QuestieAppendUniqueObjectiveType(objectiveTypes, "object")
+    end
+    if questData.objectiveCoords and (questData.objectiveCoords[objectiveIndex] or questData.objectiveCoords[-1]) then
+        QuestieAppendUniqueObjectiveType(objectiveTypes, "event")
+    end
+
+    return objectiveTypes
 end
 
 local function QuestieTrimText(text)
@@ -302,6 +462,34 @@ local function QuestieGetObjectivePathFromQuestText(objectiveName, questId)
     return nil, nil, nil
 end
 
+local function QuestieGetObjectiveCoordPath(questId, objectiveIndex, allowQuestFallback)
+    if questId and objectiveIndex and QuestieGetQuestObjectiveCoords then
+        local path = QuestieGetQuestObjectiveCoords(questId, objectiveIndex) or {}
+        if QuestiePathHasData(path) then
+            return path
+        end
+
+        if allowQuestFallback then
+            return QuestieGetQuestObjectiveCoords(questId, -1) or {}
+        end
+    end
+
+    return {}
+end
+
+local function QuestieGetQuestFallbackObjectivePath(questId)
+    local path = QuestieGetObjectiveCoordPath(questId, -1, false)
+    if QuestiePathHasData(path) then
+        return path
+    end
+
+    if questId and QuestieGetQuestFinisherLocationsById then
+        return QuestieGetQuestFinisherLocationsById(questId) or {}
+    end
+
+    return {}
+end
+
 local function QuestieGetObjectivePath(objectiveName, objectiveType, questId, objectiveIndex)
     local entityType, entityIds = QuestieGetObjectiveEntityData(objectiveName, objectiveType, questId)
     local path = {}
@@ -319,12 +507,7 @@ local function QuestieGetObjectivePath(objectiveName, objectiveType, questId, ob
             entityType = hintedEntityType
             entityIds = hintedEntityIds
         else
-            for _, itemId in ipairs(entityIds) do
-                local itemPath = QuestieGetItemLocationsById(itemId, questId)
-                if itemPath and QuestiePathHasData(itemPath) then
-                    QuestieMergePathTables(path, itemPath)
-                end
-            end
+            path = QuestieGetDirectItemPathByIds(entityIds, questId)
 
             if not QuestiePathHasData(path) and questId then
                 local requirementPath = QuestieGetObjectiveItemRequirementPath(entityIds, questId)
@@ -333,20 +516,22 @@ local function QuestieGetObjectivePath(objectiveName, objectiveType, questId, ob
                 end
             end
 
-            if not QuestiePathHasData(path) and questId and objectiveIndex and QuestieGetQuestObjectiveCoords then
-                path = QuestieGetQuestObjectiveCoords(questId, objectiveIndex) or {}
+            if not QuestiePathHasData(path) then
+                path = QuestieGetObjectiveCoordPath(questId, objectiveIndex, true)
             end
         end
     elseif objectiveType == "event" then
-        if questId and objectiveIndex and QuestieGetQuestObjectiveCoords then
-            path = QuestieGetQuestObjectiveCoords(questId, objectiveIndex) or {}
-        end
+        path = QuestieGetObjectiveCoordPath(questId, objectiveIndex, true)
     end
 
     return path, entityType, entityIds
 end
 
 function Questie:ParseObjectiveName(desc, objType)
+    if not desc then
+        return ""
+    end
+
     if QuestieDeformat then
         local name;
         local have;
@@ -366,7 +551,7 @@ function Questie:ParseObjectiveName(desc, objType)
         end
     end
 
-    local splitIndex = findLast(desc, ":");
+    local splitIndex = findLast(desc, ":") or findLast(desc, string.char(239, 188, 154));
     if splitIndex then
         local objectiveName = string.sub(desc, 1, splitIndex - 1);
         if string.find(objectiveName, " slain") then
@@ -472,6 +657,7 @@ end
 function Questie:RefreshQuestLogIndexCache()
     local activeQuests = {}
     local nextQuestLogIndexById = {}
+    local questLogSignature = {}
     local prevQuestLogSelection = QGet_QuestLogSelection()
     local id = 1
     local qc = 0
@@ -480,6 +666,10 @@ function Questie:RefreshQuestLogIndexCache()
     while qc < numQuests do
         local questName, level, questTag, isHeader, isCollapsed, isComplete = QGet_QuestLogTitle(id);
         if not isHeader then
+            table.insert(questLogSignature, tostring(level or ""))
+            table.insert(questLogSignature, "\031")
+            table.insert(questLogSignature, tostring(questName or ""))
+            table.insert(questLogSignature, "\030")
             QSelect_QuestLogEntry(id);
             local questText, objectiveText = QGet_QuestLogQuestText();
             local questId = Questie:ResolveQuestIdFromLogEntryData(questName, objectiveText, level)
@@ -503,6 +693,8 @@ function Questie:RefreshQuestLogIndexCache()
     QSelect_QuestLogEntry(prevQuestLogSelection);
     QuestieQuestLogIndexById = nextQuestLogIndexById
     LastQuestLogCount = numQuests
+    Questie.lastQuestLogCount = numQuests
+    Questie.lastQuestLogSignature = table.concat(questLogSignature)
 
     return activeQuests, numQuests
 end
@@ -683,7 +875,7 @@ function Questie:ParseQuestLoot(arg1)
     if item then
         _, _, loot = string.find(item, "%[(.+)%].+");
         if Questie:DetectQuestItem(loot) then
-            Questie:CheckQuestLogStatus();
+            Questie:CheckQuestProgressStatus();
         end
     end
 end
@@ -770,10 +962,6 @@ function Questie:CheckQuestLog()
     LastQuestLogQuestIds = activeQuests
     if changed then
         Questie:RefreshQuestStatus()
-    else
-        Questie:AddEvent("SYNCLOG", 0.2);
-        Questie:AddEvent("DRAWNOTES", 0.4);
-        Questie:AddEvent("TRACKER", 0.6);
     end
 
     QUESTIE_LAST_UPDATE_FINISHED = GetTime()
@@ -784,7 +972,8 @@ function Questie:UpdateQuests(force)
         QuestieObjectiveSnapshotsByQuestId = {}
     end
 
-    local foundChange = nil
+    local foundTrackerChange = nil
+    local foundMapChange = nil
     local activeQuests = Questie:RefreshQuestLogIndexCache()
     local prevQuestLogSelection = QGet_QuestLogSelection()
 
@@ -792,13 +981,20 @@ function Questie:UpdateQuests(force)
         QSelect_QuestLogEntry(questInfo.logId)
         local objectiveCount = QGet_NumQuestLeaderBoards(questInfo.logId)
         local snapshot = QuestieObjectiveSnapshotsByQuestId[questId] or {}
-        local changed = force and true or false
+        local trackerChanged = force and true or false
+        local mapChanged = force and true or false
 
         for objectiveIndex = 1, objectiveCount do
             local desc, objectiveType, done = QGet_QuestLogLeaderBoard(objectiveIndex)
             local previous = snapshot[objectiveIndex]
-            if not previous or previous.desc ~= desc or previous.objectiveType ~= objectiveType or previous.done ~= done then
-                changed = true
+            if not previous then
+                trackerChanged = true
+                mapChanged = true
+            elseif previous.objectiveType ~= objectiveType or previous.done ~= done then
+                trackerChanged = true
+                mapChanged = true
+            elseif previous.desc ~= desc then
+                trackerChanged = true
             end
             snapshot[objectiveIndex] = {
                 ["desc"] = desc,
@@ -809,20 +1005,30 @@ function Questie:UpdateQuests(force)
 
         for objectiveIndex = objectiveCount + 1, table.getn(snapshot) do
             snapshot[objectiveIndex] = nil
-            changed = true
+            trackerChanged = true
+            mapChanged = true
         end
 
         QuestieObjectiveSnapshotsByQuestId[questId] = snapshot
-        if changed then
-            foundChange = true
+        if trackerChanged then
+            foundTrackerChange = true
             Questie:BuildQuestRuntimeEntry(questId, questInfo.logId)
-            Questie:AddQuestToMap(questId, true)
             QuestieTracker:updateTrackerCache(questId, questInfo.logId, questInfo.level)
+        end
+        if mapChanged then
+            foundMapChange = true
+            Questie:AddQuestToMap(questId)
         end
     end
 
     QSelect_QuestLogEntry(prevQuestLogSelection)
-    return foundChange
+    if foundMapChange then
+        Questie:AddEvent("REDRAWNOTES", 0.2)
+    end
+    if foundTrackerChange then
+        Questie:AddEvent("TRACKER", 0.4)
+    end
+    return foundTrackerChange
 end
 
 function Questie:GetQuestObjectivePaths(questId, questLogId)
@@ -837,20 +1043,43 @@ function Questie:GetQuestObjectivePaths(questId, questLogId)
     QSelect_QuestLogEntry(logId)
     local objectiveCount = QGet_NumQuestLeaderBoards(logId)
 
+    if objectiveCount == 0 then
+        local path = QuestieGetQuestFallbackObjectivePath(questId)
+        if QuestiePathHasData(path) then
+            local questMeta = QuestieQuestMetaById and QuestieQuestMetaById[questId] or nil
+            objectivePaths[1] = {
+                ["path"] = path,
+                ["done"] = false,
+                ["type"] = "event",
+                ["name"] = questMeta and questMeta.objectivesText or "",
+                ["desc"] = questMeta and questMeta.objectivesText or "",
+                ["entityType"] = nil,
+                ["entityIds"] = {},
+            }
+        end
+
+        QSelect_QuestLogEntry(prevQuestLogSelection)
+        return objectivePaths
+    end
+
     for objectiveIndex = 1, objectiveCount do
         local desc, objectiveType, done = QGet_QuestLogLeaderBoard(objectiveIndex)
-        if objectiveType then
-            local objectiveName = Questie:ParseObjectiveName(desc, objectiveType)
-            local path, entityType, entityIds = QuestieGetObjectivePath(objectiveName, objectiveType, questId, objectiveIndex)
+        local objectiveTypes = QuestieGetObjectiveTypeCandidates(questId, objectiveType, objectiveIndex)
+        for _, candidateObjectiveType in ipairs(objectiveTypes) do
+            local objectiveName = Questie:ParseObjectiveName(desc, candidateObjectiveType)
+            local path, entityType, entityIds = QuestieGetObjectivePath(objectiveName, candidateObjectiveType, questId, objectiveIndex)
             objectivePaths[objectiveIndex] = {
                 ["path"] = path,
                 ["done"] = done,
-                ["type"] = objectiveType,
+                ["type"] = candidateObjectiveType,
                 ["name"] = objectiveName,
                 ["desc"] = desc,
                 ["entityType"] = entityType,
                 ["entityIds"] = entityIds,
             }
+            if QuestiePathHasData(path) then
+                break
+            end
         end
     end
 
@@ -889,7 +1118,10 @@ function Questie:IsQuestFinished(questId)
 
     QSelect_QuestLogEntry(logId)
     local objectiveCount = QGet_NumQuestLeaderBoards()
-    local done = true
+    local done = isComplete == 1
+    if objectiveCount > 0 then
+        done = true
+    end
     for objectiveIndex = 1, objectiveCount do
         local desc, objectiveType, objectiveDone = QGet_QuestLogLeaderBoard(objectiveIndex)
         if not objectiveDone then
